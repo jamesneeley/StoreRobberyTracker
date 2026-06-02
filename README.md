@@ -138,21 +138,22 @@ Shows:
 - Quick loot simulation  
 - Auto snapshot on scenario  
 
-### Debug Hotkeys
-- Start robbery  
-- Trigger safe crack  
-- Trigger mini safe crack  
-- Trigger alarm  
-- Trigger payout  
-- Trigger cooldown  
-- Trigger stalker event  
-- Toggle UI  
-- Toggle banner  
-- Toggle timer  
-- Store diagnostics  
-- Multi‑position debug  
-- Misc actions  
-- Camera debug  
+### Debug Hotkeys and the pre-assigned values
+- Start robbery                    // 97  NumPad1
+- Trigger safe crack               // 98  NumPad2
+- Trigger safe crack minigame      // 107 NumPad Add
+- Trigger alarm                    // 99  NumPad3
+- trigger escape                   // 100 NumPad4
+- Trigger payout                   // 101 NumPad5
+- Trigger cooldown                 // 102 NumPad6
+- Trigger stalker event            // 103 NumPad7
+- Toggle UI                        // 104 NumPad8
+- Toggle banner                    // 105 NumPad9
+- Toggle timer                     // 96  NumPad0
+- Store diagnostics                // 121 F10
+- Multi‑position debug             // 111 NumPad Divide
+- Misc actions                     // 106 NumPad Multiply
+- Camera debug                     // 114 F3
 
 ---
 
@@ -160,20 +161,20 @@ Shows:
 
 ## 📄 DebugSettings.ini
 
-### **[Debug]**
-- EnableDebug — master debug toggle  
-- OverlayVisible — show/hide debug overlay  
-- DebugLevel — verbosity (0–3)  
-- ModifierKey — modifier for debug actions  
-- ToggleKey — toggle overlay  
-- Action_* — hotkeys for all debug actions  
-- Scenario_FullRobbery — run full robbery simulation  
-- Scenario_QuickLoot — run quick loot simulation  
-- EnableProfiler — enable profiler  
-- Profiler_AutoDump — auto‑dump profiler data  
-- Profiler_DumpInterval — dump interval  
-- EnableFileManager — enable debug file manager  
-- AutoSnapshotOnScenario — auto snapshot  
+### **[Debug]** and pre-assugned valus for HotKeys (if any)
+- EnableDebug — master debug toggle                  // true/false
+- OverlayVisible — show/hide debug overlay           // true/false
+- DebugLevel — verbosity (0–3)                       // 2 is the default
+- ModifierKey — modifier for debug actions           // 162 Left CTRL
+- ToggleKey — toggle overlay                         // 120 F9                
+- Action_* — hotkeys for all debug actions           // SEE ABOVE SECTION
+- Scenario_FullRobbery — run full robbery simulation // 112 F1 
+- Scenario_QuickLoot — run quick loot simulation     // 113 F2
+- EnableProfiler — enable profiler                   // true/false
+- Profiler_AutoDump — auto‑dump profiler data        // true/false
+- Profiler_DumpInterval — dump interval              // 30
+- EnableFileManager — enable debug file manager      // true/false
+- AutoSnapshotOnScenario — auto snapshot             // true/false
 
 ---
 
