@@ -1,9 +1,7 @@
-﻿# 🏪 Store Robbery Enhanced  
+﻿# 🏪 Store Robbery Enhanced — Bringing GTA Online’s Robbery Achievements to Single Player
 ### Bringing GTA Online’s Robbery Achievements to Single Player — Rebuilt, Expanded, and Modernized
 
-Store Robbery Enhanced is a complete re‑imagining of the classic GTA Online store robbery loop — rebuilt from the ground up for **GTA V Single Player**.
-
-This project faithfully recreates the Online-style robbery achievement experience, then expands it with deeper systems, smarter AI, immersive UI, psychological tension, and a fully modular architecture designed for long-term growth.
+Store Robbery Enhanced is a complete re-imagining of the classic GTA Online store robbery loop — rebuilt from the ground up for **GTA V Single Player** Enhanced to bring a different engaging experience that upon completion, gives you a Mission Sytle completed feel, something that the GTAO never offered. It also offers a crazy twist with the option "Stalker System" that makes you feel during the Robbery Process if you will, feel like you are being watched and if you really got away clean or not... If it is enabled (default true), there are over 350+ preprogrammed messages and you can edit or add your own messages, change the name and charater icon, to make it even more emmersive and thrilling.
 
 In GTA Online, robbing all convenience stores is a structured progression path:
 
@@ -12,7 +10,9 @@ In GTA Online, robbing all convenience stores is a structured progression path:
 - Clerks react dynamically  
 - Safes offer bonus payouts  
 - Subtitles guide the player  
-- Achievements track your progress  
+- Achievements track your progress
+- Stalker System intregrated and customizible
+- Safe Cracking Minigame
 
 **Store Robbery Enhanced brings that entire experience into Single Player — and then pushes it further.**
 
@@ -22,13 +22,16 @@ In GTA Online, robbing all convenience stores is a structured progression path:
 
 This isn’t a simple “point gun, get money” script.  
 It’s a **full robbery ecosystem**, built to feel like Rockstar designed it for Story Mode:
+🔥 FEATURES
+🏪 Dynamic Store Robberies
+21 fully supported stores (20 Online stores + Ace Liquor)
 
 - Every store is tracked, saved, and managed  
-- Robbery states persist across sessions  
-- Cooldowns mirror GTA Online’s anti‑farm system  
-- Clerks behave with fear, surrender, and escalation logic  
-- Safes can be cracked for bonus cash  
-- Subtitles recreate the Online-style robbery prompts  
+  - Robbery states persist across sessions  
+  - Cooldowns mirror GTA Online’s anti‑farm system  
+  - Clerks behave with fear, surrender, and escalation logic  
+  - Safes can be cracked for bonus cash  
+  - Subtitles recreate the Online-style robbery prompts  
 - Minimap-only blips match the Online UI  
 - A psychological **Stalker System** reacts to your behavior  
 - A full **debug suite** lets developers inspect every system in real time  
@@ -99,6 +102,19 @@ A dynamic psychological system that reacts to your behavior:
   - Morality patterns  
 - Adds a thriller‑style narrative layer to every robbery  
 
+For a list and visual of for possible Stalker Icons for the Stalker System can be view and seen at this link below. Default Stalker Image used is "CHAR_ARTHUR"
+👉 https://wiki.rage.mp/wiki/Notification_Pictures
+
+You can edit the StoreRobberyTracker.ini file and update the Icon and Name in these settings
+[Stalker]
+EnableStalkerMsg=true
+EnableStalkerCall=true
+StalkerCallChance=25
+CallerImage=CHAR_ARTHUR <-- where you can change the icon
+CallerName=NO CALLER ID	<-- where you can change the caller ID name if desired.
+MaxMessagesPerRobbery=5
+MessageCooldownSeconds=20
+
 ---
 
 ## 🗺️ Clean Minimap Integration
@@ -109,6 +125,8 @@ A dynamic psychological system that reacts to your behavior:
 ---
 
 ## 🛠️ Full Debug Suite (Developer Tools)
+If the Debug System is enabled in the MainSettings.ini, to active and use features you must Holddown Left CTRL + Hotkey(s) to activate. All HotKeys as well as ModifierKey (Left CTRL) can be changed via the DebugSettings.ini a full list of useable HotKeys can be found at the link below
+👉 https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.keys?view=netframework-4.8.1
 
 ### Debug Overlay
 Shows:
