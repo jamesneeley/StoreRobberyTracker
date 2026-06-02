@@ -1,0 +1,481 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using GTA;
+using GTA.Math;
+using StoreRobberyTrackerMod.Data;
+using StoreRobberyTrackerMod.Systems;
+using StoreRobberyTrackerMod.Initialization;
+using StoreRobberyTrackerMod.UI;
+using StoreRobberyTrackerMod.Config;
+using StoreRobberyTrackerMod.Debug;
+using StoreRobberyTrackerMod.Minigame;
+
+namespace StoreRobberyTrackerMod
+{
+    internal class StoreContext
+    {
+        private readonly Script _script;
+
+        // ------------------------------------------------------------
+        // CORE SYSTEMS
+        // ------------------------------------------------------------
+        internal IniConfig Config { get; private set; }
+        internal UiHelpers Ui { get; private set; }
+        internal PlayerHelper Player { get; private set; }
+        public static StoreContext Active { get; private set; }
+
+        public StoreContext()
+        {
+            Active = this;
+        }
+
+        // ------------------------------------------------------------
+        // GAMEPLAY SYSTEMS
+        // ------------------------------------------------------------
+        internal ClerkSystem Clerks { get; private set; }
+        internal CameraSystem Cameras { get; private set; }
+        internal RobberySystem Robberies { get; private set; }
+        internal CooldownSystem Cooldowns { get; private set; }
+        internal SafeSystem Safes { get; private set; }
+        internal StalkerSystem Stalker { get; private set; }
+        internal ClerkReplacementSystem ClerkReplacement { get; private set; }
+
+        internal DebugScenarios Scenarios { get; private set; }
+
+        // ⭐ BLIP SYSTEM
+        internal BlipSystem Blips { get; private set; }
+
+        // ⭐ PHASE 3 — POLICE SYSTEM
+        internal PoliceSystem Police { get; private set; }
+
+        // ⭐ SAFECRACK MINIGAME (NEW)
+        internal SafeCrackState SafeState { get; private set; }
+        internal SafeCrackController SafeCrack { get; private set; }
+        internal SafeCrackSettings SafeCrackSettings { get; private set; }
+
+
+        // ------------------------------------------------------------
+        // DATA
+        // ------------------------------------------------------------
+        internal List<TrackedStore> Stores { get; private set; }
+        internal Dictionary<int, Blip> StoreBlips { get; private set; }
+
+        // ------------------------------------------------------------
+        // GLOBAL HEAT
+        // ------------------------------------------------------------
+        internal int GlobalHeatLevel;
+        internal DateTime LastHeatUpdate;
+
+        // ------------------------------------------------------------
+        // RNG
+        // ------------------------------------------------------------
+        internal Random Rng { get; private set; }
+
+        public StoreContext(Script script)
+        {
+            try
+            {
+                _script = script;
+
+                Stores = new List<TrackedStore>();
+                StoreBlips = new Dictionary<int, Blip>();
+
+                Rng = new Random();
+                LastHeatUpdate = DateTime.UtcNow;
+
+                DebugLogger.Info("StoreContext constructed");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StoreContext.ctor", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // ENSURE STORESTATE.INI EXISTS + POPULATED
+        // ------------------------------------------------------------
+        private void EnsureStoreStatePopulated()
+        {
+            try
+            {
+                string path = Config.StoreStatePath;
+
+                if (!File.Exists(path))
+                    File.WriteAllText(path, "");
+
+                var info = new FileInfo(path);
+                if (info.Length == 0)
+                {
+                    DebugLogger.Info("StoreState.ini empty — prepopulating");
+                    Config.PrepopulateStoreState(Stores);
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StoreContext.EnsureStoreStatePopulated", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // INITIALIZATION
+        // ------------------------------------------------------------
+        public void Initialize()
+        {
+            try
+            {
+                DebugLogger.Info("StoreContext.Initialize() starting");
+
+                // 1. Load config
+                Config = new IniConfig(_script);
+                Config.LoadSettings();
+
+                // 2. Core helpers
+                Ui = new UiHelpers(Config);
+                Player = new PlayerHelper(this);
+
+                // 3. Build stores
+                StoreInitializer.BuildStores(this);
+
+                // 4. Ensure StoreState.ini exists and is populated
+                EnsureStoreStatePopulated();
+
+                // 5. Load store state
+                foreach (TrackedStore store in Stores)
+                    Config.LoadStoreState(store);
+
+                // 6. Subsystems
+                Clerks = new ClerkSystem(this);
+                Cameras = new CameraSystem(this);
+                Robberies = new RobberySystem(this);
+                Cooldowns = new CooldownSystem(this);
+                Stalker = new StalkerSystem(this);
+                ClerkReplacement = new ClerkReplacementSystem(this);
+
+                // ⭐ Load SafeCrack settings
+                SafeCrackSettings = SafeCrackConfigLoader.Load(Config);
+
+                // ⭐ Initialize SafeCrack minigame
+                SafeState = new SafeCrackState();
+                SafeCrack = new SafeCrackController(
+                    SafeState,
+                    SafeCrackSettings,
+                    new SafeCrackLogic(),
+                    new SafeCrackInput(),
+                    new SafeCrackUI(),
+                    new SafeCrackAnimation()
+                );
+
+                SafeCrackEvents.SafeCracked += (pos, payout) =>
+                {
+                    // ⭐ Hand off payout to RobberySystem instead of spawning pickups
+                    var store = GetNearestStore();
+                    if (store == null)
+                        return;
+
+                    store.SafeCracked = true;
+                    store.PendingPayout += payout;
+
+                    DebugLogger.Info(string.Format("[SafeCrack] Store {0} safe cracked, added payout={1}, totalPending={2}", store.Id, payout, store.PendingPayout));
+
+                };
+
+                // ⭐ PHASE 3 — POLICE SYSTEM
+                Police = new PoliceSystem(this);
+
+                // 7. Blip system
+                Blips = new BlipSystem(this);
+                Blips.Initialize();
+
+                // 8. Subsystem initialization
+                Stalker.LoadFromIni();
+
+                // 9. Apply cooldown state
+                Cooldowns.ApplyInitialState();
+
+                // 10. Notify player script is active
+                if (_script is Main tracker)
+                    tracker.ShowLoadedNotification();
+
+                // 11. Validate store data
+                ValidateStoreData();
+
+                DebugLogger.Info("StoreContext.Initialize() complete");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StoreContext.Initialize", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // MAIN UPDATE LOOP
+        // ------------------------------------------------------------
+        public void Update()
+        {
+            try
+            {
+                Ped player = Game.Player.Character;
+                if (player == null || !player.Exists())
+                    return;
+
+                // ⭐ Update blips first
+                Blips.Update();
+
+                // Global systems
+                Stalker.ProcessEvents();
+                Cooldowns.UpdateGlobalHeat();
+                SafeCrack.Update();
+                Stalker.UpdateCallState();
+
+                // Per-store systems
+                int count = Stores.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    TrackedStore store = Stores[i];
+
+                    // 1) Cooldown / availability
+                    Cooldowns.UpdateStoreCooldown(store, player);
+
+                    // 2) Clerk replacement: neutralize natives + spawn dummy + ensure our clerk
+                    ClerkReplacement.UpdateForStore(store, player);
+
+                    // 3) Cameras (safe now that clerks are neutralized / dummy present)
+                    Cameras.UpdateStoreCameras(this, store);
+
+                    // 4) Our clerk behavior
+                    Clerks.UpdateClerk(store, player);
+
+                    // 5) Robbery logic
+                    Robberies.UpdateRobbery(store, player);
+
+                    // 6) Police / heat per store
+                    Police.UpdatePoliceLogic(store, player);
+
+                    // 7) Safe interaction (NEW SAFECRACK SYSTEM)
+                    HandleSafeCrackForStore(store, player);
+
+                }
+
+                // Draw global UI
+                Ui.Draw();
+
+                // Draw SafeCrack UI only when active
+                if (SafeState.Active)
+                    SafeCrack.Update();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StoreContext.Update", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // SAVE STORE STATE
+        // ------------------------------------------------------------
+        public void SaveStoreState(TrackedStore store)
+        {
+            try
+            {
+                Config.SaveStoreState(store);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StoreContext.SaveStoreState", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // CLEANUP ON ABORT
+        // ------------------------------------------------------------
+        public void CleanupOnAbort()
+        {
+            try
+            {
+                DebugLogger.Info("StoreContext.CleanupOnAbort()");
+
+                if (Blips != null)
+                    Blips.Cleanup();
+
+                if (Cameras != null)
+                    Cameras.CleanupBlipsAndProps();
+
+                int count = Stores.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    TrackedStore store = Stores[i];
+
+                    if (store.Clerk != null && store.Clerk.Exists())
+                        store.Clerk.Delete();
+
+                    // ⭐ NEW — cleanup dummy clerk as well
+                    if (store.DummyClerk != null && store.DummyClerk.Exists())
+                        store.DummyClerk.Delete();
+
+                    if (store.CooldownBlocker != null && store.CooldownBlocker.Exists())
+                        store.CooldownBlocker.Delete();
+                }
+
+                // Abort SafeCrack if running
+                if (SafeState != null && SafeState.Active)
+                    SafeCrack.Abort();
+
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StoreContext.CleanupOnAbort", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // GET NEAREST STORE
+        // ------------------------------------------------------------
+        public TrackedStore GetNearestStore(float maxDistance = 100f)
+        {
+            try
+            {
+                Ped player = Game.Player.Character;
+                if (player == null || !player.Exists())
+                    return null;
+
+                Vector3 pos = player.Position;
+
+                TrackedStore nearest = null;
+                float bestDist = maxDistance;
+
+                int count = Stores.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    TrackedStore store = Stores[i];
+                    if (store == null)
+                        continue;
+
+                    float dist = pos.DistanceTo(store.StorePos);
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        nearest = store;
+                    }
+                }
+
+                return nearest;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StoreContext.GetNearestStore", ex);
+                return null;
+            }
+        }
+
+        // ------------------------------------------------------------
+        // VALIDATE STORE DATA (Option 2 — Moderate)
+        // ------------------------------------------------------------
+        private void ValidateStoreData()
+        {
+            try
+            {
+                DebugLogger.Info("Validating store data...");
+
+                foreach (var s in Stores)
+                {
+                    if (s == null)
+                    {
+                        DebugLogger.Info("Null store entry detected");
+                        Ui.ShowNotification("~r~Null store entry detected");
+                        continue;
+                    }
+
+                    // Required fields
+                    if (s.ClerkPos == Vector3.Zero)
+                        Ui.ShowNotification($"~r~{s.Name}: Missing ClerkPos");
+
+                    if (s.RegisterPos == Vector3.Zero)
+                        Ui.ShowNotification($"~r~{s.Name}: Missing RegisterPos");
+
+                    if (s.SafePos == Vector3.Zero)
+                        Ui.ShowNotification($"~r~{s.Name}: Missing SafePos");
+
+                    if (s.DoorPos == Vector3.Zero)
+                        Ui.ShowNotification($"~r~{s.Name}: Missing DoorPos");
+
+                    if (s.DoorModelHash == 0)
+                        Ui.ShowNotification($"~r~{s.Name}: Invalid DoorModelHash");
+
+                    if (s.Cameras == null || s.Cameras.Count == 0)
+                        Ui.ShowNotification($"~r~{s.Name}: No cameras defined");
+
+                    if (s.Radius <= 0)
+                        Ui.ShowNotification($"~r~{s.Name}: Invalid radius");
+                }
+
+                DebugLogger.Info("Store data validation complete");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StoreContext.ValidateStoreData", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // GLOBAL ROBBERY STATE
+        // ------------------------------------------------------------
+        public bool AnyRobberyActive
+        {
+            get
+            {
+                try
+                {
+                    foreach (var s in Stores)
+                        if (s.IsRobberyActive)
+                            return true;
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.LogException("StoreContext.AnyRobberyActive", ex);
+                    return false;
+                }
+            }
+        }
+
+        // ------------------------------------------------------------
+        // SAFECRACK TRIGGER LOGIC (NEW SYSTEM)
+        // ------------------------------------------------------------
+        private void HandleSafeCrackForStore(TrackedStore store, Ped player)
+        {
+            // If safe already cracked, skip
+            if (store.SafeCracked)
+                return;
+
+            // Distance check
+            float dist = player.Position.DistanceTo(store.SafePos);
+            bool inRange = dist < 1.4f;
+
+            // If player leaves range while cracking → abort
+            if (!inRange && SafeState.Active)
+            {
+                SafeCrack.Abort();
+                return;
+            }
+
+            // If not in range → nothing to do
+            if (!inRange)
+                return;
+
+            // Must be facing the safe
+            Vector3 dir = (store.SafePos - player.Position).Normalized;
+            float dot = Vector3.Dot(player.ForwardVector, dir);
+            bool facing = dot > 0.65f;
+
+            if (!facing)
+                return;
+
+            // If minigame already running → let controller handle it
+            if (SafeState.Active)
+                return;
+
+            // Start minigame
+            SafeCrack.Start(store.SafePos, store.SafeHeading, player);
+        }
+    }
+}
