@@ -1,0 +1,44 @@
+# Changelog
+All notable changes to **Store Robbery Enhanced** will be documented in this file.
+
+The format follows **Semantic Versioning (MAJOR.MINOR.PATCH.BUILD)**.
+
+---
+
+## [2.6.7.5] — Initial Release
+### Overview
+This is the **first official public release** of Store Robbery Enhanced.  
+It represents the completed Phase 3 architecture and the fully rebuilt Single Player version of the GTA Online store robbery achievement experience.
+
+### Added
+- Full 21‑store dataset (20 Online stores + Ace Liquor).
+- Store ID remapping finalized (Old Store 14 → New Store 8).
+- Complete robbery system:
+  - Register payouts
+  - Clerk reactions
+  - Alarm escalation
+  - Cooldowns
+  - Subtitles
+- Clerk AI system:
+  - Fear, surrender, flee, escalation logic.
+- SafeCrack minigame with UI, difficulty scaling, and bonus payouts.
+- Minimap‑only blip system with dynamic state colors.
+- Full debug suite:
+  - Debug overlay
+  - Camera debug
+  - Logging system
+- Modular architecture:
+  - Config
+  - Data
+  - Systems
+  - UI
+  - Minigame
+  - Initialization
+  - Debug
+
+### Notes
+- This is the **initial release** of the mod.
+- Store 8 is the official baseline reference store.
+- All systems are stable and ready for Phase 4 expansion.
+
+---
