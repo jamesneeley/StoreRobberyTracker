@@ -99,5 +99,11 @@
     <Compile Include="Scripts\Systems\TimerSystem.cs" />
     <Compile Include="Scripts\UI\UiHelpers.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="LICENSE.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
