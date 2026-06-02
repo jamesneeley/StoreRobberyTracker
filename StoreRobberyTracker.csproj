@@ -101,6 +101,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="StoreRobberyTracker\DebugSettings.ini" />
+    <None Include="StoreRobberyTracker\StalkerMessages.ini" />
+    <None Include="StoreRobberyTracker\MainSettings.ini" />
+    <None Include="StoreRobberyTracker\StoreState.ini" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="LICENSE.txt" />

@@ -96,7 +96,7 @@ namespace StoreRobberyTrackerMod
             _settingsFolder = Path.Combine(scriptsFolder, "StoreRobberyTracker");
             Directory.CreateDirectory(_settingsFolder);
 
-            _mainIniPath = Path.Combine(_settingsFolder, "StoreRobberyTracker.ini");
+            _mainIniPath = Path.Combine(_settingsFolder, "MainSettings.ini");
             _storeStatePath = Path.Combine(_settingsFolder, "StoreState.ini");
             _stalkerIniPath = Path.Combine(_settingsFolder, "StalkerMessages.ini");
             _debugIniPath = Path.Combine(_settingsFolder, "DebugSettings.ini");
