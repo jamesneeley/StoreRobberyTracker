@@ -1,9 +1,12 @@
-﻿## 🏪 Store Robbery Enhanced — Bringing GTA Online’s Robbery Achievements to Single Player
+﻿# 🏪 Store Robbery Enhanced  
+### Bringing GTA Online’s Robbery Achievements to Single Player — Rebuilt, Expanded, and Modernized
 
-Store Robbery Enhanced is a complete re‑imagining of the classic GTA Online store robbery loop — rebuilt from the ground up for **GTA V Single Player**.  
-This project faithfully recreates the Online-style robbery achievement experience, then expands it with deeper systems, smarter AI, immersive UI, and a fully modular architecture designed for long-term growth.
+Store Robbery Enhanced is a complete re‑imagining of the classic GTA Online store robbery loop — rebuilt from the ground up for **GTA V Single Player**.
 
-In GTA Online, robbing all convenience stores is a structured progression path:  
+This project faithfully recreates the Online-style robbery achievement experience, then expands it with deeper systems, smarter AI, immersive UI, psychological tension, and a fully modular architecture designed for long-term growth.
+
+In GTA Online, robbing all convenience stores is a structured progression path:
+
 - Each store has its own state  
 - Cooldowns prevent farming  
 - Clerks react dynamically  
@@ -13,7 +16,10 @@ In GTA Online, robbing all convenience stores is a structured progression path:
 
 **Store Robbery Enhanced brings that entire experience into Single Player — and then pushes it further.**
 
-### 🎯 What Makes This Mod Different?
+---
+
+# 🎯 What Makes This Mod Different?
+
 This isn’t a simple “point gun, get money” script.  
 It’s a **full robbery ecosystem**, built to feel like Rockstar designed it for Story Mode:
 
@@ -24,86 +30,242 @@ It’s a **full robbery ecosystem**, built to feel like Rockstar designed it for
 - Safes can be cracked for bonus cash  
 - Subtitles recreate the Online-style robbery prompts  
 - Minimap-only blips match the Online UI  
-- Debug tools let developers inspect every system in real time  
+- A psychological **Stalker System** reacts to your behavior  
+- A full **debug suite** lets developers inspect every system in real time  
 
 The goal was simple:  
 **Bring the GTA Online robbery achievement system into Single Player — with the polish, depth, and reliability it always deserved.**
 
-### 🧩 Built for Players *and* Modders
-Under the hood, Store Robbery Enhanced is a fully modular SHVDN 3.9.0 project with clean architecture:
+---
 
-- Configurable store data  
-- Expandable systems  
-- Debug overlays  
-- Camera tools  
-- Minigame framework  
-- UI layer  
-- Event-driven logic  
+# 🔥 Features (Player Overview)
 
-Whether you're a player looking for a more immersive robbery experience or a developer wanting a clean foundation to build on, this project delivers.
-
-### 🚀 Designed for Expansion
-This mod is built with future systems in mind:
-
-- Achievements  
-- Progression  
-- Vendors  
-- Loadouts  
-- Economy simulation  
-- Pets & mounts  
-- Battle pass  
-- Crafting  
-- Augments & sockets  
-
-The foundation is already in place — Phase 3 completed — and the project is ready for long-term evolution.
-
-Store Robbery Enhanced is not just a mod.  
-It’s the **Single Player version of what GTA Online’s store robberies should have been.**
+## 🏪 Dynamic Store Robberies
+- 21 fully supported stores (20 Online stores + Ace Liquor)  
+- Persistent store states:
+  - Robbed / Not Robbed  
+  - Cooldown active  
+  - Safe cracked  
+  - Alarm triggered  
+  - Clerk killed (gun/melee)  
+- Store states save across sessions  
+- Cooldowns prevent farming  
+- Register payouts scale per store  
+- Optional safe cracking for bonus cash  
 
 ---
 
-## 🔥 Features (Player Overview)
-
-### 🏪 Dynamic Store Robberies
-- Every store is fully tracked and managed.
-- Clerk reactions, alarm triggers, and payout scaling.
-- Optional safe cracking for bonus cash.
-- Store‑specific cooldowns prevent farming.
-
-### 🔧 Enhanced AI & Systems
-- Clerk fear, surrender, and flee logic.
-- Alarm escalation and police response hooks.
-- Camera system for immersion and debugging.
-
-### 💰 Safe Cracking Minigame
-- Interactive safe cracking system.
-- Difficulty scaling per store.
-- Bonus payout on successful crack.
-
-### 🗺️ Clean Minimap Integration
-- Robbery blips appear **only on the minimap**, not the world map.
-- Dynamic color changes based on robbery state.
-
-### 🛠️ Full Debug Suite
-- On‑screen debug overlay.
-- Camera debug mode.
-- Real‑time store state tracking.
-- Logging system for developers.
+## 🔧 Enhanced AI & Systems
+- Clerk fear, surrender, and flee logic  
+- Alarm escalation and police response hooks  
+- Silent alarm triggers  
+- Clerk phone calls to police  
+- Time‑based escalation  
+- Camera system for immersion and debugging  
 
 ---
 
-## 📦 Installation
+## 💰 Safe Cracking Minigame
+A fully interactive, skill‑based safe cracking system:
+
+- Dial rotation with sweet‑spot detection  
+- Difficulty scaling per store  
+- Bonus payout on success  
+- Configurable safe crack time  
+- Configurable cooldown  
+- Optional controller vibration  
+- Optional loading of “optional safes”  
+- Clean UI with timer, dial, and feedback  
+
+---
+
+## 🔪 Stalker System — Psychological Threat Layer
+A dynamic psychological system that reacts to your behavior:
+
+- **350+ reactive stalker messages**  
+- Categories include:
+  - Knockout  
+  - MeleeKill  
+  - GunKill  
+  - Robbery  
+  - Escape  
+  - CallAnswered  
+  - CallIgnored  
+- Stalker phone calls with custom caller ID  
+- Behavior‑based reactions:
+  - Violence level  
+  - Escape style  
+  - Sloppiness vs precision  
+  - Morality patterns  
+- Adds a thriller‑style narrative layer to every robbery  
+
+---
+
+## 🗺️ Clean Minimap Integration
+- Blips appear **only on the minimap**, not the world map  
+- Dynamic color changes based on robbery state  
+- Matches GTA Online’s UI style  
+
+---
+
+## 🛠️ Full Debug Suite (Developer Tools)
+
+### Debug Overlay
+Shows:
+- Store ID  
+- Store name  
+- Robbery state  
+- Clerk state  
+- Cooldown timers  
+- Safe status  
+- Alarm state  
+- Camera state  
+- System flags  
+
+### Camera Debug
+- Toggleable camera overlay  
+- Real‑time camera vectors  
+- Interior validation  
+- Store alignment tools  
+
+### Profiler
+- Optional performance profiler  
+- Auto‑dump mode  
+- Interval‑based dumps  
+
+### Scenario Runner
+- Full robbery simulation  
+- Quick loot simulation  
+- Auto snapshot on scenario  
+
+### Debug Hotkeys
+- Start robbery  
+- Trigger safe crack  
+- Trigger mini safe crack  
+- Trigger alarm  
+- Trigger payout  
+- Trigger cooldown  
+- Trigger stalker event  
+- Toggle UI  
+- Toggle banner  
+- Toggle timer  
+- Store diagnostics  
+- Multi‑position debug  
+- Misc actions  
+- Camera debug  
+
+---
+
+# ⚙️ INI Settings (Full Breakdown)
+
+## 📄 DebugSettings.ini
+
+### **[Debug]**
+- EnableDebug — master debug toggle  
+- OverlayVisible — show/hide debug overlay  
+- DebugLevel — verbosity (0–3)  
+- ModifierKey — modifier for debug actions  
+- ToggleKey — toggle overlay  
+- Action_* — hotkeys for all debug actions  
+- Scenario_FullRobbery — run full robbery simulation  
+- Scenario_QuickLoot — run quick loot simulation  
+- EnableProfiler — enable profiler  
+- Profiler_AutoDump — auto‑dump profiler data  
+- Profiler_DumpInterval — dump interval  
+- EnableFileManager — enable debug file manager  
+- AutoSnapshotOnScenario — auto snapshot  
+
+---
+
+## 📄 StalkerMessages.ini
+Contains **350+ lines** across categories:
+
+- Knockout  
+- MeleeKill  
+- GunKill  
+- Robbery  
+- Escape  
+- CallAnswered  
+- CallIgnored  
+
+Each category contains 35 unique lines.
+
+---
+
+## 📄 StoreRobberyTracker.ini (Main Settings)
+
+### **[Main Settings]**
+- EnableMessages  
+- EnablePolice  
+- CooldownMinutes  
+- RobberyTimeLimit  
+- EscapeDistance  
+
+### **[Police]**
+- SilentAlarmDelaySeconds  
+- ClerkCallDelaySeconds  
+- TimeEscalationSeconds  
+
+### **[Stalker]**
+- EnableStalkerMsg  
+- EnableStalkerCall  
+- StalkerCallChance  
+- CallerImage  
+- CallerName  
+- MaxMessagesPerRobbery  
+- MessageCooldownSeconds  
+
+### **[Store Settings]**
+- RegisterMinAmount / MaxAmount  
+- SafeMinAmount / MaxAmount  
+- EnableCameras  
+- UseStoreNames  
+- CameraGraceSeconds  
+- SafeCrackTimeSeconds  
+- PayoutMultiplier  
+- SafeCrackCooldownMs  
+- SafeCrackPadShake  
+- SafeCrackLoadOptionalSafes  
+
+### **[TIMER_UI]**
+- PositionX / PositionY  
+- Scale  
+- DropShadow  
+- Background  
+- BackgroundWidth / Height  
+- BackgroundOpacity  
+- BackgroundColorR/G/B  
+
+---
+
+## 📄 StoreState.ini
+Tracks persistent store data:
+
+- IsRobbed  
+- CooldownActive  
+- SafeCracked  
+- AlarmTriggered  
+- ClerkDeathHandled  
+- ClerkKilledWithGun  
+- LastRobbedUtc  
+
+All 21 stores included.
+
+---
+
+# 📦 Installation
 
 ### Requirements
-- **GTA V (Latest Version)**
-- **ScriptHookV**
-- **ScriptHookVDotNet (SHVDN) 3.9.0 Enhanced — Recommended**
+- **GTA V (Latest Version)**  
+- **ScriptHookV**  
+- **ScriptHookVDotNet 3.9.0 Enhanced**  
 - **.NET Framework 4.8**
 
 ### Install Steps
-1. Install **ScriptHookV** (Alexander Blade).
-2. Install **ScriptHookVDotNet 3.9.0 Enhanced**.
-3. Drag the `StoreRobberyEnhanced.dll` (or project output) into:
+1. Install ScriptHookV  
+2. Install ScriptHookVDotNet 3.9.0 Enhanced  
+3. Drag `StoreRobberyEnhanced.dll` into:
+
    ```
    Grand Theft Auto V/scripts/
    ```
@@ -162,73 +324,75 @@ StoreRobberyEnhanced/
 ├── README.md
 ├── StoreRobberyEnhanced.csproj
 └── StoreRobberyEnhanced.sln
+
 ```
 
----
+# 🧠 System Architecture
 
-## 🧠 System Architecture
+### Initialization Layer
+- Script startup  
+- Store registration  
+- Context creation  
+- Debug system bootstrapping  
 
-### **Initialization Layer**
-Handles:
-- Script startup
-- Store registration
-- Context creation
-- Debug system bootstrapping
+### Core Systems
+- RobberySystem  
+- ClerkSystem  
+- CooldownSystem  
+- AlarmSystem  
+- SubtitleSystem  
+- CameraSystem  
 
-### **Core Systems**
-- **RobberySystem** — main robbery logic  
-- **ClerkSystem** — clerk AI, fear, surrender  
-- **CooldownSystem** — prevents repeated farming  
-- **AlarmSystem** — escalation and police hooks  
-- **SubtitleSystem** — dynamic robbery subtitles  
-- **CameraSystem** — camera overlay + debug  
-
-### **Minigame Layer**
+### Minigame Layer
 - Safe cracking logic  
 - UI rendering  
 - Difficulty scaling  
 
-### **Debug Layer**
-- Real‑time overlay  
+### Stalker Layer
+- Behavioral tracking  
+- Message selection  
+- Phone call system  
+- Psychological profiling  
+
+### Debug Layer
+- Overlay  
 - Camera debug  
+- Profiler  
 - Logging  
 
-### **UI Layer**
+### UI Layer
 - Notifications  
 - Menus  
 - Minimap blips  
 
 ---
 
-## 🧪 Developer Debug Tools
+## 🔧 Restoring Project References
 
-### Debug Overlay
-Shows:
-- Store ID  
-- Robbery state  
-- Clerk state  
-- Cooldown timers  
-- Safe status  
-- Alarm state  
+Due to licensing restrictions, ScriptHookV and ScriptHookVDotNet DLLs cannot be included in this repository.
 
-### Camera Debug
-- Toggleable camera overlay  
-- Real‑time camera vectors  
-- Store interior validation  
+To build the project:
 
-### Logging
-- Timestamped logs  
-- System‑level event tracking  
-- Error tracing  
+1. Download ScriptHookVDotNet 3.9.0 Enhanced:
+   https://www.gta5-mods.com/tools/script-hook-v-net-enhanced
 
+2. Create a folder named `lib` in the project root.
+
+3. Place the following files inside `/lib/`:
+   - ScriptHookVDotNet.dll
+   - ScriptHookVDotNet2.dll
+   - ScriptHookVDotNet3.dll
+
+4. Open the solution and build in Release mode.
+   
 ---
 
-## 🛠️ Building the Project
+# 🛠️ Building the Project
 
-1. Open `StoreRobberyEnhanced.sln` in Visual Studio.
-2. Ensure **.NET Framework 4.8** is installed.
-3. Build in **Release** mode.
-4. Output DLL will appear in:
+1. Open `StoreRobberyEnhanced.sln` in Visual Studio  
+2. Ensure **.NET Framework 4.8** is installed  
+3. Build in **Release** mode  
+4. Output DLL appears in:
    ```
    /bin/Release/
    ```
@@ -247,6 +411,5 @@ For major changes, open an issue first to discuss what you’d like to modify.
 ---
 
 ## ⭐ Credits
-Created by **James Neeley**  AKA FastBurst
+Created by **James Neeley**  AKA **FastBurst** Discord ID **FastBurst#7708**
 GTA V Mod Developer & Systems Architect
-
