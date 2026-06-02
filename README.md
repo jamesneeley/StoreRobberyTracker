@@ -193,7 +193,7 @@ Each category contains 35 unique lines.
 
 ---
 
-## 📄 StoreRobberyTracker.ini (Main Settings)
+## 📄 MainSettings.ini (Main Settings)
 
 ### **[Main Settings]**
 - EnableMessages  
