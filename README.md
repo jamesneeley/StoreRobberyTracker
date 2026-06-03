@@ -344,8 +344,8 @@ StoreRobberyEnhanced/
 ├── .gitignore
 ├── LICENSE.txt
 ├── README.md
-├── StoreRobberyEnhanced.csproj
-└── StoreRobberyEnhanced.sln
+├── StoreRobberyTracker.csproj
+└── StoreRobberyTracker.sln
 
 ```
 
