@@ -1,4 +1,6 @@
-﻿using GTA.Math;
+﻿using GTA;
+using GTA.Math;
+using GTA.Native;
 using StoreRobberyTrackerMod.Config;
 
 namespace StoreRobberyTrackerMod.Minigame
@@ -59,6 +61,13 @@ namespace StoreRobberyTrackerMod.Minigame
             // Closeness for UI shake
             state.SweetSpotCloseness =
                 (float)System.Math.Max(0.0, state.SweetSpotTolerance - diff);
+
+            // Controller feedback: light rumble while in sweet spot
+            if (state.IsInSweetSpot)
+            {
+                // Short, light shake that refreshes while you stay in the sweet spot
+                Function.Call(Hash.SET_CONTROL_SHAKE, 0, 120, 180);
+            }
 
             // Confirm → advance stage
             if (state.IsInSweetSpot && state.ConfirmRequested)

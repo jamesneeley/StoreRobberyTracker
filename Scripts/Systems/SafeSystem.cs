@@ -125,7 +125,7 @@ namespace StoreRobberyTrackerMod.Systems
                     store.IsRobberyActive = true;
 
                 // ⭐ Start the minigame
-                _ctx.SafeCrack.Start(store.SafePos, store.SafeHeading, Game.Player.Character);
+                _ctx.SafeCrack.Start(store, store.SafePos, store.SafeHeading, Game.Player.Character);
 
                 msg = "SafeCrack minigame started";
                 return true;

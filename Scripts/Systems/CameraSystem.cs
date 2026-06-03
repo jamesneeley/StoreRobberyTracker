@@ -1,9 +1,10 @@
-﻿using System;
-using GTA;
+﻿using GTA;
 using GTA.Math;
 using GTA.Native;
 using StoreRobberyTrackerMod.Data;
 using StoreRobberyTrackerMod.Debug;
+using System;
+using static System.Windows.Forms.AxHost;
 
 namespace StoreRobberyTrackerMod.Systems
 {
@@ -23,6 +24,14 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                // ⭐ Suppress debug camera alarm during SafeCrack
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                {
+                    DebugLogger.Info("DebugTriggerAlarm() suppressed — SafeCrack active");
+                    _ctx.Ui.ShowNotification("~y~Camera alarm suppressed (SafeCrack active)");
+                    return;
+                }
+
                 DebugLogger.Info("DebugTriggerAlarm() called");
 
                 var store = _ctx.GetNearestStore();
@@ -63,6 +72,20 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!_ctx.Config.EnableCameras)
                 {
                     DebugLogger.Trace("Cameras disabled via config");
+                    return;
+                }
+
+                // ⭐ Suppress all camera logic during SafeCrack
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                {
+                    DebugLogger.Trace($"CameraSystem suppressed — SafeCrack active for store {store.Id}");
+                    return;
+                }
+
+                // ⭐ Suppress cameras during SilentRobbery mode
+                if (store.SilentRobbery)
+                {
+                    DebugLogger.Trace($"CameraSystem suppressed — SilentRobbery flag for store {store.Id}");
                     return;
                 }
 
@@ -111,6 +134,13 @@ namespace StoreRobberyTrackerMod.Systems
                 DebugLogger.Trace($"ProcessInteriorCameras({store.Id})");
 
                 if (!_ctx.Config.EnableCameras)
+                    return false;
+
+                // ⭐ Suppress interior cameras during SafeCrack
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return false;
+
+                if (store.SilentRobbery)
                     return false;
 
                 if (!store.IsRobberyActive)
@@ -171,7 +201,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // FALLBACK CAMERAS (PATCHED)
+        // FALLBACK CAMERAS
         // ------------------------------------------------------------
         private void ProcessFallbackCameras(TrackedStore store, Ped player)
         {
@@ -180,6 +210,13 @@ namespace StoreRobberyTrackerMod.Systems
                 DebugLogger.Trace($"ProcessFallbackCameras({store.Id})");
 
                 if (!_ctx.Config.EnableCameras)
+                    return;
+
+                // ⭐ Suppress fallback cameras during SafeCrack
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                if (store.SilentRobbery)
                     return;
 
                 if (!store.IsRobberyActive)
@@ -214,10 +251,6 @@ namespace StoreRobberyTrackerMod.Systems
                         }
                     }
 
-                    // ------------------------------------------------------------
-                    // PATCH: Correct fallback camera direction
-                    // Cameras now look toward the interior (ClerkPos), not StorePos
-                    // ------------------------------------------------------------
                     Vector3 camDir = (store.ClerkPos - cam.Position);
                     if (camDir.LengthSquared() < 0.001f)
                         camDir = new Vector3(0f, 1f, 0f);
@@ -253,6 +286,9 @@ namespace StoreRobberyTrackerMod.Systems
             try
             {
                 if (!_ctx.Config.EnableCameras)
+                    return false;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                     return false;
 
                 if (Game.IsControlJustPressed(Control.Attack) && _ctx.Player.IsArmed())
@@ -294,6 +330,9 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!_ctx.Config.EnableCameras)
                     return false;
 
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return false;
+
                 float dist = player.Position.DistanceTo(cam.Position);
 
                 if (dist < 2.0f && Game.IsControlJustPressed(Control.Attack))
@@ -319,6 +358,10 @@ namespace StoreRobberyTrackerMod.Systems
             try
             {
                 if (!_ctx.Config.EnableCameras)
+                    return false;
+
+                // ⭐ Suppress detection during SafeCrack
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                     return false;
 
                 Vector3 toPlayer = (player.Position - camPos);
@@ -360,6 +403,19 @@ namespace StoreRobberyTrackerMod.Systems
             {
                 if (!_ctx.Config.EnableCameras)
                     return;
+
+                // ⭐ Suppress camera alarms during SafeCrack
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                {
+                    DebugLogger.Trace($"Camera alarm suppressed — SafeCrack active for store {store.Id}");
+                    return;
+                }
+
+                if (store.SilentRobbery)
+                {
+                    DebugLogger.Trace($"Camera alarm suppressed — SilentRobbery flag for store {store.Id}");
+                    return;
+                }
 
                 if (!store.IsRobberyActive)
                     return;

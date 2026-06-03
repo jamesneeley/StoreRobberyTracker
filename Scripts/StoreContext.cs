@@ -178,7 +178,8 @@ namespace StoreRobberyTrackerMod
                     new SafeCrackInput(),
                     SafeCrackUI,            // ⭐ UI now stored and exposed
                     new SafeCrackAnimation(),
-                    Ui                      // ⭐ PASS UiHelpers INSTANCE
+                    Ui,                     // ⭐ PASS UiHelpers INSTANCE
+                    Robberies                    
                 );
 
                 SafeCrackEvents.SafeCracked += (pos, payout) =>
@@ -488,7 +489,7 @@ namespace StoreRobberyTrackerMod
                 return;
 
             // Start minigame
-            SafeCrack.Start(store.SafePos, store.SafeHeading, player);
+            SafeCrack.Start(store, store.SafePos, store.SafeHeading, player);
         }
     }
 }

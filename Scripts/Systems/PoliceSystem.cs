@@ -11,7 +11,6 @@ namespace StoreRobberyTrackerMod.Systems
         private readonly StoreContext _ctx;
         public bool SuppressPoliceForDebug = false;
 
-
         public PoliceSystem(StoreContext ctx)
         {
             _ctx = ctx;
@@ -24,6 +23,31 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                // ⭐ SafeCrack stealth mode — completely suppress police logic
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                {
+                    store.HeatLevel = 0;
+                    store.AlarmTriggered = false;
+                    store.ClerkCallingPolice = false;
+                    store.SilentAlarmPressed = false;
+
+                    DebugLogger.Trace("[PoliceSystem] Suppressed — SafeCrack active");
+                    return;
+                }
+
+                // ⭐ SilentRobbery mode (set by SafeCrackController)
+                if (store.SilentRobbery)
+                {
+                    store.HeatLevel = 0;
+                    store.AlarmTriggered = false;
+                    store.ClerkCallingPolice = false;
+                    store.SilentAlarmPressed = false;
+                    Game.Player.WantedLevel = 0;
+
+                    DebugLogger.Trace("[PoliceSystem] Suppressed — SilentRobbery flag");
+                    return;
+                }
+
                 // ⭐ NEW: Debug override — completely disable police logic
                 if (SuppressPoliceForDebug)
                     return;
@@ -305,7 +329,7 @@ namespace StoreRobberyTrackerMod.Systems
                 if (store.ClerkRecognizedPlayer)
                 {
                     store.HeatLevel += 1;
-                    store.ClerkRecognizedPlayer = false; // consume once
+                    store.ClerkRecognizedPlayer = false;
                     DebugLogger.Info($"Recognition escalation (+1 heat) at {store.Name}");
                 }
             }
@@ -327,6 +351,13 @@ namespace StoreRobberyTrackerMod.Systems
 
                 if (!store.IsRobberyActive)
                     return;
+
+                // ⭐ Prevent wanted level during SafeCrack or SilentRobbery
+                if ((_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning) || store.SilentRobbery)
+                {
+                    Game.Player.WantedLevel = 0;
+                    return;
+                }
 
                 int wanted = Game.Player.WantedLevel;
 

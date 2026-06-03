@@ -108,6 +108,20 @@ namespace StoreRobberyTrackerMod.Systems
             }
         }
 
+        // Overload for SafeCrack integration
+        public int DebugForcePayout(TrackedStore store)
+        {
+            // Forward to the existing parameterless version
+            return DebugForcePayout();
+        }
+
+        // Overload for SafeCrack integration
+        public void DebugForceEscape(TrackedStore store)
+        {
+            // Forward to the existing parameterless version
+            DebugForceEscape();
+        }
+
         // ------------------------------------------------------------
         // DEBUG FORCE ESCAPE
         // ------------------------------------------------------------
@@ -289,9 +303,13 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
-                // ⭐ If SafeCrack minigame is running, pause ALL robbery logic
-                if (_ctx.SafeState != null && _ctx.SafeState.Active)
+                // ⭐ Pause ALL robbery logic while SafeCrack is running
+                // ⭐ Prevent robbery subtitles from firing during SafeCrack
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                {
+                    _ctx.Ui.ClearTimer();
                     return;
+                }
 
                 // 🔸 Dedicated debug-escape subtitle loop
                 if (_debugEscapeActive && store.Id == _debugEscapeStoreId && !store.CooldownActive)
@@ -379,7 +397,7 @@ namespace StoreRobberyTrackerMod.Systems
                         if (Game.IsControlJustPressed(GTA.Control.Context))
                         {
                             DebugLogger.Info($"Starting SafeCrack at store {store.Id}");
-                            _ctx.SafeCrack.Start(store.SafePos, store.SafeHeading, player);
+                            _ctx.SafeCrack.Start(store, store.SafePos, store.SafeHeading, player);
                         }
                     }
                 }
@@ -481,6 +499,12 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                {
+                    _ctx.Ui.ClearTimer();
+                    return;
+                }
+
                 if (store.AlarmTriggered)
                     return;
 
@@ -599,6 +623,9 @@ namespace StoreRobberyTrackerMod.Systems
         // ------------------------------------------------------------
         private void CheckLeavingEarly(TrackedStore store, Ped player)
         {
+            if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                return;
+
             // ⭐ Updated to use SafeCracked
             if (store.IsRobbed &&
                 !store.SafeCracked &&
@@ -619,6 +646,9 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
                 // ⭐ DEBUG ESCAPE OVERRIDE
                 if (_debugEscapeActive && store.Id == _debugEscapeStoreId)
                 {
@@ -757,6 +787,9 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
                 store.IsRobberyActive = false;
 
                 // ⭐ Capture debug state BEFORE clearing it
