@@ -1,9 +1,9 @@
-﻿using System;
-using GTA;
+﻿using GTA;
 using GTA.Math;
 using StoreRobberyTrackerMod.Data;
 using StoreRobberyTrackerMod.Debug;
 using StoreRobberyTrackerMod.Minigame;
+using System;
 
 namespace StoreRobberyTrackerMod.Systems
 {
@@ -36,9 +36,7 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!store.IsRobberyActive)
                 {
                     store.IsRobberyActive = true;
-                    msg = "Robbery was not active — activating now";
-                    DebugLogger.Info(msg);
-                    return false;
+                    DebugLogger.Info("Robbery was not active — activating now");
                 }
 
                 if (store.SafeCracked)
@@ -62,7 +60,7 @@ namespace StoreRobberyTrackerMod.Systems
 
                 store.SafeCracked = true;
                 store.PendingPayout += finalReward;
-                store.PendingCompletion = true;
+                store.PendingCompletion = true; // keep for realism
 
                 DebugLogger.Info($"Debug safe crack complete: store={store.Id}, reward={finalReward}");
 
@@ -91,6 +89,19 @@ namespace StoreRobberyTrackerMod.Systems
             {
                 DebugLogger.Info("DebugStartSafeCrack() called — launching REAL SafeCrack minigame");
 
+                if (_ctx.SafeCrack == null || _ctx.SafeState == null)
+                {
+                    msg = "SafeCrack system not initialized";
+                    return false;
+                }
+
+                // ⭐ Prevent repeated teleports / restarts
+                if (_ctx.SafeState.Active)
+                {
+                    msg = "SafeCrack already running";
+                    return false;
+                }
+
                 var store = _ctx.GetNearestStore();
                 if (store == null)
                 {
@@ -113,6 +124,7 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!store.IsRobberyActive)
                     store.IsRobberyActive = true;
 
+                // ⭐ Start the minigame
                 _ctx.SafeCrack.Start(store.SafePos, store.SafeHeading, Game.Player.Character);
 
                 msg = "SafeCrack minigame started";
@@ -133,7 +145,15 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                // ⭐ If not active, nothing to do
+                if (!_ctx.SafeState.Active)
+                    return;
+
+                // ⭐ Update logic
                 _ctx.SafeCrack.Update();
+
+                // ⭐ Draw UI (Main also draws, but this ensures debug mode works)
+                _ctx.SafeCrackUI.Draw(_ctx.SafeState, _ctx.SafeCrackSettings);
             }
             catch (Exception ex)
             {

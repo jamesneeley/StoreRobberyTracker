@@ -15,6 +15,8 @@ namespace StoreRobberyTrackerMod.Initialization
         {
             ctx.Stores.Clear();
             LoadAllStoreIPLs();
+            // Allow IPLs/interiors to stream before building cameras
+            Script.Wait(500);
 
             int id = 0;
 
@@ -398,41 +400,41 @@ namespace StoreRobberyTrackerMod.Initialization
             // Rockstar interior camera offsets
             Vector3[] cams24_7 =
             {
-                new Vector3(-2.10f, -1.20f, 2.20f),
-                new Vector3( 2.30f, -1.10f, 2.20f),
-                new Vector3( 0.10f,  3.40f, 2.20f)
-            };
+        new Vector3(-2.10f, -1.20f, 2.20f),
+        new Vector3( 2.30f, -1.10f, 2.20f),
+        new Vector3( 0.10f,  3.40f, 2.20f)
+    };
 
             Vector3[] camsLTD =
             {
-                new Vector3(-2.00f, -1.00f, 2.30f),
-                new Vector3( 2.10f, -1.00f, 2.30f),
-                new Vector3( 0.00f,  3.20f, 2.30f)
-            };
+        new Vector3(-2.00f, -1.00f, 2.30f),
+        new Vector3( 2.10f, -1.00f, 2.30f),
+        new Vector3( 0.00f,  3.20f, 2.30f)
+    };
 
             Vector3[] camsRobs =
             {
-                new Vector3(-2.40f, -1.20f, 2.10f),
-                new Vector3( 2.40f, -1.20f, 2.10f),
-                new Vector3( 0.00f,  3.60f, 2.10f)
-            };
+        new Vector3(-2.40f, -1.20f, 2.10f),
+        new Vector3( 2.40f, -1.20f, 2.10f),
+        new Vector3( 0.00f,  3.60f, 2.10f)
+    };
 
             Vector3[] camsAce =
             {
-                new Vector3(-2.60f, -1.40f, 2.00f),
-                new Vector3( 2.60f, -1.40f, 2.00f),
-                new Vector3( 0.00f,  3.80f, 2.00f)
-            };
+        new Vector3(-2.60f, -1.40f, 2.00f),
+        new Vector3( 2.60f, -1.40f, 2.00f),
+        new Vector3( 0.00f,  3.80f, 2.00f)
+    };
 
             // Interior rotation list (confirmed by you)
             float[] interiorRot =
             {
-                242.5f, 0.0f, 0.0f, 255.0f, 70.0f,
-                330.0f, 300.0f, 180.0f, 320.0f, 200.0f,
-                50.0f, 90.0f, 140.0f, 100.0f, 320.0f,
-                30.0f, 90.0f, 130.0f, 275.0f, 90.0f,
-                90.0f
-            };
+        242.5f, 0.0f, 0.0f, 255.0f, 70.0f,
+        330.0f, 300.0f, 180.0f, 320.0f, 200.0f,
+        50.0f, 90.0f, 140.0f, 100.0f, 320.0f,
+        30.0f, 90.0f, 130.0f, 275.0f, 90.0f,
+        90.0f
+    };
 
             // Determine interior type
             Vector3[] offsets;
@@ -446,8 +448,10 @@ namespace StoreRobberyTrackerMod.Initialization
             else
                 offsets = camsRobs;
 
-            // Number of cameras = preserve your original count
+            // ✅ FIX: ensure at least 3 cameras per store
             int camCount = store.Cameras.Count;
+            if (camCount == 0)
+                camCount = 3;
 
             List<Vector3> result = new List<Vector3>();
 
@@ -532,6 +536,15 @@ namespace StoreRobberyTrackerMod.Initialization
 
             // Ace Liquor (unique interior)
             // No dedicated IPL — uses base interior
+        }
+
+        public static void RebuildCamerasForAllStores(StoreContext ctx)
+        {
+            foreach (var store in ctx.Stores)
+            {
+                var camPositions = DefaultCamerasFor(store.Id, store);
+                store.Cameras = camPositions.Select(pos => new CameraData { Position = pos }).ToList();
+            }
         }
     }
 }

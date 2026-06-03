@@ -27,7 +27,7 @@ namespace StoreRobberyTrackerMod.Debug
         }
 
         // ------------------------------------------------------------
-        // SAFE CRACK
+        // SAFE CRACK (INSTANT)
         // ------------------------------------------------------------
         public static void TriggerSafeCrack()
         {
@@ -38,10 +38,16 @@ namespace StoreRobberyTrackerMod.Debug
         }
 
         // ------------------------------------------------------------
-        // SAFE CRACK
+        // SAFE CRACK MINIGAME
         // ------------------------------------------------------------
         public static void TriggerSafeCrackMini()
         {
+            if (_ctx.SafeCrack == null || _ctx.SafeState == null)
+            {
+                _ui.ShowNotification("~r~SafeCrack system not initialized yet");
+                return;
+            }
+
             if (_ctx.Safes.DebugStartSafeCrack(out string msg))
                 _ui.ShowNotification("~g~SafeCrack Minigame OK~s~: " + msg);
             else
@@ -80,7 +86,7 @@ namespace StoreRobberyTrackerMod.Debug
         // ------------------------------------------------------------
         public static void TriggerCooldown()
         {
-            var s = _ctx.GetNearestStore(); // ✔ correct call
+            var s = _ctx.GetNearestStore();
 
             if (s == null)
             {
@@ -136,6 +142,7 @@ namespace StoreRobberyTrackerMod.Debug
         {
             _ui.ShowNotification("~b~MultiPos Triggered");
         }
+
         // ------------------------------------------------------------
         // MISC ACTIONS TEST
         // ------------------------------------------------------------
@@ -144,8 +151,9 @@ namespace StoreRobberyTrackerMod.Debug
             StoreChecker();
             _ui.ShowNotification("~b~Misc Actions Triggered");
         }
+
         // ------------------------------------------------------------
-        // SCENATIO FULL ROBBERY TEST
+        // SCENARIO FULL ROBBERY TEST
         // ------------------------------------------------------------
         public static void TriggerScenarioFullRobbery()
         {
@@ -153,6 +161,7 @@ namespace StoreRobberyTrackerMod.Debug
             _ui.ShowNotification("~b~Scenario  Full Robbery");
             _ctx.Scenarios.RunFullRobberyScenario();
         }
+
         // ------------------------------------------------------------
         // SCENARIO QUICK LOOT TEST
         // ------------------------------------------------------------
@@ -211,7 +220,7 @@ namespace StoreRobberyTrackerMod.Debug
 
         public static void StoreChecker()
         {
-            var s = _ctx.GetNearestStore(); // ✔ correct call
+            var s = _ctx.GetNearestStore();
             if (s == null)
             {
                 _ui.ShowNotification("~r~No store found near player");

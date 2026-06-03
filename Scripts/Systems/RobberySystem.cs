@@ -4,7 +4,7 @@ using GTA.Math;
 using GTA.Native;
 using StoreRobberyTrackerMod.Data;
 using StoreRobberyTrackerMod.Debug;
-using StoreRobberyTrackerMod.Minigame; // ⭐ SafeCrack lives here
+using StoreRobberyTrackerMod.Minigame;
 
 namespace StoreRobberyTrackerMod.Systems
 {
@@ -35,27 +35,27 @@ namespace StoreRobberyTrackerMod.Systems
                 // It ONLY:
                 //  - Marks the safe as cracked
                 //  - Adds its payout into store.PendingPayout
-                SafeCrackEvents.SafeCracked += (pos, payout) =>
-                {
-                    try
-                    {
-                        var store = _ctx.GetNearestStore();
-                        if (store == null)
-                            return;
+                //SafeCrackEvents.SafeCracked += (pos, payout) =>
+                //{
+                //    try
+                //    {
+                //        var store = _ctx.GetNearestStore();
+                //        if (store == null)
+                //            return;
 
-                        // Mark safe as cracked
-                        store.SafeCracked = true;
+                //        // Mark safe as cracked
+                //        store.SafeCracked = true;
 
-                        // Add safe payout into robbery total
-                        store.PendingPayout += payout;
+                //        // Add safe payout into robbery total
+                //        store.PendingPayout += payout;
 
-                        DebugLogger.Info($"[SafeCrack] Store {store.Id} safe cracked, added payout={payout}, totalPending={store.PendingPayout}");
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugLogger.LogException("RobberySystem.SafeCrackEvents.SafeCracked", ex);
-                    }
-                };
+                //        DebugLogger.Info($"[SafeCrack] Store {store.Id} safe cracked, added payout={payout}, totalPending={store.PendingPayout}");
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        DebugLogger.LogException("RobberySystem.SafeCrackEvents.SafeCracked", ex);
+                //    }
+                //};
 
                 if (_ctx.Config.EnableDebug && _ctx.Config.EnableDebugTimer)
                 {
@@ -198,7 +198,7 @@ namespace StoreRobberyTrackerMod.Systems
                 if (dist < _ctx.Config.EscapeDistance)
                 {
                     _ctx.Ui.ShowSubtitle("Robbery complete! Escape the area.", 3000);
-                    return 0; // wait for next tick
+                    return 0;
                 }
 
                 // ⭐ Player is far enough → complete robbery
@@ -224,7 +224,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // DEBUG RESET STORE (FULL WIPE FOR INI)
+        // DEBUG RESET STORE
         // ------------------------------------------------------------
         public void DebugResetStore(TrackedStore store)
         {
@@ -259,7 +259,7 @@ namespace StoreRobberyTrackerMod.Systems
                 var cam = store.Cameras[i];
                 cam.Destroyed = false;
                 cam.GraceActive = false;
-                cam.GraceStartUtc = DateTime.MinValue; // ensures blank in INI
+                cam.GraceStartUtc = DateTime.MinValue;
             }
 
             if (store.DummyClerk != null && store.DummyClerk.Exists())
@@ -273,7 +273,7 @@ namespace StoreRobberyTrackerMod.Systems
             _ctx.Police.SuppressPoliceForDebug = false;
             _ctx.Clerks.SpawnDummyClerk(store);
 
-            DebugLogger.Info($"DebugResetStore: store {store.Id} fully reset to clean state (INI cleared)");
+            DebugLogger.Info($"DebugResetStore: store {store.Id} fully reset");
 
             // Persist clean state to INI
             _ctx.SaveStoreState(store);
@@ -289,6 +289,10 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                // ⭐ If SafeCrack minigame is running, pause ALL robbery logic
+                if (_ctx.SafeState != null && _ctx.SafeState.Active)
+                    return;
+
                 // 🔸 Dedicated debug-escape subtitle loop
                 if (_debugEscapeActive && store.Id == _debugEscapeStoreId && !store.CooldownActive)
                 {
@@ -342,6 +346,10 @@ namespace StoreRobberyTrackerMod.Systems
 
                 TryStartRegisterRobbery(store, player);
 
+                // ⭐ Prevent ANY system from restarting SafeCrack while active
+                if (_ctx.SafeState.Active)
+                    return;
+
                 if (store.IsRobbed)
                 {
                     UpdateRobberyTimer(store);
@@ -350,24 +358,25 @@ namespace StoreRobberyTrackerMod.Systems
                     CheckEarlyEscapeSuccess(store, player);
                 }
 
-                // ⭐ SAFECRACK INTERACTION TRIGGER
-                // Player must be:
-                //  - In an active robbery
-                //  - Safe exists
-                //  - Safe not cracked yet
-                //  - SafeCrack minigame not already running
+                // ------------------------------------------------------------
+                // ⭐ SAFECRACK INTERACTION TRIGGER (FINAL PATCHED)
+                // ------------------------------------------------------------
                 if (store.IsRobbed &&
                     store.SafePos != Vector3.Zero &&
-                    !store.SafeCracked &&
-                    !_ctx.SafeCrack.IsRunning)
+                    !store.SafeCracked)
                 {
+                    // If SafeCrack is already running → do nothing
+                    if (_ctx.SafeState.Active)
+                        return;
+
                     float safeDist = player.Position.DistanceTo(store.SafePos);
 
                     if (safeDist < 1.2f)
                     {
                         _ctx.Ui.ShowHelpText("Press ~y~E~w~ to crack the safe");
 
-                        if (Game.IsKeyPressed(System.Windows.Forms.Keys.E))
+                        // Only start ONCE when E is PRESSED THIS FRAME
+                        if (Game.IsControlJustPressed(GTA.Control.Context))
                         {
                             DebugLogger.Info($"Starting SafeCrack at store {store.Id}");
                             _ctx.SafeCrack.Start(store.SafePos, store.SafeHeading, player);
@@ -375,12 +384,9 @@ namespace StoreRobberyTrackerMod.Systems
                     }
                 }
 
-                // ⭐ NEW COMPLETION LOGIC (replaces old SafeSystem)
-                // Robbery completes ONLY when:
-                //  - Robbery is active
-                //  - Safe is cracked (if store has a safe)
-                //  - PendingCompletion is true
-                //  - PendingPayout > 0
+                // ------------------------------------------------------------
+                // COMPLETION LOGIC
+                // ------------------------------------------------------------
                 if (store.IsRobbed &&
                     store.PendingCompletion &&
                     store.PendingPayout > 0 &&
@@ -588,9 +594,9 @@ namespace StoreRobberyTrackerMod.Systems
             }
         }
 
-        // ============================================================
+        // ------------------------------------------------------------
         // DON'T LEAVE YET WARNING
-        // ============================================================
+        // ------------------------------------------------------------
         private void CheckLeavingEarly(TrackedStore store, Ped player)
         {
             // ⭐ Updated to use SafeCracked
@@ -607,7 +613,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // EARLY ESCAPE (NO WANTED LEVEL)
+        // EARLY ESCAPE
         // ------------------------------------------------------------
         private void CheckEarlyEscapeSuccess(TrackedStore store, Ped player)
         {
@@ -690,7 +696,7 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
-                // ⭐ NEW: If store has a safe, require SafeCracked
+                // Require safe cracked if store has a safe
                 if (store.SafePos != Vector3.Zero && !store.SafeCracked)
                 {
                     _ctx.Ui.ShowSubtitle("Crack the safe to finish the robbery.", 3000);
@@ -706,7 +712,7 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
                 }
 
-                // 🔸 Debug escape should still respect distance gate
+                // Debug escape still respects distance gate
                 if (_debugEscapeActive && store.Id == _debugEscapeStoreId)
                 {
                     float distdebug = player.Position.DistanceTo(store.StorePos);
@@ -767,7 +773,7 @@ namespace StoreRobberyTrackerMod.Systems
 
                 _ctx.Ui.ClearTimer();
 
-                Script.Yield(); // ⭐ Prevent UI overwrite
+                Script.Yield(); // Prevent UI overwrite
 
                 _ctx.Ui.ShowHeistPassedBanner("~o~ROBBERY COMPLETE", "~y~Earned $" + payout);
 
@@ -803,17 +809,12 @@ namespace StoreRobberyTrackerMod.Systems
                 // ⭐ Capture debug state BEFORE clearing it
                 bool wasDebugEscape = _debugEscapeActive;
 
-                // Clear debug escape state
-                _debugEscapeActive = false;
-                _debugEscapeStoreId = -1;
-                _ctx.Police.SuppressPoliceForDebug = false;
-                _ctx.Clerks.SpawnDummyClerk(store);
-
                 // ⭐ Auto-reset store AFTER payout + cooldown
                 if (wasDebugEscape)
                 {
-                    DebugLogger.Info($"Auto-resetting store {store.Id} after debug escape");
-                    DebugResetStore(store);
+                    _debugEscapeActive = false;
+                    _debugEscapeStoreId = -1;
+                    DebugLogger.Info("Debug escape state cleared after cooldown.");
                 }
             }
             catch (Exception ex)
@@ -823,3 +824,4 @@ namespace StoreRobberyTrackerMod.Systems
         }
     }
 }
+

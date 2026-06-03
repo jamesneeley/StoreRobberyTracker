@@ -89,7 +89,7 @@ namespace StoreRobberyTrackerMod
                     {
                         { _ctx.Config.Action_RobberyStart, "RobberyStart" },
                         { _ctx.Config.Action_SafeCrack, "SafeCrack" },
-                        { _ctx.Config.Action_SafeCrack, "SafeCrackMini" },
+                        { _ctx.Config.Action_SafeCrackMini, "SafeCrackMini" },
                         { _ctx.Config.Action_CameraAlarm, "CameraAlarm" },
                         { _ctx.Config.Action_Escape, "Escape" },
                         { _ctx.Config.Action_Payout, "Payout" },
@@ -125,7 +125,14 @@ namespace StoreRobberyTrackerMod
             try
             {
                 if (_ctx != null)
+                {
+                    // Core systems + SafeCrack logic (StoreContext handles SafeCrack.Update when active)
                     _ctx.Update();
+
+                    // Draw SafeCrack UI when the minigame is active (SHVDN 3.9.0-safe)
+                    if (_ctx.SafeState != null && _ctx.SafeState.Active)
+                        _ctx.SafeCrackUI.Draw(_ctx.SafeState, _ctx.SafeCrackSettings);
+                }
 
                 _ui.Draw();
 

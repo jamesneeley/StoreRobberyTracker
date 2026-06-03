@@ -548,7 +548,7 @@ namespace StoreRobberyTrackerMod
             ini.WriteComment("Debug", "");
 
             // Core debug flags
-            ini.WriteBool("Debug", "EnableDebug", true);
+            ini.WriteBool("Debug", "EnableDebug", false);
             ini.WriteBool("Debug", "OverlayVisible", true);
             ini.WriteInt("Debug", "DebugLevel", 2);
 
@@ -591,7 +591,7 @@ namespace StoreRobberyTrackerMod
         // ------------------------------------------------------------
         private void LoadDebugSettings(SimpleIni ini)
         {
-            EnableDebug = ini.ReadBool("Debug", "EnableDebug", true);
+            EnableDebug = ini.ReadBool("Debug", "EnableDebug", false);
             OverlayVisible = ini.ReadBool("Debug", "OverlayVisible", true);
             DebugLevel = ini.ReadInt("Debug", "DebugLevel", 2);
 

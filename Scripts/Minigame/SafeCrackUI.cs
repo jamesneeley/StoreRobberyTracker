@@ -1,6 +1,7 @@
 ﻿using GTA;
 using GTA.Native;
 using StoreRobberyTrackerMod.Config;
+using StoreRobberyTrackerMod.Debug;
 
 namespace StoreRobberyTrackerMod.Minigame
 {
@@ -22,15 +23,25 @@ namespace StoreRobberyTrackerMod.Minigame
         // ------------------------------------------------------------
         public void Draw(SafeCrackState state, SafeCrackSettings settings)
         {
-            if (!state.Active)
-                return;
+            try
+            {
+                if (!state.Active)
+                    return;
 
-            LoadTextures();
+                // 🔊 Hard proof this is running
+                DebugLogger.Trace("[SafeCrackUI] Draw() called — state active");
 
-            DrawDial(state);
-            DrawLocks(state);
-            DrawDirectionArrow(state);
-            DrawSweetSpotShake(state);
+                LoadTextures();
+
+                DrawDial(state);
+                DrawLocks(state);
+                DrawDirectionArrow(state);
+                DrawSweetSpotShake(state);
+            }
+            catch (System.Exception ex)
+            {
+                DebugLogger.LogException("SafeCrackUI.Draw", ex);
+            }
         }
 
         public void Clear()

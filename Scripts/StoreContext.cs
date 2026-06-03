@@ -54,6 +54,8 @@ namespace StoreRobberyTrackerMod
         internal SafeCrackController SafeCrack { get; private set; }
         internal SafeCrackSettings SafeCrackSettings { get; private set; }
 
+        // ⭐ NEW — EXPOSE UI INSTANCE FOR MAIN.FRAME RENDER
+        internal ISafeCrackUI SafeCrackUI { get; private set; }
 
         // ------------------------------------------------------------
         // DATA
@@ -136,6 +138,11 @@ namespace StoreRobberyTrackerMod
 
                 // 3. Build stores
                 StoreInitializer.BuildStores(this);
+                StoreInitializer.BuildStores(this);
+
+                // ⭐ FIX: Rebuild cameras AFTER IPLs and store state load
+                Script.Wait(500);
+                StoreInitializer.RebuildCamerasForAllStores(this);
 
                 // 4. Ensure StoreState.ini exists and is populated
                 EnsureStoreStatePopulated();
@@ -152,18 +159,26 @@ namespace StoreRobberyTrackerMod
                 Stalker = new StalkerSystem(this);
                 ClerkReplacement = new ClerkReplacementSystem(this);
 
+                // ⭐ REQUIRED — this was missing
+                Safes = new SafeSystem(this);
+
                 // ⭐ Load SafeCrack settings
                 SafeCrackSettings = SafeCrackConfigLoader.Load(Config);
 
                 // ⭐ Initialize SafeCrack minigame
                 SafeState = new SafeCrackState();
+
+                // ⭐ Create UI instance and expose it
+                SafeCrackUI = new SafeCrackUI();
+
                 SafeCrack = new SafeCrackController(
                     SafeState,
                     SafeCrackSettings,
                     new SafeCrackLogic(),
                     new SafeCrackInput(),
-                    new SafeCrackUI(),
-                    new SafeCrackAnimation()
+                    SafeCrackUI,            // ⭐ UI now stored and exposed
+                    new SafeCrackAnimation(),
+                    Ui                      // ⭐ PASS UiHelpers INSTANCE
                 );
 
                 SafeCrackEvents.SafeCracked += (pos, payout) =>
@@ -177,7 +192,7 @@ namespace StoreRobberyTrackerMod
                     store.PendingPayout += payout;
 
                     DebugLogger.Info(string.Format("[SafeCrack] Store {0} safe cracked, added payout={1}, totalPending={2}", store.Id, payout, store.PendingPayout));
-
+               
                 };
 
                 // ⭐ PHASE 3 — POLICE SYSTEM
@@ -225,7 +240,6 @@ namespace StoreRobberyTrackerMod
                 // Global systems
                 Stalker.ProcessEvents();
                 Cooldowns.UpdateGlobalHeat();
-                SafeCrack.Update();
                 Stalker.UpdateCallState();
 
                 // Per-store systems
@@ -252,15 +266,14 @@ namespace StoreRobberyTrackerMod
                     // 6) Police / heat per store
                     Police.UpdatePoliceLogic(store, player);
 
-                    // 7) Safe interaction (NEW SAFECRACK SYSTEM)
-                    HandleSafeCrackForStore(store, player);
-
+                    // ⭐ SafeCrack trigger logic
+                    // HandleSafeCrackForStore(store, player);
                 }
 
                 // Draw global UI
                 Ui.Draw();
 
-                // Draw SafeCrack UI only when active
+                // ⭐ SafeCrack logic tick (UI is drawn in Main.OnFrameRender)
                 if (SafeState.Active)
                     SafeCrack.Update();
             }
@@ -368,7 +381,7 @@ namespace StoreRobberyTrackerMod
         }
 
         // ------------------------------------------------------------
-        // VALIDATE STORE DATA (Option 2 — Moderate)
+        // VALIDATE STORE DATA
         // ------------------------------------------------------------
         private void ValidateStoreData()
         {
@@ -439,7 +452,7 @@ namespace StoreRobberyTrackerMod
         }
 
         // ------------------------------------------------------------
-        // SAFECRACK TRIGGER LOGIC (NEW SYSTEM)
+        // SAFECRACK TRIGGER LOGIC
         // ------------------------------------------------------------
         private void HandleSafeCrackForStore(TrackedStore store, Ped player)
         {

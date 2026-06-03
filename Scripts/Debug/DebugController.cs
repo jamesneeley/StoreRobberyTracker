@@ -2,17 +2,19 @@
 using StoreRobberyTrackerMod.Debug;
 using StoreRobberyTrackerMod.UI;
 
-namespace StoreRobberyTrackerMod
+namespace StoreRobberyTrackerMod.Debug
 {
     internal class DebugController
     {
         private readonly Script _script;
         private readonly UiHelpers _ui;
+        private bool _actionPressed = false;
 
         // Toggle key (default F9 = 120)
         private int _toggleKey = 120;
 
         private readonly StoreContext _ctx;
+
         public DebugController(Script script, UiHelpers ui, StoreContext ctx)
         {
             _script = script;
@@ -42,30 +44,20 @@ namespace StoreRobberyTrackerMod
                 DebugState.OverlayVisible = !DebugState.OverlayVisible;
             }
 
-            /// Debug actions
+            // ------------------------------------------------------------
+            // DEBUG ACTIONS (DEBOUNCED)
+            // ------------------------------------------------------------
             if (DebugKeybinds.TryGetAction(out string action))
             {
-                _ui.ShowNotification("Action: " + action); // TEMP
-                switch (action)
+                if (!_actionPressed)
                 {
-                    case "RobberyStart": DebugActions.TriggerRobberyStart(); break;
-                    case "SafeCrack": DebugActions.TriggerSafeCrack(); break;
-                    case "SafeCrackMini": DebugActions.TriggerSafeCrackMini(); break;
-                    case "CameraAlarm": DebugActions.TriggerCameraAlarm(); break;
-                    case "Escape": DebugActions.TriggerEscape(); break;
-                    case "Payout": DebugActions.TriggerPayout(); break;
-                    case "Cooldown": DebugActions.TriggerCooldown(); break;
-                    case "Stalker": DebugActions.TriggerStalker(); break;
-                    case "UI": DebugActions.TriggerUI(); break;
-                    case "Banner": DebugActions.TriggerBanner(); break;
-                    case "Timer": DebugActions.TriggerTimer(); break;
-                    case "StoreDiag": DebugActions.TriggerStoreDiagnostics(); break;
-                    case "MultiPos": DebugActions.TriggerStoreDiagnostics(); break;
-                    case "MiscAction": DebugActions.TriggerStoreDiagnostics(); break;
-                    case "ScenarioFullRobbery": DebugActions.TriggerScenarioFullRobbery(); break;
-                    case "ScnearioQuickLoor": DebugActions.TriggeScenarioQuickLoot(); break;
-                    case "CameraDebug": DebugActions.ToggleCameraDebug(); break;
+                    _actionPressed = true;
+                    HandleDebugAction(action);
                 }
+            }
+            else
+            {
+                _actionPressed = false;
             }
 
             // ------------------------------------------------------------
@@ -75,7 +67,30 @@ namespace StoreRobberyTrackerMod
             {
                 DebugCameraRender.Draw(_ctx);
             }
+        }
 
+        private void HandleDebugAction(string action)
+        {
+            switch (action)
+            {
+                case "RobberyStart": DebugActions.TriggerRobberyStart(); break;
+                case "SafeCrack": DebugActions.TriggerSafeCrack(); break;
+                case "SafeCrackMini": DebugActions.TriggerSafeCrackMini(); break;
+                case "CameraAlarm": DebugActions.TriggerCameraAlarm(); break;
+                case "Escape": DebugActions.TriggerEscape(); break;
+                case "Payout": DebugActions.TriggerPayout(); break;
+                case "Cooldown": DebugActions.TriggerCooldown(); break;
+                case "Stalker": DebugActions.TriggerStalker(); break;
+                case "UI": DebugActions.TriggerUI(); break;
+                case "Banner": DebugActions.TriggerBanner(); break;
+                case "Timer": DebugActions.TriggerTimer(); break;
+                case "StoreDiag": DebugActions.TriggerStoreDiagnostics(); break;
+                case "MultiPos": DebugActions.TriggerStoreDiagnostics(); break;
+                case "MiscAction": DebugActions.TriggerStoreDiagnostics(); break;
+                case "ScenarioFullRobbery": DebugActions.TriggerScenarioFullRobbery(); break;
+                case "ScnearioQuickLoot": DebugActions.TriggeScenarioQuickLoot(); break;
+                case "CameraDebug": DebugActions.ToggleCameraDebug(); break;
+            }
         }
     }
 }
