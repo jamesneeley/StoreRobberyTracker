@@ -46,6 +46,12 @@ namespace StoreRobberyTrackerMod.Systems
                     return false;
                 }
 
+                // ⭐ Clear stealth + alarm state
+                store.SilentRobbery = false;
+                store.AlarmTriggered = false;
+                store.ClerkCallingPolice = false;
+                store.SilentAlarmPressed = false;
+
                 // Simulate instant success
                 DebugLogger.Info("Simulating SafeCrack instant success...");
 
@@ -60,7 +66,7 @@ namespace StoreRobberyTrackerMod.Systems
 
                 store.SafeCracked = true;
                 store.PendingPayout += finalReward;
-                store.PendingCompletion = true; // keep for realism
+                store.PendingCompletion = true;
 
                 DebugLogger.Info($"Debug safe crack complete: store={store.Id}, reward={finalReward}");
 
@@ -95,7 +101,6 @@ namespace StoreRobberyTrackerMod.Systems
                     return false;
                 }
 
-                // ⭐ Prevent repeated teleports / restarts
                 if (_ctx.SafeState.Active)
                 {
                     msg = "SafeCrack already running";
@@ -123,6 +128,12 @@ namespace StoreRobberyTrackerMod.Systems
 
                 if (!store.IsRobberyActive)
                     store.IsRobberyActive = true;
+
+                // ⭐ Enable stealth mode for debug SafeCrack
+                store.SilentRobbery = true;
+                store.AlarmTriggered = false;
+                store.ClerkCallingPolice = false;
+                store.SilentAlarmPressed = false;
 
                 // ⭐ Start the minigame
                 _ctx.SafeCrack.Start(store, store.SafePos, store.SafeHeading, Game.Player.Character);

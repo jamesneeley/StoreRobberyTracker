@@ -238,7 +238,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // DEBUG RESET STORE
+        // DEBUG RESET STORE (FULLY PATCHED)
         // ------------------------------------------------------------
         public void DebugResetStore(TrackedStore store)
         {
@@ -249,13 +249,16 @@ namespace StoreRobberyTrackerMod.Systems
             store.PendingCompletion = false;
             store.PendingPayout = 0;
             store.CooldownActive = false;
-            store.AlarmTriggered = false;
             store.PlayerMaskedAtStart = false;
+
+            // Stealth / alarm suppression
+            store.SilentRobbery = false;
+            store.AlarmTriggered = false;
+            store.ClerkCallingPolice = false;
+            store.SilentAlarmPressed = false;
 
             // Escalation / behavior flags
             store.ClerkDeathHandled = false;
-            store.ClerkCallingPolice = false;
-            store.SilentAlarmPressed = false;
             store.RepeatRobberyEscalationApplied = false;
             store.MaskEscalationApplied = false;
             store.FightEscalationApplied = false;
@@ -263,63 +266,54 @@ namespace StoreRobberyTrackerMod.Systems
             store.ClerkRecognizedPlayer = false;
             store.ClerkKilledWithGun = false;
 
-            // 🔸 Completely clear timestamps so INI can write them as blank
+            // Reset timestamps
             store.LastRobbedUtc = DateTime.MinValue;
             store.RobberyStartUtc = DateTime.MinValue;
 
-            // 🔸 Reset all cameras including grace fields
-            // No longer being used.
-            //for (int i = 0; i < store.Cameras.Count; i++)
-            //{
-            //    var cam = store.Cameras[i];
-            //    cam.Destroyed = false;
-            //    cam.GraceActive = false;
-            //    cam.GraceStartUtc = DateTime.MinValue;
-            //}
+            // DO NOT reset camera destruction state — that is intentional gameplay
+            // DO NOT reset grace — camera system handles this naturally
 
+            // Remove dummy clerk
             if (store.DummyClerk != null && store.DummyClerk.Exists())
             {
                 store.DummyClerk.Delete();
                 store.DummyClerk = null;
             }
 
-            // Clear wanted level and police suppression
+            // Clear wanted level + debug suppression
             Game.Player.WantedLevel = 0;
             _ctx.Police.SuppressPoliceForDebug = false;
+
+            // Respawn dummy clerk cleanly
             _ctx.Clerks.SpawnDummyClerk(store);
 
             DebugLogger.Info($"DebugResetStore: store {store.Id} fully reset");
 
-            // Persist clean state to INI
+            // Persist clean state
             _ctx.SaveStoreState(store);
-
-            // Optional: force immediate INI rewrite if your save routine buffers writes
-            // _ctx.FileManager.WriteStoreSection(store.Id, store);
         }
 
         // ------------------------------------------------------------
-        // MAIN ENTRY
+        // MAIN ENTRY (FULLY PATCHED)
         // ------------------------------------------------------------
         public void UpdateRobbery(TrackedStore store, Ped player)
         {
             try
             {
                 // ⭐ Pause ALL robbery logic while SafeCrack is running
-                // ⭐ Prevent robbery subtitles from firing during SafeCrack
                 if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                 {
                     _ctx.Ui.ClearTimer();
                     return;
                 }
 
-                // 🔸 Dedicated debug-escape subtitle loop
+                // ⭐ Debug escape subtitle loop
                 if (_debugEscapeActive && store.Id == _debugEscapeStoreId && !store.CooldownActive)
                 {
                     float dist = player.Position.DistanceTo(store.StorePos);
 
                     if (dist < _ctx.Config.EscapeDistance)
                     {
-                        // Throttle to once per second so it doesn’t spam
                         if (Game.GameTime - _lastDebugSubtitleTime > 1000)
                         {
                             _ctx.Ui.ShowSubtitle("Robbery complete! Escape the area.", 3000);
@@ -337,7 +331,7 @@ namespace StoreRobberyTrackerMod.Systems
                     CheckEarlyEscapeSuccess(store, player);
                 }
 
-                // DEBUG TIMER
+                // ⭐ Debug timer override
                 if (_ctx.Config.EnableDebugTimer && _testTimerActive)
                 {
                     int remaining = (_testTimerEnd - Game.GameTime) / 1000;
@@ -359,16 +353,18 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
                 }
 
-                // NORMAL LOGIC
+                // ⭐ Cooldown stops all robbery logic
                 if (store.CooldownActive)
                     return;
 
+                // ⭐ Try to start a register robbery
                 TryStartRegisterRobbery(store, player);
 
                 // ⭐ Prevent ANY system from restarting SafeCrack while active
                 if (_ctx.SafeState.Active)
                     return;
 
+                // ⭐ Run robbery logic again if robbery started this frame
                 if (store.IsRobbed)
                 {
                     UpdateRobberyTimer(store);
@@ -384,7 +380,6 @@ namespace StoreRobberyTrackerMod.Systems
                     store.SafePos != Vector3.Zero &&
                     !store.SafeCracked)
                 {
-                    // If SafeCrack is already running → do nothing
                     if (_ctx.SafeState.Active)
                         return;
 
@@ -394,7 +389,6 @@ namespace StoreRobberyTrackerMod.Systems
                     {
                         _ctx.Ui.ShowHelpText("Press ~y~E~w~ to crack the safe");
 
-                        // Only start ONCE when E is PRESSED THIS FRAME
                         if (Game.IsControlJustPressed(GTA.Control.Context))
                         {
                             DebugLogger.Info($"Starting SafeCrack at store {store.Id}");
@@ -404,7 +398,7 @@ namespace StoreRobberyTrackerMod.Systems
                 }
 
                 // ------------------------------------------------------------
-                // COMPLETION LOGIC
+                // ⭐ COMPLETION LOGIC
                 // ------------------------------------------------------------
                 if (store.IsRobbed &&
                     store.PendingCompletion &&
@@ -421,27 +415,40 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // START ROBBERY
+        // START ROBBERY (FULLY PATCHED)
         // ------------------------------------------------------------
         private void TryStartRegisterRobbery(TrackedStore store, Ped player)
         {
             try
             {
+                // Debug timer guard
                 if (_ctx.Config.EnableDebugTimer && _testTimerActive)
                     return;
 
-                if (store.IsRobbed)
+                // Already robbed or invalid clerk
+                if (store.IsRobbed || store.Clerk == null || !store.Clerk.Exists())
                     return;
 
-                if (store.Clerk == null || !store.Clerk.Exists())
-                    return;
-
+                // Distance + aiming check
                 float dist = player.Position.DistanceTo(store.Clerk.Position);
                 if (dist < 12f && _ctx.Player.IsAiming() && _ctx.Player.IsArmed())
                 {
                     store.PlayerMaskedAtStart = _ctx.Player.IsMasked();
 
                     DebugLogger.Info($"Robbery started at store {store.Id}");
+
+                    // ⭐ SafeCrack stealth suppression
+                    if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    {
+                        DebugLogger.Trace($"[RobberySystem] Suppressed — SafeCrack active for store {store.Id}");
+                        store.SilentRobbery = true;
+                        store.AlarmTriggered = false;
+                        store.ClerkCallingPolice = false;
+                        store.SilentAlarmPressed = false;
+                        store.HeatLevel = 0;
+                        return;
+                    }
+
                     StartRegisterRobbery(store);
 
                     if (_ctx.Config.EnableMessages)
@@ -459,6 +466,9 @@ namespace StoreRobberyTrackerMod.Systems
             }
         }
 
+        // ------------------------------------------------------------
+        // REGISTER ROBBERY INITIALIZATION (FULLY PATCHED)
+        // ------------------------------------------------------------
         private void StartRegisterRobbery(TrackedStore store)
         {
             try
@@ -467,9 +477,19 @@ namespace StoreRobberyTrackerMod.Systems
                 store.RobberyStartUtc = DateTime.UtcNow;
                 store.PendingCompletion = true;
 
+                // ⭐ Respect SilentRobbery flag (stealth mode)
+                if (store.SilentRobbery)
+                {
+                    DebugLogger.Trace($"[RobberySystem] SilentRobbery active — suppressing alarms for store {store.Id}");
+                    store.AlarmTriggered = false;
+                    store.ClerkCallingPolice = false;
+                    store.SilentAlarmPressed = false;
+                    store.HeatLevel = 0;
+                }
+
+                // Calculate payout
                 int payout = _ctx.Rng.Next(_ctx.Config.RegisterMinAmount, _ctx.Config.RegisterMaxAmount + 1);
                 payout = (int)(payout * _ctx.Config.PayoutMultiplier);
-
                 store.PendingPayout += payout;
 
                 DebugLogger.Info($"Register robbery payout: store={store.Id}, payout={payout}");
@@ -484,6 +504,7 @@ namespace StoreRobberyTrackerMod.Systems
                     _ctx.Ui.ShowSubtitle("There is a safe in the office — crack it too.", 4000);
                 }
 
+                // Save state + update blip
                 _ctx.SaveStoreState(store);
                 _ctx.Cooldowns.UpdateStoreBlip(store);
             }
@@ -645,16 +666,17 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // EARLY ESCAPE
+        // EARLY ESCAPE (FULLY PATCHED)
         // ------------------------------------------------------------
         private void CheckEarlyEscapeSuccess(TrackedStore store, Ped player)
         {
             try
             {
+                // ⭐ Never run early escape during SafeCrack
                 if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                     return;
 
-                // ⭐ DEBUG ESCAPE OVERRIDE
+                // ⭐ Debug override
                 if (_debugEscapeActive && store.Id == _debugEscapeStoreId)
                 {
                     float distdebug = player.Position.DistanceTo(store.StorePos);
@@ -666,20 +688,21 @@ namespace StoreRobberyTrackerMod.Systems
                     }
 
                     DebugLogger.Info($"Debug escape success at store {store.Id}");
-
                     store.IsRobberyActive = false;
                     AwardPayout(store);
                     BeginCooldown(store);
                     return;
                 }
 
-                // ⭐ Require safe cracked for early escape
+                // ⭐ Must have robbed register + cracked safe
                 if (!store.IsRobbed || !store.SafeCracked)
                     return;
 
+                // ⭐ No early escape if alarm triggered
                 if (store.AlarmTriggered)
                     return;
 
+                // ⭐ Must lose cops first
                 if (Game.Player.WantedLevel > 0)
                 {
                     _ctx.Ui.ShowSubtitle("Escape the area & lose the cops.", 3000);
@@ -688,12 +711,11 @@ namespace StoreRobberyTrackerMod.Systems
 
                 float dist = player.Position.DistanceTo(store.StorePos);
 
-                // All cameras must be destroyed
+                // ⭐ All cameras must be destroyed
                 bool allCamsDown = true;
-                int count = store.Cameras.Count;
-                for (int i = 0; i < count; i++)
+                foreach (var cam in store.Cameras)
                 {
-                    if (!store.Cameras[i].Destroyed)
+                    if (!cam.Destroyed)
                     {
                         allCamsDown = false;
                         break;
@@ -706,17 +728,13 @@ namespace StoreRobberyTrackerMod.Systems
                     DebugLogger.Info($"Early escape success at store {store.Id}");
 
                     store.IsRobberyActive = false;
-
                     AwardPayout(store);
                     BeginCooldown(store);
+                    return;
+                }
 
-                    return;
-                }
-                else
-                {
-                    _ctx.Ui.ShowSubtitle("Robbery complete! Escape the area.");
-                    return;
-                }
+                // ⭐ Still inside escape radius
+                _ctx.Ui.ShowSubtitle("Robbery complete! Escape the area.");
             }
             catch (Exception ex)
             {
@@ -725,29 +743,31 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // FINAL COMPLETION
+        // FINAL COMPLETION (FULLY PATCHED)
         // ------------------------------------------------------------
         private void CompleteRobbery(TrackedStore store, Ped player)
         {
             try
             {
-                // Require safe cracked if store has a safe
+                // ⭐ If store has a safe, require it to be cracked
                 if (store.SafePos != Vector3.Zero && !store.SafeCracked)
                 {
                     _ctx.Ui.ShowSubtitle("Crack the safe to finish the robbery.", 3000);
                     return;
                 }
 
+                // ⭐ Must have pending completion + payout
                 if (!store.PendingCompletion || store.PendingPayout <= 0)
                     return;
 
+                // ⭐ Must lose cops first
                 if (Game.Player.WantedLevel > 0)
                 {
                     _ctx.Ui.ShowSubtitle("Escape the area & lose the cops.", 3000);
                     return;
                 }
 
-                // Debug escape still respects distance gate
+                // ⭐ Debug escape path
                 if (_debugEscapeActive && store.Id == _debugEscapeStoreId)
                 {
                     float distdebug = player.Position.DistanceTo(store.StorePos);
@@ -766,6 +786,8 @@ namespace StoreRobberyTrackerMod.Systems
                 }
 
                 float dist = player.Position.DistanceTo(store.StorePos);
+
+                // ⭐ Must escape radius
                 if (dist < _ctx.Config.EscapeDistance)
                 {
                     _ctx.Ui.ShowSubtitle("Robbery complete! Escape the area.", 3000);
@@ -786,37 +808,60 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // PAYOUT + COOLDOWN
+        // PAYOUT (FULLY PATCHED)
         // ------------------------------------------------------------
         private void AwardPayout(TrackedStore store)
         {
             try
             {
+                // Never award payout during SafeCrack
                 if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                     return;
 
+                // Stop active robbery state
                 store.IsRobberyActive = false;
 
-                // ⭐ Capture debug state BEFORE clearing it
                 bool wasDebugEscape = _debugEscapeActive;
                 int payout = store.PendingPayout;
 
-                DebugLogger.Info($"Awarding payout: store={store.Id}, payout={payout}");
+                DebugLogger.Info($"Awarding payout: store={store.Id}, payout={payout}, debugEscape={wasDebugEscape}");
 
-                // ⭐ Debug escape → do NOT pay player
-                if (wasDebugEscape)
-                    Game.Player.Money += 0;
-                else
+                // Debug escape → do NOT pay player
+                if (!wasDebugEscape)
+                {
                     Game.Player.Money += payout;
+                    _ctx.Ui.ShowHeistPassedBanner("~o~ROBBERY COMPLETE", $"~g~Earned ${payout}");
+                }
+                else
+                {
+                    _ctx.Ui.ShowSubtitle("Debug escape complete (no payout).", 3000);
+                }
 
+                // Clear debug escape state
+                _debugEscapeActive = false;
+                _debugEscapeStoreId = -1;
+                _ctx.Police.SuppressPoliceForDebug = false;
+
+                // Reset robbery flags
+                store.IsRobbed = false;
+                store.PendingCompletion = false;
+                store.PendingPayout = 0;
+
+                store.LastRobbedUtc = DateTime.UtcNow;
+                store.RobberyStartUtc = DateTime.MinValue;
+
+                // Clear stealth mode
+                store.SilentRobbery = false;
+                store.AlarmTriggered = false;
+                store.ClerkCallingPolice = false;
+                store.SilentAlarmPressed = false;
+
+                // Clear UI timer
                 _ctx.Ui.ClearTimer();
 
-                Script.Yield(); // Prevent UI overwrite
-
-                _ctx.Ui.ShowHeistPassedBanner("~o~ROBBERY COMPLETE", "~y~Earned $" + payout);
-
-                store.PendingPayout = 0;
-                store.PendingCompletion = false;
+                // Persist state
+                _ctx.SaveStoreState(store);
+                _ctx.Cooldowns.UpdateStoreBlip(store);
             }
             catch (Exception ex)
             {
@@ -824,16 +869,38 @@ namespace StoreRobberyTrackerMod.Systems
             }
         }
 
+        // ------------------------------------------------------------
+        // COOLDOWN (FULLY PATCHED)
+        // ------------------------------------------------------------
         private void BeginCooldown(TrackedStore store)
         {
             try
             {
+                if (store == null)
+                    return;
+
                 DebugLogger.Info($"BeginCooldown({store.Id})");
 
-                store.IsRobbed = true;
-                store.LastRobbedUtc = DateTime.UtcNow;
-                store.CooldownActive = true;
+                bool wasDebugEscape = _debugEscapeActive;
 
+                // Mark cooldown
+                store.CooldownActive = true;
+                store.LastRobbedUtc = DateTime.UtcNow;
+
+                // Clear active robbery state
+                store.IsRobberyActive = false;
+                store.PendingCompletion = false;
+
+                // Real robbery vs debug escape
+                store.IsRobbed = !wasDebugEscape;
+
+                // Clear stealth mode
+                store.SilentRobbery = false;
+                store.AlarmTriggered = false;
+                store.ClerkCallingPolice = false;
+                store.SilentAlarmPressed = false;
+
+                // Apply cooldown visuals + persistence
                 _ctx.Cooldowns.ApplyCooldownBlocker(store);
                 _ctx.Cooldowns.UpdateStoreBlip(store);
                 _ctx.SaveStoreState(store);
@@ -844,16 +911,15 @@ namespace StoreRobberyTrackerMod.Systems
 
                 _ctx.Stalker.TryTriggerCall();
 
-                // ⭐ Capture debug state BEFORE clearing it
-                bool wasDebugEscape = _debugEscapeActive;
-
-                // ⭐ Auto-reset store AFTER payout + cooldown
+                // Clear debug escape state AFTER using it
                 if (wasDebugEscape)
                 {
                     _debugEscapeActive = false;
                     _debugEscapeStoreId = -1;
                     DebugLogger.Info("Debug escape state cleared after cooldown.");
                 }
+
+                // Banner + payout handled in AwardPayout()
             }
             catch (Exception ex)
             {

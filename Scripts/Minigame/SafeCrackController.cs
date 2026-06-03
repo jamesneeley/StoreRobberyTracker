@@ -1,12 +1,12 @@
-﻿using System;
-using GTA;
+﻿using GTA;
 using GTA.Math;
 using GTA.Native;
 using StoreRobberyTrackerMod.Config;
-using StoreRobberyTrackerMod.Debug;
-using StoreRobberyTrackerMod.UI;
 using StoreRobberyTrackerMod.Data;
+using StoreRobberyTrackerMod.Debug;
 using StoreRobberyTrackerMod.Systems; // RobberySystem namespace
+using StoreRobberyTrackerMod.UI;
+using System;
 
 namespace StoreRobberyTrackerMod.Minigame
 {
@@ -15,6 +15,8 @@ namespace StoreRobberyTrackerMod.Minigame
         private readonly SafeCrackState _state;
         private readonly SafeCrackSettings _settings;
         private readonly UiHelpers _UiHelp;
+        private readonly StoreContext _ctx;
+        private readonly IniConfig _config;
 
         private readonly ISafeCrackLogic _logic;
         private readonly ISafeCrackInput _input;
@@ -38,7 +40,9 @@ namespace StoreRobberyTrackerMod.Minigame
             ISafeCrackUI ui,
             ISafeCrackAnimation anim,
             UiHelpers uiHelp,
-            RobberySystem robberySystem)
+            RobberySystem robberySystem,
+            StoreContext ctx,
+            IniConfig config)
         {
             _state = state;
             _settings = settings;
@@ -50,10 +54,13 @@ namespace StoreRobberyTrackerMod.Minigame
 
             _UiHelp = uiHelp;
             _robberySystem = robberySystem;
+
+            _ctx = ctx;          // ⭐ REQUIRED
+            _config = config;    // ⭐ REQUIRED
         }
 
         // ------------------------------------------------------------
-        // START MINIGAME
+        // START MINIGAME (FULLY PATCHED)
         // ------------------------------------------------------------
         public void Start(TrackedStore store, Vector3 safePos, float safeHeading, Ped player)
         {
@@ -70,7 +77,9 @@ namespace StoreRobberyTrackerMod.Minigame
 
                 DebugLogger.Info("[SafeCrack] Start() called");
 
-                // Cooldown check
+                // ------------------------------------------------------------
+                // ⭐ Cooldown check
+                // ------------------------------------------------------------
                 if (_state.CooldownActive)
                 {
                     int now = Game.GameTime;
@@ -83,7 +92,9 @@ namespace StoreRobberyTrackerMod.Minigame
                     _state.CooldownActive = false;
                 }
 
-                // Reset state
+                // ------------------------------------------------------------
+                // ⭐ Reset state
+                // ------------------------------------------------------------
                 _state.Reset();
                 _state.Active = true;
                 _state.Completed = false;
@@ -93,15 +104,22 @@ namespace StoreRobberyTrackerMod.Minigame
                 _state.SafePos = safePos;
                 _state.SafeHeading = safeHeading;
                 _state.Player = player;
+                _state.StartTime = Game.GameTime;
                 _state.LastUpdateTime = Game.GameTime;
 
+                // ------------------------------------------------------------
                 // ⭐ STEALTH ROBBERY MODE ENABLED
-                SuppressStoreSystems();
+                // ------------------------------------------------------------
+                SuppressStoreSystems();   // sets SilentRobbery + suppresses clerk + cameras + police
 
-                // Save current camera mode so we can restore it later
+                // ------------------------------------------------------------
+                // ⭐ Save current camera mode so we can restore it later
+                // ------------------------------------------------------------
                 _savedCameraMode = Function.Call<int>(Hash.GET_FOLLOW_PED_CAM_VIEW_MODE);
 
-                // Teleport if needed
+                // ------------------------------------------------------------
+                // ⭐ Teleport player if needed
+                // ------------------------------------------------------------
                 float dist = player.Position.DistanceTo(safePos);
                 if (dist > 0.6f)
                 {
@@ -111,27 +129,33 @@ namespace StoreRobberyTrackerMod.Minigame
 
                 // Let GTA settle the ped for a few frames
                 for (int i = 0; i < 10; i++)
-                {
                     Script.Yield();
-                }
 
                 // ⭐ Force GTA to ground the ped
                 Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, player.Handle,
                     safePos.X, safePos.Y, safePos.Z, false, false, false);
 
-                // Yield again to let physics apply
-                Script.Yield();
+                Script.Yield(); // let physics apply
 
-                // ⭐ NOW freeze
+                // ------------------------------------------------------------
+                // ⭐ Freeze player
+                // ------------------------------------------------------------
                 player.Task.ClearAllImmediately();
                 player.IsPositionFrozen = true;
                 _playerFrozen = true;
 
-                // Initialize logic + animation
+                // ------------------------------------------------------------
+                // ⭐ Initialize logic + animation
+                // ------------------------------------------------------------
                 _logic.Initialize(_state, _settings);
                 _anim.Begin(player, safePos, safeHeading);
 
-                DebugLogger.Info("SafeCrack minigame started");
+                // ------------------------------------------------------------
+                // ⭐ Initialize UI (timer + dial)
+                // ------------------------------------------------------------
+                _ui.Draw(_state, _settings);
+
+                DebugLogger.Info("[SafeCrack] Minigame started successfully");
             }
             catch (Exception ex)
             {
@@ -141,13 +165,16 @@ namespace StoreRobberyTrackerMod.Minigame
         }
 
         // ------------------------------------------------------------
-        // UPDATE LOOP
+        // UPDATE LOOP (FULLY PATCHED)
         // ------------------------------------------------------------
         public void Update()
         {
             if (!_state.Active)
                 return;
 
+            // ------------------------------------------------------------
+            // Disable gameplay controls while minigame is active
+            // ------------------------------------------------------------
             DisableGameplayControls();
 
             int now = Game.GameTime;
@@ -156,7 +183,29 @@ namespace StoreRobberyTrackerMod.Minigame
 
             _state.LastUpdateTime = now;
 
-            // Eligibility
+            // ------------------------------------------------------------
+            // SAFECRACK COUNTDOWN TIMER (THROTTLED + CORRECT)
+            // ------------------------------------------------------------
+            int elapsed = now - _state.StartTime;
+            int total = _config.SafeCrackTimeSeconds * 1000;
+            int remaining = (total - elapsed) / 1000;
+
+            if (remaining < 0)
+            {
+                _state.Failed = true;
+                return;
+            }
+
+            // Update timer text once per second
+            if (now - _state.LastTimerUpdate > 1000)
+            {
+                _UiHelp.SetTimerText($"Safe time left: {remaining}", remaining);
+                _state.LastTimerUpdate = now;
+            }
+
+            // ------------------------------------------------------------
+            // ELIGIBILITY CHECK
+            // ------------------------------------------------------------
             if (!_logic.ValidatePlayerStillEligible(_state))
             {
                 DebugLogger.Info("[SafeCrack] Player no longer eligible, aborting");
@@ -164,9 +213,25 @@ namespace StoreRobberyTrackerMod.Minigame
                 return;
             }
 
+            // ------------------------------------------------------------
+            // INPUT + LOGIC
+            // ------------------------------------------------------------
+            // Preserve ConfirmRequested between frames until logic consumes it
+            bool confirmHeld = _state.ConfirmRequested;
             _input.Process(_state, _settings);
+            if (confirmHeld)
+                _state.ConfirmRequested = true;
+
             _logic.Update(_state, _settings);
 
+            // ------------------------------------------------------------
+            // DRAW UI EACH FRAME
+            // ------------------------------------------------------------
+            _ui.Draw(_state, _settings);
+
+            // ------------------------------------------------------------
+            // COMPLETION / FAILURE
+            // ------------------------------------------------------------
             if (_state.Completed)
             {
                 FinishSuccess();
@@ -181,11 +246,15 @@ namespace StoreRobberyTrackerMod.Minigame
         }
 
         // ------------------------------------------------------------
-        // SUCCESS HANDLER
+        // SUCCESS HANDLER (FULLY PATCHED)
         // ------------------------------------------------------------
         private void FinishSuccess()
         {
-            _state.Completed = false;
+            // Guard: only run once
+            if (!_state.Active)
+                return;
+
+            _state.Completed = true;
             _state.Active = false;
 
             _anim.EndSuccess(_state.Player);
@@ -193,18 +262,31 @@ namespace StoreRobberyTrackerMod.Minigame
             int payout = _logic.CalculatePayout(_settings);
             _state.Payout = payout;
 
+            // ⭐ Success vibration
             Function.Call(Hash.SET_CONTROL_SHAKE, 0, 250, 200);
+
+            // ⭐ Play success sound (no payout reveal)
+            Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+
+            // ⭐ Subtitle without payout
+            _UiHelp.ShowSubtitle("~g~Safe cracked!", 3000);
 
             // Fire event
             SafeCrackEvents.OnSafeCracked(_state.SafePos, payout);
 
-            _UiHelp.ShowSubtitle($"~g~Safe cracked! Loot: ${payout}", 4000);
-
-            // ⭐ Mark store safe as cracked and add payout into robbery total
+            // ⭐ Apply multiplier + add to robbery total
             if (_store != null)
             {
                 _store.SafeCracked = true;
+
+                payout = (int)(payout * _ctx.Config.PayoutMultiplier);
                 _store.PendingPayout += payout;
+
+                // ⭐ Exit stealth mode cleanly
+                _store.SilentRobbery = false;
+                _store.AlarmTriggered = false;
+                _store.ClerkCallingPolice = false;
+                _store.SilentAlarmPressed = false;
             }
 
             // Cooldown
@@ -215,7 +297,7 @@ namespace StoreRobberyTrackerMod.Minigame
         }
 
         // ------------------------------------------------------------
-        // FAILURE HANDLER
+        // FAILURE HANDLER (FULLY PATCHED)
         // ------------------------------------------------------------
         private void FailAndResetStore()
         {
@@ -224,17 +306,22 @@ namespace StoreRobberyTrackerMod.Minigame
             if (_store != null)
             {
                 DebugLogger.Info("[SafeCrack] Resetting store after failure");
+                _store.SilentRobbery = false;
                 _robberySystem.DebugResetStore(_store);
             }
         }
 
         // ------------------------------------------------------------
-        // STOP MINIGAME
+        // STOP MINIGAME (FULLY PATCHED)
         // ------------------------------------------------------------
         public void Stop(bool success)
         {
             _state.Active = false;
             _state.ConfirmRequested = false;
+
+            // Prevent fail message during game load or initialization
+            if (Game.IsLoading)
+                success = true;
 
             // Clear any running tasks/animations
             if (_state.Player != null && _state.Player.Exists())
@@ -260,17 +347,25 @@ namespace StoreRobberyTrackerMod.Minigame
             _anim.End(_state.Player, success);
             _ui.Clear();
 
-            if (!success)
+            // Always restore controls
+            RestoreControls();
+
+            // Clear stealth flag on store
+            if (_store != null)
+            {
+                _store.SilentRobbery = false;
+            }
+
+            // Only show fail message if player actually stopped mid‑game
+            if (!success && !_state.Completed)
             {
                 Function.Call(Hash.SET_CONTROL_SHAKE, 0, 300, 255);
                 _UiHelp.ShowSubtitle("~r~You stopped cracking the safe. Try again.", 3000);
             }
-
-            RestoreControls();
         }
 
         // ------------------------------------------------------------
-        // ABORT
+        // ABORT (FULLY PATCHED)
         // ------------------------------------------------------------
         public void Abort()
         {
@@ -280,7 +375,10 @@ namespace StoreRobberyTrackerMod.Minigame
             Stop(false);
 
             if (_store != null)
+            {
+                _store.SilentRobbery = false;
                 _robberySystem.DebugResetStore(_store);
+            }
         }
 
         // ------------------------------------------------------------
@@ -321,7 +419,7 @@ namespace StoreRobberyTrackerMod.Minigame
         }
 
         // ------------------------------------------------------------
-        // STORE SUPPRESSION (STEALTH MODE)
+        // STORE SUPPRESSION (STEALTH MODE) (FULLY PATCHED)
         // ------------------------------------------------------------
         private void SuppressStoreSystems()
         {
@@ -340,13 +438,6 @@ namespace StoreRobberyTrackerMod.Minigame
             _store.MaskEscalationApplied = false;
             _store.FightEscalationApplied = false;
             _store.TimeEscalationApplied = false;
-
-            // Disable cameras
-            foreach (var cam in _store.Cameras)
-            {
-                cam.GraceActive = true;
-                cam.GraceStartUtc = DateTime.UtcNow;
-            }
 
             DebugLogger.Info("[SafeCrack] Store systems suppressed for stealth safecrack");
         }

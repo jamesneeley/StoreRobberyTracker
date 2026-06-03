@@ -38,6 +38,9 @@ namespace StoreRobberyTrackerMod.Data
         public bool ClerkFleeing;
         public DateTime ClerkAnimStartUtc;
         public int ClerkAnimDurationMs;
+        public bool GreetedPlayer = false;
+        public int LastGreetTime = 0;
+
         // --- ClerkReplacementSystem timing support ---
         public bool PlayerInside { get; set; } = false;
         public DateTime PlayerEnteredUtc { get; set; } = DateTime.MinValue;

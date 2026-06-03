@@ -7,8 +7,11 @@ namespace StoreRobberyTrackerMod.Data
     {
         public Vector3 Position;
         public bool Destroyed;
+
+        // ⭐ Grace system
         public bool GraceActive;
         public DateTime GraceStartUtc;
+        public double GraceDurationSeconds;   // ⭐ NEW
 
         // Optional future expansion (CameraSystem may use this later)
         public float Direction;
@@ -22,6 +25,7 @@ namespace StoreRobberyTrackerMod.Data
             Destroyed = false;
             GraceActive = false;
             GraceStartUtc = DateTime.MinValue;
+            GraceDurationSeconds = 0;   // ⭐ NEW
             Direction = 0f;
         }
 
@@ -34,6 +38,7 @@ namespace StoreRobberyTrackerMod.Data
             Destroyed = false;
             GraceActive = false;
             GraceStartUtc = DateTime.MinValue;
+            GraceDurationSeconds = 0;   // ⭐ NEW
             Direction = 0f;
         }
 
@@ -46,6 +51,7 @@ namespace StoreRobberyTrackerMod.Data
             Destroyed = false;
             GraceActive = false;
             GraceStartUtc = DateTime.MinValue;
+            GraceDurationSeconds = 0;   // ⭐ NEW
             Direction = direction;
         }
     }

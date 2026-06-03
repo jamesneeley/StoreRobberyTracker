@@ -62,6 +62,8 @@ namespace StoreRobberyTrackerMod.Minigame
         // ------------------------------------------------------------
         public int LastUpdateTime = 0;
         public int CooldownEndTime = 0;
+        public int StartTime = 0;
+        public int LastTimerUpdate = 0;
 
         // ------------------------------------------------------------
         // PAYOUT
@@ -95,6 +97,8 @@ namespace StoreRobberyTrackerMod.Minigame
 
             LastUpdateTime = 0;
             CooldownEndTime = 0;
+            StartTime = 0;
+            LastTimerUpdate = 0;
 
             Payout = 0;
         }

@@ -93,7 +93,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // CAMERA DETECTION
+        // CAMERA DETECTION (Patched)
         // ------------------------------------------------------------
         private void HandleCameraTriggeredAlarm(TrackedStore store)
         {
@@ -105,15 +105,37 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!store.IsRobberyActive || store.AlarmTriggered)
                     return;
 
+                // ⭐ Suppress camera alarms during SafeCrack or SilentRobbery
+                if ((_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning) || store.SilentRobbery)
+                    return;
+
                 foreach (CameraData cam in store.Cameras)
                 {
                     if (cam.Destroyed)
                         continue;
 
-                    // ⭐ Require both camera grace AND clerk reaction to avoid false alarms
-                    if (cam.GraceActive && store.ClerkReacted)
+                    // ⭐ If grace hasn't started, camera cannot trigger yet
+                    if (!cam.GraceActive)
+                        continue;
+
+                    // ⭐ Clerk must have reacted (aiming gun, threatening, etc.)
+                    if (!store.ClerkReacted)
+                        continue;
+
+                    // ⭐ Ensure grace duration is initialized
+                    if (cam.GraceDurationSeconds <= 0)
+                        cam.GraceDurationSeconds = _ctx.Config.CameraGraceSeconds;
+
+                    // ⭐ Calculate elapsed grace time
+                    double elapsed = (DateTime.UtcNow - cam.GraceStartUtc).TotalSeconds;
+
+                    // ⭐ Only trigger after grace period expires
+                    if (elapsed >= cam.GraceDurationSeconds)
                     {
-                        DebugLogger.Info($"Camera alarm triggered at {store.Name}");
+                        DebugLogger.Info(
+                            $"Camera alarm triggered at {store.Name} after grace period ({elapsed:0.0}s >= {cam.GraceDurationSeconds}s)"
+                        );
+
                         TriggerPolice(store, 2, "~r~Camera detected suspicious activity!");
                         break;
                     }
@@ -126,7 +148,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // CLERK DEATH
+        // CLERK DEATH (FULLY PATCHED)
         // ------------------------------------------------------------
         private void HandleClerkDeathAlarm(TrackedStore store)
         {
@@ -138,10 +160,45 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!store.IsRobberyActive || store.AlarmTriggered)
                     return;
 
-                // ⭐ Only our clerk’s tracked death should matter
+                // ------------------------------------------------------------
+                // ⭐ Suppress clerk death alarms during SafeCrack or SilentRobbery
+                // ------------------------------------------------------------
+                if ((_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning) || store.SilentRobbery)
+                {
+                    store.ClerkDeathHandled = false;
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ Only react if the clerk death was actually processed
+                // ------------------------------------------------------------
                 if (!store.ClerkDeathHandled)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ Ignore death alarms if all cameras are destroyed
+                // (no one can "see" the body)
+                // ------------------------------------------------------------
+                bool anyCameraAlive = false;
+                foreach (var cam in store.Cameras)
+                {
+                    if (!cam.Destroyed)
+                    {
+                        anyCameraAlive = true;
+                        break;
+                    }
+                }
+
+                if (!anyCameraAlive)
+                {
+                    DebugLogger.Trace($"Clerk death ignored — all cameras destroyed for store {store.Id}");
+                    store.ClerkDeathHandled = false;
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ Trigger appropriate police escalation
+                // ------------------------------------------------------------
                 DebugLogger.Info($"Clerk death alarm at {store.Name}, killedWithGun={store.ClerkKilledWithGun}");
 
                 if (store.ClerkKilledWithGun)
@@ -156,7 +213,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // SILENT ALARM
+        // SILENT ALARM (FULLY PATCHED)
         // ------------------------------------------------------------
         private void HandleSilentAlarm(TrackedStore store)
         {
@@ -168,10 +225,54 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!store.IsRobberyActive || store.AlarmTriggered)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ Suppress silent alarm during SafeCrack or SilentRobbery
+                // ------------------------------------------------------------
+                if ((_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning) || store.SilentRobbery)
+                {
+                    store.SilentAlarmPressed = false;
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ If clerk never pressed the silent alarm, nothing to do
+                // ------------------------------------------------------------
                 if (!store.SilentAlarmPressed)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ Clerk must have reacted before silent alarm can escalate
+                // (prevents silent alarm from firing before robbery is recognized)
+                // ------------------------------------------------------------
+                if (!store.ClerkReacted)
+                    return;
+
+                // ------------------------------------------------------------
+                // ⭐ Ignore silent alarm if all cameras are destroyed
+                // (no one can "see" the clerk pressing it)
+                // ------------------------------------------------------------
+                bool anyCameraAlive = false;
+                foreach (var cam in store.Cameras)
+                {
+                    if (!cam.Destroyed)
+                    {
+                        anyCameraAlive = true;
+                        break;
+                    }
+                }
+
+                if (!anyCameraAlive)
+                {
+                    DebugLogger.Trace($"Silent alarm ignored — all cameras destroyed for store {store.Id}");
+                    store.SilentAlarmPressed = false;
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ Delay before silent alarm actually triggers police
+                // ------------------------------------------------------------
                 double elapsed = (DateTime.UtcNow - store.SilentAlarmUtc).TotalSeconds;
+
                 if (elapsed >= _ctx.Config.SilentAlarmDelaySeconds)
                 {
                     DebugLogger.Info($"Silent alarm triggered at {store.Name}");
@@ -185,7 +286,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // CLERK CALLING POLICE
+        // CLERK CALLING POLICE (FULLY PATCHED)
         // ------------------------------------------------------------
         private void HandleClerkCallingPolice(TrackedStore store)
         {
@@ -197,10 +298,53 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!store.IsRobberyActive || store.AlarmTriggered)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ Suppress clerk calls during SafeCrack or SilentRobbery
+                // ------------------------------------------------------------
+                if ((_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning) || store.SilentRobbery)
+                {
+                    store.ClerkCallingPolice = false;
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ Clerk must have reacted before calling police
+                // (prevents clerk calling police just because cameras saw player)
+                // ------------------------------------------------------------
+                if (!store.ClerkReacted)
+                    return;
+
+                // ------------------------------------------------------------
+                // ⭐ Clerk cannot call police if all cameras are destroyed
+                // ------------------------------------------------------------
+                bool anyCameraAlive = false;
+                foreach (var cam in store.Cameras)
+                {
+                    if (!cam.Destroyed)
+                    {
+                        anyCameraAlive = true;
+                        break;
+                    }
+                }
+
+                if (!anyCameraAlive)
+                {
+                    DebugLogger.Trace($"Clerk cannot call police — all cameras destroyed for store {store.Id}");
+                    store.ClerkCallingPolice = false;
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ If clerk is not currently calling police, nothing to do
+                // ------------------------------------------------------------
                 if (!store.ClerkCallingPolice)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ Delay before police are actually called
+                // ------------------------------------------------------------
                 double elapsed = (DateTime.UtcNow - store.ClerkCallStartUtc).TotalSeconds;
+
                 if (elapsed >= _ctx.Config.ClerkCallDelaySeconds)
                 {
                     DebugLogger.Info($"Clerk called police at {store.Name}");
@@ -379,7 +523,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // TRIGGER POLICE
+        // TRIGGER POLICE (FULLY PATCHED)
         // ------------------------------------------------------------
         private void TriggerPolice(TrackedStore store, int wantedLevel, string message)
         {
@@ -391,21 +535,70 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!store.IsRobberyActive)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ Suppress ALL police triggers during SafeCrack or SilentRobbery
+                // ------------------------------------------------------------
+                if ((_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning) || store.SilentRobbery)
+                {
+                    DebugLogger.Trace($"[TriggerPolice] Suppressed — SafeCrack or SilentRobbery active for store {store.Id}");
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ Prevent double-triggering
+                // ------------------------------------------------------------
                 if (store.AlarmTriggered)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ Prevent police triggers if all cameras are destroyed
+                // (no witnesses, no alarm system)
+                // ------------------------------------------------------------
+                bool anyCameraAlive = false;
+                foreach (var cam in store.Cameras)
+                {
+                    if (!cam.Destroyed)
+                    {
+                        anyCameraAlive = true;
+                        break;
+                    }
+                }
+
+                if (!anyCameraAlive)
+                {
+                    DebugLogger.Trace($"[TriggerPolice] Suppressed — all cameras destroyed for store {store.Id}");
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ Mark alarm as triggered
+                // ------------------------------------------------------------
                 store.AlarmTriggered = true;
 
+                // ------------------------------------------------------------
+                // ⭐ Apply wanted level escalation
+                // ------------------------------------------------------------
                 if (wantedLevel > Game.Player.WantedLevel)
                     Game.Player.WantedLevel = wantedLevel;
 
+                // ------------------------------------------------------------
+                // ⭐ UI feedback
+                // ------------------------------------------------------------
                 _ctx.Ui.ShowNotification(message);
 
+                // ------------------------------------------------------------
+                // ⭐ Heat system
+                // ------------------------------------------------------------
                 store.HeatLevel += 1;
                 _ctx.GlobalHeatLevel += 1;
 
-                DebugLogger.Info($"TriggerPolice: store={store.Name}, wanted={wantedLevel}, heat={store.HeatLevel}, globalHeat={_ctx.GlobalHeatLevel}");
+                DebugLogger.Info(
+                    $"TriggerPolice: store={store.Name}, wanted={wantedLevel}, heat={store.HeatLevel}, globalHeat={_ctx.GlobalHeatLevel}"
+                );
 
+                // ------------------------------------------------------------
+                // ⭐ Persist state
+                // ------------------------------------------------------------
                 _ctx.SaveStoreState(store);
             }
             catch (Exception ex)

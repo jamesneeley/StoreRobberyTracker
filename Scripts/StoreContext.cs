@@ -179,7 +179,9 @@ namespace StoreRobberyTrackerMod
                     SafeCrackUI,            // ⭐ UI now stored and exposed
                     new SafeCrackAnimation(),
                     Ui,                     // ⭐ PASS UiHelpers INSTANCE
-                    Robberies                    
+                    Robberies,
+                    this,        // StoreContext
+                    Config       // IniConfig                    
                 );
 
                 SafeCrackEvents.SafeCracked += (pos, payout) =>

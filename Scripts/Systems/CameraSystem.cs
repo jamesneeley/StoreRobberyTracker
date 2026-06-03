@@ -125,7 +125,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // INTERIOR CAMERA DETECTION
+        // INTERIOR CAMERA DETECTION (FULLY PATCHED)
         // ------------------------------------------------------------
         private bool ProcessInteriorCameras(TrackedStore store, Ped player)
         {
@@ -140,6 +140,7 @@ namespace StoreRobberyTrackerMod.Systems
                 if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                     return false;
 
+                // ⭐ Suppress cameras during SilentRobbery
                 if (store.SilentRobbery)
                     return false;
 
@@ -160,17 +161,91 @@ namespace StoreRobberyTrackerMod.Systems
 
                     foundAny = true;
 
+                    // ------------------------------------------------------------
+                    // ⭐ INTERIOR CAMERA DESTRUCTION → SYNC WITH FALLBACK CAMERAS
+                    // ------------------------------------------------------------
                     if (PlayerDestroyedCamera(cam, player))
                     {
                         DebugLogger.Info($"Interior camera destroyed at {cam.Position} for store {store.Id}");
+
+                        // Delete the prop
                         cam.Delete();
+
+                        // ⭐ Mark the nearest fallback camera as destroyed
+                        CameraData nearest = null;
+                        float bestDist = 9999f;
+
+                        foreach (var fcam in store.Cameras)
+                        {
+                            float d = fcam.Position.DistanceTo(cam.Position);
+                            if (d < bestDist)
+                            {
+                                bestDist = d;
+                                nearest = fcam;
+                            }
+                        }
+
+                        if (nearest != null)
+                        {
+                            nearest.Destroyed = true;
+                            nearest.GraceActive = false;
+                            DebugLogger.Info($"Fallback camera synced destroyed for store {store.Id}");
+                        }
+
                         continue;
                     }
 
+                    // ------------------------------------------------------------
+                    // ⭐ INTERIOR CAMERA DETECTION (WITH GRACE + CLERK REACTION)
+                    // ------------------------------------------------------------
                     if (CameraSeesPlayer(cam.Position, cam.ForwardVector, player))
                     {
-                        DebugLogger.Info($"Interior camera detected player for store {store.Id}");
-                        TriggerCameraFlag(store);
+                        // ⭐ Clerk must have reacted before cameras can trigger alarms
+                        if (!store.ClerkReacted)
+                        {
+                            DebugLogger.Trace($"Interior camera sees player but clerk not reacted — ignoring for store {store.Id}");
+                            continue;
+                        }
+
+                        // ⭐ Start grace period on nearest fallback camera
+                        CameraData nearest = null;
+                        float bestDist = 9999f;
+
+                        foreach (var fcam in store.Cameras)
+                        {
+                            float d = fcam.Position.DistanceTo(cam.Position);
+                            if (d < bestDist)
+                            {
+                                bestDist = d;
+                                nearest = fcam;
+                            }
+                        }
+
+                        if (nearest != null)
+                        {
+                            if (!nearest.GraceActive)
+                            {
+                                nearest.GraceActive = true;
+                                nearest.GraceStartUtc = DateTime.UtcNow;
+                                nearest.GraceDurationSeconds = _ctx.Config.CameraGraceSeconds;
+
+                                DebugLogger.Trace(
+                                    $"Interior camera grace started for store {store.Id} (duration={nearest.GraceDurationSeconds}s)"
+                                );
+                            }
+                            else
+                            {
+                                double elapsed = (DateTime.UtcNow - nearest.GraceStartUtc).TotalSeconds;
+
+                                if (elapsed >= nearest.GraceDurationSeconds)
+                                {
+                                    DebugLogger.Info(
+                                        $"Interior camera alarm triggered after grace for store {store.Id}"
+                                    );
+                                    TriggerCameraFlag(store);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -184,6 +259,9 @@ namespace StoreRobberyTrackerMod.Systems
             }
         }
 
+        // ------------------------------------------------------------
+        // CAMERA MODEL CHECK (must be above ProcessInteriorCameras)
+        // ------------------------------------------------------------
         private bool IsCameraModel(int hash)
         {
             try
@@ -201,7 +279,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // FALLBACK CAMERAS
+        // FALLBACK CAMERAS (FULLY PATCHED)
         // ------------------------------------------------------------
         private void ProcessFallbackCameras(TrackedStore store, Ped player)
         {
@@ -216,6 +294,7 @@ namespace StoreRobberyTrackerMod.Systems
                 if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                     return;
 
+                // ⭐ Suppress cameras during SilentRobbery
                 if (store.SilentRobbery)
                     return;
 
@@ -228,46 +307,86 @@ namespace StoreRobberyTrackerMod.Systems
                 {
                     CameraData cam = store.Cameras[i];
 
+                    // ------------------------------------------------------------
+                    // ⭐ DESTROYED CAMERAS ARE FULLY IGNORED
+                    // ------------------------------------------------------------
                     if (cam.Destroyed)
                     {
                         DebugLogger.Trace($"Fallback camera {i} already destroyed for store {store.Id}");
                         continue;
                     }
 
+                    // ------------------------------------------------------------
+                    // ⭐ ALLOW MELEE / GUN DESTRUCTION
+                    // ------------------------------------------------------------
                     if (PlayerDestroyedFallbackCamera(cam, player))
                     {
                         cam.Destroyed = true;
+                        cam.GraceActive = false;
+
                         DebugLogger.Info($"Fallback camera {i} destroyed by player for store {store.Id}");
                         continue;
                     }
 
-                    if (cam.GraceActive)
-                    {
-                        double elapsed = (DateTime.UtcNow - cam.GraceStartUtc).TotalSeconds;
-                        if (elapsed >= _ctx.Config.CameraGraceSeconds)
-                        {
-                            cam.GraceActive = false;
-                            DebugLogger.Trace($"Fallback camera {i} grace period ended for store {store.Id}");
-                        }
-                    }
-
+                    // ------------------------------------------------------------
+                    // ⭐ CAMERA DIRECTION (TOWARD CLERK)
+                    // ------------------------------------------------------------
                     Vector3 camDir = (store.ClerkPos - cam.Position);
                     if (camDir.LengthSquared() < 0.001f)
                         camDir = new Vector3(0f, 1f, 0f);
 
-                    if (CameraSeesPlayer(cam.Position, camDir, player))
+                    bool seesPlayer = CameraSeesPlayer(cam.Position, camDir, player);
+
+                    // ------------------------------------------------------------
+                    // ⭐ CAMERA SEES PLAYER → START OR CONTINUE GRACE
+                    // ------------------------------------------------------------
+                    if (seesPlayer)
                     {
+                        // ⭐ Clerk must have reacted before cameras can escalate
+                        if (!store.ClerkReacted)
+                        {
+                            DebugLogger.Trace(
+                                $"Fallback camera {i} sees player but clerk not reacted — ignoring for store {store.Id}"
+                            );
+                            continue;
+                        }
+
+                        // ⭐ Start grace if not active
                         if (!cam.GraceActive)
                         {
                             cam.GraceActive = true;
                             cam.GraceStartUtc = DateTime.UtcNow;
+                            cam.GraceDurationSeconds = _ctx.Config.CameraGraceSeconds;
 
-                            DebugLogger.Trace($"Fallback camera {i} grace started for store {store.Id}");
+                            DebugLogger.Trace(
+                                $"Fallback camera {i} grace started for store {store.Id} (duration={cam.GraceDurationSeconds}s)"
+                            );
                         }
                         else
                         {
-                            DebugLogger.Info($"Fallback camera {i} detected player for store {store.Id}");
-                            TriggerCameraFlag(store);
+                            // ⭐ Check elapsed time
+                            double elapsed = (DateTime.UtcNow - cam.GraceStartUtc).TotalSeconds;
+
+                            if (elapsed >= cam.GraceDurationSeconds)
+                            {
+                                DebugLogger.Info(
+                                    $"Fallback camera {i} alarm triggered after grace for store {store.Id}"
+                                );
+                                TriggerCameraFlag(store);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // ------------------------------------------------------------
+                        // ⭐ CAMERA LOST SIGHT → RESET GRACE
+                        // ------------------------------------------------------------
+                        if (cam.GraceActive)
+                        {
+                            cam.GraceActive = false;
+                            DebugLogger.Trace(
+                                $"Fallback camera {i} grace reset (lost sight) for store {store.Id}"
+                            );
                         }
                     }
                 }
