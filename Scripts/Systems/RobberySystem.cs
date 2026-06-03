@@ -584,6 +584,10 @@ namespace StoreRobberyTrackerMod.Systems
                 if (_debugEscapeActive)
                     return;
 
+                // ⭐ Ignore if default clerk was replaced safely
+                if (!store.IsOurClerk)
+                    return;
+
                 if (store.AlarmTriggered)
                     return;
 

@@ -42,15 +42,15 @@ namespace StoreRobberyTrackerMod.Systems
             if (store == null)
                 return;
 
-            // Only care if player is near this store
+            // ⭐ Increase distance so replacement happens BEFORE interior loads
             float dist = player.Position.DistanceTo(store.StorePos);
-            if (dist > store.Radius + 10f)
+            if (dist > store.Radius + 60f)
                 return;
 
-            // Ensure replacement when near (Option 1)
+            // Ensure replacement when near
             EnsureDefaultClerkRemoved(store);
 
-            // Periodic sweep to prevent respawns (Option 3)
+            // Periodic sweep to prevent respawns
             if (DateTime.UtcNow - store.LastClerkSweepUtc >= _sweepInterval)
             {
                 store.LastClerkSweepUtc = DateTime.UtcNow;
@@ -63,25 +63,43 @@ namespace StoreRobberyTrackerMod.Systems
         // ------------------------------------------------------------
         private void EnsureDefaultClerkRemoved(TrackedStore store)
         {
-            // If our clerk already exists, just keep the area clean
-            if (store.Clerk != null && store.Clerk.Exists())
+            // Temporarily suppress wanted level while replacement runs
+            Function.Call(Hash.SET_MAX_WANTED_LEVEL, 0);
+            Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, Game.Player, true);
+            Game.Player.WantedLevel = 0;
+
+            try
             {
-                RemoveNearbyDefaultClerks(store, store.Clerk);
-                store.DefaultClerkRemoved = true;
-                return;
+                // If our clerk already exists, just keep the area clean
+                if (store.Clerk != null && store.Clerk.Exists())
+                {
+                    RemoveNearbyDefaultClerks(store, store.Clerk);
+                    store.DefaultClerkRemoved = true;
+                }
+                else
+                {
+                    // First time: remove default clerk, then spawn ours
+                    RemoveNearbyDefaultClerks(store, null);
+                    _ctx.Clerks?.ForceSpawnClerk(store);
+
+                    if (store.Clerk != null && store.Clerk.Exists())
+                        store.DefaultClerkRemoved = true;
+                }
             }
-
-            // First time: remove default clerk, then spawn ours
-            RemoveNearbyDefaultClerks(store, null);
-
-            _ctx.Clerks?.ForceSpawnClerk(store);
-
-            if (store.Clerk != null && store.Clerk.Exists())
-                store.DefaultClerkRemoved = true;
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("ClerkReplacementSystem.EnsureDefaultClerkRemoved", ex);
+            }
+            finally
+            {
+                // Restore normal police behavior
+                Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, Game.Player, false);
+                Function.Call(Hash.SET_MAX_WANTED_LEVEL, 5);
+            }
         }
 
         // ------------------------------------------------------------
-        // REMOVE DEFAULT CLERKS
+        // REMOVE DEFAULT CLERKS (SAFE VERSION)
         // ------------------------------------------------------------
         private void RemoveNearbyDefaultClerks(TrackedStore store, Ped skip)
         {
@@ -100,30 +118,30 @@ namespace StoreRobberyTrackerMod.Systems
                 if (skip != null && ped.Handle == skip.Handle)
                     continue;
 
-                // mark that this was NOT our clerk
-                store.IsOurClerk = false;
-
-                // SHVDN 3.9.0: valid store clerk models
-                //if (ped.Model.Hash == (int)PedHash.ShopKeep01 ||
-                //    ped.Model.Hash == (int)PedHash.ShopMaskSMY)
-                //{
-                //    ped.Delete();
-                //}
                 int hash = ped.Model.Hash;
-                //if (ped.Model.Hash == (int)PedHash.ShopKeep01 || ped.Model.Hash == (int)PedHash.ShopMaskSMY)
+
                 if (Array.IndexOf(_defaultClerkModels, hash) != -1)
                 {
-                    // Make sure he doesn't react or cause wanted level
+                    // ⭐ DO NOT DELETE — deleting triggers wanted level
+                    // ⭐ DO NOT MOVE UNDERGROUND — GTA interprets as death
+
                     ped.Task.ClearAllImmediately();
                     ped.BlockPermanentEvents = true;
                     ped.CanBeTargetted = false;
                     ped.IsInvincible = true;
-
                     ped.IsVisible = false;
-                    // Move him far away / underground so he’s effectively gone
-                    ped.Position = new Vector3(0f, 0f, -100f);
-                    ped.IsPersistent = false;
-                    ped.MarkAsNoLongerNeeded();
+                    ped.IsCollisionEnabled = false;
+
+                    // ⭐ Move clerk ABOVE the store so GTA considers them alive
+                    ped.Position = store.ClerkPos + new Vector3(0f, 0f, 50f);
+
+                    ped.IsPersistent = true;
+                    ped.IsPositionFrozen = true;
+
+                    // ⭐ Spawn dummy clerk to satisfy interior script
+                    _ctx.Clerks.SpawnDummyClerk(store);
+
+                    DebugLogger.Info($"Default clerk safely neutralized for store {store.Id}");
                 }
             }
         }
