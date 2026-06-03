@@ -21,7 +21,7 @@ INSTALLATION
 ------------
 1. Install ScriptHookV.
 2. Install ScriptHookVDotNet 3.9.0 Enhanced.
-3. Place StoreRobberyEnhanced.dll into:
+3. Place StoreRobberTracker.dll into:
    Grand Theft Auto V/scripts/
 
 NOTES

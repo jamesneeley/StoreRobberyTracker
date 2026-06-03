@@ -286,7 +286,7 @@ All 21 stores included.
 ### Install Steps
 1. Install ScriptHookV  
 2. Install ScriptHookVDotNet 3.9.0 Enhanced  
-3. Drag `StoreRobberyEnhanced.dll` into:
+3. Drag `StoreRobberyTracker.dll` into:
 
    ```
    Grand Theft Auto V/scripts/
@@ -344,8 +344,8 @@ StoreRobberyEnhanced/
 ├── .gitignore
 ├── LICENSE.txt
 ├── README.md
-├── StoreRobberyEnhanced.csproj
-└── StoreRobberyEnhanced.sln
+├── StoreRobberyTracker.csproj
+└── StoreRobberyTracker.sln
 
 ```
 
@@ -411,7 +411,7 @@ To build the project:
 
 # 🛠️ Building the Project
 
-1. Open `StoreRobberyEnhanced.sln` in Visual Studio  
+1. Open `StoreRobberyTracker.sln` in Visual Studio  
 2. Ensure **.NET Framework 4.8** is installed  
 3. Build in **Release** mode  
 4. Output DLL appears in:
