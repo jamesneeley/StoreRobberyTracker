@@ -47,5 +47,5 @@ NOTES
 
 CREDITS
 -------
-Created by James Neeley
+Created by James Neeley AKA **FastBurst**
 GTA V Mod Developer & Systems Architect
