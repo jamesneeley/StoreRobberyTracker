@@ -109,12 +109,23 @@ namespace StoreRobberyTrackerMod.Minigame
                     player.Heading = safeHeading;
                 }
 
-                // ⭐ HARD FREEZE PLAYER DURING MINIGAME
-                if (player != null && player.Exists())
+                // Let GTA settle the ped for a few frames
+                for (int i = 0; i < 10; i++)
                 {
-                    player.IsPositionFrozen = true;
-                    _playerFrozen = true;
+                    Script.Yield();
                 }
+
+                // ⭐ Force GTA to ground the ped
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, player.Handle,
+                    safePos.X, safePos.Y, safePos.Z, false, false, false);
+
+                // Yield again to let physics apply
+                Script.Yield();
+
+                // ⭐ NOW freeze
+                player.Task.ClearAllImmediately();
+                player.IsPositionFrozen = true;
+                _playerFrozen = true;
 
                 // Initialize logic + animation
                 _logic.Initialize(_state, _settings);
@@ -277,19 +288,23 @@ namespace StoreRobberyTrackerMod.Minigame
         // ------------------------------------------------------------
         private void DisableGameplayControls()
         {
+            // Disable combat + actions
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.Attack);
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.Aim);
-            Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.Jump);
-            Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.Sprint);
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.Reload);
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.MeleeAttack1);
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.MeleeAttack2);
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.VehicleAccelerate);
             Function.Call(Hash.DISABLE_CONTROL_ACTION, 0, (int)Control.VehicleBrake);
 
+            // ⭐ DO NOT disable Jump or Sprint — they kill the A button
+            // ⭐ DO NOT disable MoveUpDown or MoveLeftRight — they kill left stick rotation
+
+            // Allow camera look
             Function.Call(Hash.ENABLE_CONTROL_ACTION, 0, (int)Control.LookLeftRight);
             Function.Call(Hash.ENABLE_CONTROL_ACTION, 0, (int)Control.LookUpDown);
         }
+
 
         private void RestoreControls()
         {

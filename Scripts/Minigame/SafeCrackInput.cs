@@ -34,7 +34,7 @@ namespace StoreRobberyTrackerMod.Minigame
             // CONTROLLER ROTATION (Left Stick X)
             // NOTE: When gameplay controls are restricted, group 2 is used.
             // ------------------------------------------------------------
-            float axisX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 2, (int)Control.MoveLeftRight);
+            float axisX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.MoveLeftRight);
 
             if (System.Math.Abs(axisX) > 0.05f)
                 state.RotationSpeed = axisX * ROTATION_SLOW;
@@ -43,7 +43,8 @@ namespace StoreRobberyTrackerMod.Minigame
             // CONFIRM INPUT (E or A)
             // ------------------------------------------------------------
             bool confirmKey = Game.IsKeyPressed(System.Windows.Forms.Keys.E);
-            bool confirmPad = Function.Call<bool>(Hash.IS_CONTROL_JUST_PRESSED, 2, (int)Control.Context);
+            //bool confirmPad = Function.Call<bool>(Hash.IS_CONTROL_JUST_PRESSED, 0, (int)Control.Context);
+            bool confirmPad = Function.Call<bool>(Hash.IS_CONTROL_JUST_PRESSED, 0, (int)Control.FrontendAccept);
 
             if (confirmKey || confirmPad)
                 state.ConfirmRequested = true;
@@ -52,7 +53,7 @@ namespace StoreRobberyTrackerMod.Minigame
             // CANCEL INPUT (ESC or B)
             // ------------------------------------------------------------
             bool cancelKey = Game.IsKeyPressed(System.Windows.Forms.Keys.Escape);
-            bool cancelPad = Function.Call<bool>(Hash.IS_CONTROL_JUST_PRESSED, 2, (int)Control.PhoneCancel);
+            bool cancelPad = Function.Call<bool>(Hash.IS_CONTROL_JUST_PRESSED, 0, (int)Control.PhoneCancel);
 
             if (cancelKey || cancelPad)
                 state.Failed = true;

@@ -200,7 +200,7 @@ namespace StoreRobberyTrackerMod.Systems
                 {                    
                     store.CooldownBlocker.IsPositionFrozen = true;
                     store.CooldownBlocker.IsCollisionEnabled = true;
-                    store.CooldownBlocker.IsVisible = true;
+                    store.CooldownBlocker.IsVisible = false;
 
                     // 🔧 Align with door heading
                     store.CooldownBlocker.Heading = store.DoorHeading;
