@@ -72,6 +72,8 @@ The goal was simple:
 ---
 
 ## 💰 Safe Cracking Minigame
+<img width="1536" alt="SafeCrackMinigame" src="https://github.com/user-attachments/assets/a9da36a0-349e-4bce-af5c-23383af645ae" />
+
 A fully interactive, skill‑based safe cracking system:
 
 - Dial rotation with sweet‑spot detection  
