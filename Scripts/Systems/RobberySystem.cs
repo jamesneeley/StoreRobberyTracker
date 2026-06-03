@@ -268,13 +268,14 @@ namespace StoreRobberyTrackerMod.Systems
             store.RobberyStartUtc = DateTime.MinValue;
 
             // 🔸 Reset all cameras including grace fields
-            for (int i = 0; i < store.Cameras.Count; i++)
-            {
-                var cam = store.Cameras[i];
-                cam.Destroyed = false;
-                cam.GraceActive = false;
-                cam.GraceStartUtc = DateTime.MinValue;
-            }
+            // No longer being used.
+            //for (int i = 0; i < store.Cameras.Count; i++)
+            //{
+            //    var cam = store.Cameras[i];
+            //    cam.Destroyed = false;
+            //    cam.GraceActive = false;
+            //    cam.GraceStartUtc = DateTime.MinValue;
+            //}
 
             if (store.DummyClerk != null && store.DummyClerk.Exists())
             {
@@ -857,4 +858,3 @@ namespace StoreRobberyTrackerMod.Systems
         }
     }
 }
-

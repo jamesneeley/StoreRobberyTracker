@@ -361,19 +361,20 @@ namespace StoreRobberyTrackerMod
                     : store.LastRobbedUtc.ToString("o")
             );
 
-            int camCount = store.Cameras.Count;
-            for (int i = 0; i < camCount; i++)
-            {
-                ini.WriteBool(sec, $"Cam{i}_Destroyed", store.Cameras[i].Destroyed);
-                ini.WriteBool(sec, $"Cam{i}_GraceActive", store.Cameras[i].GraceActive);
-                ini.WriteString(
-                    sec,
-                    $"Cam{i}_GraceStartUtc",
-                    store.Cameras[i].GraceStartUtc == DateTime.MinValue
-                        ? ""
-                        : store.Cameras[i].GraceStartUtc.ToString("o")
-                );
-            }
+            // no longer being used, but leaving in place in case we want to write new camera-related data in the future
+            //int camCount = store.Cameras.Count;
+            //for (int i = 0; i < camCount; i++)
+            //{
+            //    ini.WriteBool(sec, $"Cam{i}_Destroyed", store.Cameras[i].Destroyed);
+            //    ini.WriteBool(sec, $"Cam{i}_GraceActive", store.Cameras[i].GraceActive);
+            //    ini.WriteString(
+            //        sec,
+            //        $"Cam{i}_GraceStartUtc",
+            //        store.Cameras[i].GraceStartUtc == DateTime.MinValue
+            //            ? ""
+            //            : store.Cameras[i].GraceStartUtc.ToString("o")
+            //    );
+            //}
 
             ini.Save();
         }
@@ -402,16 +403,17 @@ namespace StoreRobberyTrackerMod
             if (DateTime.TryParse(robbedStr, null, DateTimeStyles.RoundtripKind, out DateTime robbed))
                 store.LastRobbedUtc = robbed;
 
-            int camCount = store.Cameras.Count;
-            for (int i = 0; i < camCount; i++)
-            {
-                store.Cameras[i].Destroyed = ini.ReadBool(sec, $"Cam{i}_Destroyed", false);
-                store.Cameras[i].GraceActive = ini.ReadBool(sec, $"Cam{i}_GraceActive", false);
+            // no longer being used, but leaving in place in case we want to read old data
+            //int camCount = store.Cameras.Count;
+            //for (int i = 0; i < camCount; i++)
+            //{
+            //    store.Cameras[i].Destroyed = ini.ReadBool(sec, $"Cam{i}_Destroyed", false);
+            //    store.Cameras[i].GraceActive = ini.ReadBool(sec, $"Cam{i}_GraceActive", false);
 
-                string graceStr = ini.ReadString(sec, $"Cam{i}_GraceStartUtc", "");
-                if (DateTime.TryParse(graceStr, null, DateTimeStyles.RoundtripKind, out DateTime grace))
-                    store.Cameras[i].GraceStartUtc = grace;
-            }
+            //    string graceStr = ini.ReadString(sec, $"Cam{i}_GraceStartUtc", "");
+            //    if (DateTime.TryParse(graceStr, null, DateTimeStyles.RoundtripKind, out DateTime grace))
+            //        store.Cameras[i].GraceStartUtc = grace;
+            //}
         }
 
         // ------------------------------------------------------------
@@ -434,12 +436,13 @@ namespace StoreRobberyTrackerMod
                 ini.WriteBool(sec, "ClerkKilledWithGun", false);
                 ini.WriteString(sec, "LastRobbedUtc", "");
 
-                for (int i = 0; i < store.Cameras.Count; i++)
-                {
-                    ini.WriteBool(sec, $"Cam{i}_Destroyed", false);
-                    ini.WriteBool(sec, $"Cam{i}_GraceActive", false);
-                    ini.WriteString(sec, $"Cam{i}_GraceStartUtc", "");
-                }
+                // no longer used
+                //for (int i = 0; i < store.Cameras.Count; i++)
+                //{
+                //    ini.WriteBool(sec, $"Cam{i}_Destroyed", false);
+                //    ini.WriteBool(sec, $"Cam{i}_GraceActive", false);
+                //    ini.WriteString(sec, $"Cam{i}_GraceStartUtc", "");
+                //}
             }
 
             ini.Save();
