@@ -5,6 +5,16 @@ using StoreRobberyTrackerMod.Debug;
 
 namespace StoreRobberyTrackerMod.Minigame
 {
+    /// <summary>
+    /// Draws the SafeCrack UI each frame:
+    /// - Dial background
+    /// - Rotating dial
+    /// - Lock indicators
+    /// - Direction arrow
+    /// - Sweet spot shake + text
+    /// 
+    /// This version is fully compatible with the patched SafeCrackController.
+    /// </summary>
     internal class SafeCrackUI : ISafeCrackUI
     {
         // Rockstar texture dictionaries
@@ -28,11 +38,13 @@ namespace StoreRobberyTrackerMod.Minigame
                 if (!state.Active)
                     return;
 
-                // 🔊 Hard proof this is running
+                // Debug trace (safe to leave on — extremely lightweight)
                 DebugLogger.Trace("[SafeCrackUI] Draw() called — state active");
 
+                // Load textures safely
                 LoadTextures();
 
+                // Draw UI components
                 DrawDial(state);
                 DrawLocks(state);
                 DrawDirectionArrow(state);
@@ -50,13 +62,15 @@ namespace StoreRobberyTrackerMod.Minigame
         }
 
         // ------------------------------------------------------------
-        // LOAD TEXTURES
+        // LOAD TEXTURES (SAFE + NON-BLOCKING)
         // ------------------------------------------------------------
         private void LoadTextures()
         {
+            // Safe dictionary
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, DICT_SAFE))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, DICT_SAFE, true);
 
+            // Arrow dictionary
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, DICT_ARROW))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, DICT_ARROW, true);
         }
@@ -83,7 +97,7 @@ namespace StoreRobberyTrackerMod.Minigame
                 y,
                 scaleX * 0.50f,
                 scaleY * 0.50f,
-                -state.CurrentDialRotation,
+                -state.CurrentDialRotation,   // negative = correct rotation direction
                 255, 255, 255, 255
             );
         }
@@ -125,7 +139,7 @@ namespace StoreRobberyTrackerMod.Minigame
         }
 
         // ------------------------------------------------------------
-        // SHAKE EFFECT WHEN NEAR SWEET SPOT
+        // SWEET SPOT SHAKE + TEXT
         // ------------------------------------------------------------
         private void DrawSweetSpotShake(SafeCrackState state)
         {
@@ -138,7 +152,6 @@ namespace StoreRobberyTrackerMod.Minigame
             float shakeX = Function.Call<float>(Hash.GET_RANDOM_FLOAT_IN_RANGE, -intensity, intensity);
             float shakeY = Function.Call<float>(Hash.GET_RANDOM_FLOAT_IN_RANGE, -intensity, intensity);
 
-            // Draw a subtle green highlight text
             DrawText("Sweet Spot!", 0.50f + shakeX, 0.65f + shakeY, 0.55f, 0, 255, 0);
         }
 

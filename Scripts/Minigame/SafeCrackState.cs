@@ -6,6 +6,13 @@ namespace StoreRobberyTrackerMod.Minigame
     /// <summary>
     /// Holds all runtime state for the SafeCrack minigame.
     /// Pure state container — no logic.
+    /// 
+    /// ⭐ This version is fully aligned with:
+    /// - SafeCrackController (patched)
+    /// - SafeCrackLogic (patched)
+    /// - SafeCrackInput (patched)
+    /// - SafeCrackUI (patched)
+    /// - SafeCrackSettings (patched)
     /// </summary>
     internal class SafeCrackState
     {
@@ -30,7 +37,10 @@ namespace StoreRobberyTrackerMod.Minigame
         public bool PlayerInRange = false;
         public bool PlayerFacingSafe = false;
 
-        // Confirm input (separate from facing)
+        /// <summary>
+        /// Set by SafeCrackInput, consumed by SafeCrackLogic.
+        /// Preserved across frames by SafeCrackController.
+        /// </summary>
         public bool ConfirmRequested = false;
 
         // ------------------------------------------------------------
@@ -43,19 +53,32 @@ namespace StoreRobberyTrackerMod.Minigame
         public int Stage = 0;
         public int TotalStages = 3;
 
-        // Direction arrow (right/left)
+        /// <summary>
+        /// Direction arrow (true = right, false = left).
+        /// Alternates each stage.
+        /// </summary>
         public bool DirectionRight = true;
 
         // ------------------------------------------------------------
         // FEEDBACK / EFFECTS
         // ------------------------------------------------------------
         public bool PadShakeEnabled = true;
+
+        /// <summary>
+        /// True when the dial is within SweetSpotTolerance degrees of TargetRotation.
+        /// </summary>
         public bool IsInSweetSpot = false;
 
-        // How close to the sweet spot (0+)
+        /// <summary>
+        /// Normalized 0–1 closeness value used by UI shake.
+        /// </summary>
         public float SweetSpotCloseness = 0f;
 
-        public int SweetSpotTolerance = 6;
+        /// <summary>
+        /// Sweet spot tolerance in degrees.
+        /// Loaded from SafeCrackSettings.
+        /// </summary>
+        public float SweetSpotTolerance = 10f;
 
         // ------------------------------------------------------------
         // TIMERS
@@ -89,7 +112,8 @@ namespace StoreRobberyTrackerMod.Minigame
             RotationSpeed = 0f;
 
             Stage = 0;
-            TotalStages = 3;
+            // ⭐ TotalStages is set by SafeCrackLogic.Initialize()
+            // DO NOT override it here.
             DirectionRight = true;
 
             IsInSweetSpot = false;

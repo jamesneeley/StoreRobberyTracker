@@ -54,12 +54,51 @@ namespace StoreRobberyTrackerMod.Systems
                 if (clerk == null || !clerk.Exists())
                     return;
 
+                // ⭐ SAFETY RESET: only if clerk is actually stuck
+                bool usingScenario = Function.Call<bool>(Hash.IS_PED_USING_ANY_SCENARIO, clerk);
+
+                if (clerk.IsRagdoll || usingScenario || clerk.IsPositionFrozen)
+                {
+                    DebugLogger.Info(string.Format(
+                        "[RESET] Forcing task clear on clerk {0} (frozen={1} ragdoll={2} scenario={3})",
+                        clerk.Handle,
+                        clerk.IsPositionFrozen,
+                        clerk.IsRagdoll,
+                        usingScenario
+                    ));
+
+                    Function.Call(Hash.CLEAR_PED_TASKS_IMMEDIATELY, clerk);
+                    clerk.IsPositionFrozen = false;
+                }
+
+                // HARD GUARD: never run behavior on dummy clerk
+                if (store.DummyClerk != null && store.DummyClerk.Exists() &&
+                    clerk.Handle == store.DummyClerk.Handle)
+                {
+                    return;
+                }
+
                 if (clerk.IsDead)
                 {
                     if (store.IsOurClerk)
                         HandleClerkDeath(store);
                     return;
                 }
+
+                // SAFETY: make sure our clerk can actually animate
+                clerk.IsPositionFrozen = false;
+
+                // ⭐ Extra safety: shortly after spawn, ensure no leftover tasks
+                if (store.ClerkSpawnTime > 0 && Game.GameTime - store.ClerkSpawnTime < 2000)
+                {
+                    clerk.Task.ClearAllImmediately();
+                    clerk.BlockPermanentEvents = false;
+                    clerk.IsPositionFrozen = false;
+                }
+
+                // Preload anim dicts (non-blocking)
+                Function.Call(Hash.REQUEST_ANIM_DICT, "amb@world_human_shopkeeper@male@idle_a");
+                Function.Call(Hash.REQUEST_ANIM_DICT, "mp_am_hold_up");
 
                 // ------------------------------------------------------------
                 // PLAYER ENTERED STORE → GREETING LOGIC
@@ -84,9 +123,33 @@ namespace StoreRobberyTrackerMod.Systems
                     store.GreetedPlayer = false;
                 }
 
-                // Idle loop
-                if (!store.ClerkReacted && !store.ClerkStalling)
+                // ------------------------------------------------------------
+                // IDLE LOOP — DO NOT INTERRUPT GREETING
+                // ------------------------------------------------------------
+
+                // ⭐ If greeting window is active, do nothing
+                if (Game.GameTime < store.GreetingEndTime)
+                    return;
+
+                // If clerk is currently playing the greet anim, don't touch them
+                if (IsPlayingAnim(clerk, "mp_am_hold_up", "shoplift_high"))
+                    return;
+
+                // Normal idle logic
+                if (!store.ClerkReacted &&
+                    !store.ClerkStalling &&
+                    !store.ClerkOpeningRegister &&
+                    !store.ClerkGrabbingCash &&
+                    !store.ClerkThrowingBag &&
+                    !store.ClerkPanicking &&
+                    !store.ClerkFleeing)
+                {
                     RunIdleBehavior(store, clerk);
+                }
+
+                // ------------------------------------------------------------
+                // REACTION / ROBBERY LOGIC
+                // ------------------------------------------------------------
 
                 // Threat detection
                 if (!store.ClerkReacted && _ctx.Player.IsThreatening(clerk))
@@ -147,8 +210,36 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // HELPER: GREET PLAYERS (FULL SPEECH SET)
+        // CLERK VOICE + AMBIENT SETTINGS
         // ------------------------------------------------------------
+        private static readonly string[] ClerkVoices =
+        {
+            "S_M_M_SHOP_KEEP_01_WHITE_MINI_01",
+            "S_M_M_SHOP_KEEP_01_BLACK_MINI_01",
+            "S_M_M_SHOP_KEEP_01_LATINO_MINI_01",
+            "S_M_M_SHOP_KEEP_01_ASIAN_MINI_01"
+        };
+
+        private void ApplyClerkVoiceAndAmbientSettings(Ped clerk)
+        {
+            if (clerk == null || !clerk.Exists())
+                return;
+
+            // Random voice
+            string voice = ClerkVoices[_ctx.Rng.Next(ClerkVoices.Length)];
+            Function.Call(Hash.SET_AMBIENT_VOICE_NAME, clerk, voice);
+
+            // Enable all ambient systems
+            clerk.BlockPermanentEvents = false;
+            Function.Call(Hash.SET_PED_CAN_PLAY_AMBIENT_ANIMS, clerk, true);
+            Function.Call(Hash.SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS, clerk, true);
+            Function.Call(Hash.SET_PED_CAN_PLAY_GESTURE_ANIMS, clerk, true);
+            Function.Call(Hash.SET_PED_CAN_USE_AUTO_CONVERSATION_LOOKAT, clerk, true);
+
+            // Ensure speech is allowed
+            Function.Call(Hash.STOP_PED_SPEAKING, clerk, false);
+        }
+
         // ------------------------------------------------------------
         // HELPER: GREET PLAYERS (FULL SPEECH SET, SHVDN 3.9.0 SAFE)
         // ------------------------------------------------------------
@@ -157,72 +248,97 @@ namespace StoreRobberyTrackerMod.Systems
             if (clerk == null || !clerk.Exists())
                 return;
 
+            // ⭐ PREVENT DUMMY CLERKS FROM EVER GREETING
+            if (store.DummyClerk != null && store.DummyClerk.Exists() &&
+                store.Clerk != null && store.Clerk.Exists() &&
+                store.Clerk.Handle == store.DummyClerk.Handle)
+                return;
+
             // ⭐ REQUIRED FOR SPEECH TO WORK IN INTERIORS
             Function.Call(Hash.SET_PED_CAN_PLAY_AMBIENT_ANIMS, clerk, true);
             Function.Call(Hash.SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS, clerk, true);
             Function.Call(Hash.SET_PED_CAN_PLAY_GESTURE_ANIMS, clerk, true);
             Function.Call(Hash.SET_PED_CAN_USE_AUTO_CONVERSATION_LOOKAT, clerk, true);
 
-            // ✅ Replace the invalid hash with this valid one
+            // ⭐ Allow gestures + speech
             Function.Call(Hash.SET_BLOCKING_OF_NON_TEMPORARY_EVENTS, clerk, false);
 
-            Ped player = Game.Player.Character;  // ✅ define player here
+            // ⭐ Set greeting window (2 seconds)
+            store.GreetingEndTime = Game.GameTime + 2000;
+
+            Ped player = Game.Player.Character;
 
             bool masked = _ctx.Player.IsMasked();
             bool repeatRobber = store.TimesRobbed >= 1;
             bool veryRepeatRobber = store.TimesRobbed >= 2;
             bool aiming = player.IsAiming;
 
+            string speechName = "SHOP_GREET"; // default fallback
+
             // ------------------------------------------------------------
             // SPEECH PRIORITY (highest → lowest)
             // ------------------------------------------------------------
             if (aiming)
             {
-                SafePlaySpeech(clerk, "SHOP_SCARED", "SPEECH_PARAMS_FORCE");
+                speechName = "SHOP_SCARED";
+                SafePlaySpeech(clerk, speechName, "SPEECH_PARAMS_FORCE");
                 PlayClerkGreetingAnim(clerk);
+                DebugLogger.Info($"[GREET] {speechName} on clerk {clerk.Handle}");
                 return;
             }
 
             if (masked)
             {
-                SafePlaySpeech(clerk, "SHOP_GREET_MASKED", "SPEECH_PARAMS_FORCE");
+                speechName = "SHOP_GREET_MASKED";
+                SafePlaySpeech(clerk, speechName, "SPEECH_PARAMS_FORCE");
                 PlayClerkGreetingAnim(clerk);
+                DebugLogger.Info($"[GREET] {speechName} on clerk {clerk.Handle}");
                 return;
             }
 
             if (repeatRobber && !veryRepeatRobber)
             {
-                SafePlaySpeech(clerk, "SHOP_GREET_REPEAT", "SPEECH_PARAMS_FORCE");
+                speechName = "SHOP_GREET_REPEAT";
+                SafePlaySpeech(clerk, speechName, "SPEECH_PARAMS_FORCE");
                 PlayClerkGreetingAnim(clerk);
+                DebugLogger.Info($"[GREET] {speechName} on clerk {clerk.Handle}");
                 return;
             }
 
             if (veryRepeatRobber)
             {
-                SafePlaySpeech(clerk, "SHOP_GREET_NERVOUS", "SPEECH_PARAMS_FORCE");
+                speechName = "SHOP_GREET_NERVOUS";
+                SafePlaySpeech(clerk, speechName, "SPEECH_PARAMS_FORCE");
                 PlayClerkGreetingAnim(clerk);
+                DebugLogger.Info($"[GREET] {speechName} on clerk {clerk.Handle}");
                 return;
             }
 
-            // 5. Player lingering / suspicious behavior
+            // Suspicious
             if (player.Position.DistanceTo(store.StorePos) < store.Radius * 0.5f && player.IsOnFoot)
             {
-                SafePlaySpeech(clerk, "SHOP_SUSPICIOUS", "SPEECH_PARAMS_FORCE");
+                speechName = "SHOP_SUSPICIOUS";
+                SafePlaySpeech(clerk, speechName, "SPEECH_PARAMS_FORCE");
                 PlayClerkGreetingAnim(clerk);
+                DebugLogger.Info($"[GREET] {speechName} on clerk {clerk.Handle}");
                 return;
             }
 
-            // 6. Player browsing (optional flavor)
+            // Browsing
             if (player.IsOnFoot && player.Velocity.Length() < 0.1f)
             {
-                SafePlaySpeech(clerk, "SHOP_BROWSE", "SPEECH_PARAMS_FORCE");
+                speechName = "SHOP_BROWSE";
+                SafePlaySpeech(clerk, speechName, "SPEECH_PARAMS_FORCE");
                 PlayClerkGreetingAnim(clerk);
+                DebugLogger.Info($"[GREET] {speechName} on clerk {clerk.Handle}");
                 return;
             }
 
-            // 7. Default greeting
-            SafePlaySpeech(clerk, "SHOP_GREET", "SPEECH_PARAMS_FORCE");
+            // Default
+            speechName = "SHOP_GREET";
+            SafePlaySpeech(clerk, speechName, "SPEECH_PARAMS_FORCE");
             PlayClerkGreetingAnim(clerk);
+            DebugLogger.Info($"[GREET] {speechName} on clerk {clerk.Handle}");
         }
 
         private void PlayClerkGreetingAnim(Ped clerk)
@@ -233,8 +349,18 @@ namespace StoreRobberyTrackerMod.Systems
             string dict = "mp_am_hold_up";
             string anim = "shoplift_high";
 
-            Function.Call(Hash.REQUEST_ANIM_DICT, dict);
-            clerk.Task.PlayAnimation(dict, anim, 8f, -8f, 2000, AnimationFlags.UpperBodyOnly, 0f);
+            // ⭐ Clear ALL tasks so greeting can override idle / any other anim
+            clerk.Task.ClearAllImmediately();
+
+            // ⭐ Full-body anim so it always shows on shopkeepers
+            PlayAnimNative(
+                clerk,
+                dict,
+                anim,
+                AnimationFlags.None
+            );
+
+            DebugLogger.Info(string.Format("[GREET-ANIM] Requested {0}/{1} on clerk {2}", dict, anim, clerk.Handle));
         }
 
         // ------------------------------------------------------------
@@ -254,9 +380,9 @@ namespace StoreRobberyTrackerMod.Systems
                     if (s.Clerk != null && s.Clerk.Exists() && s.Clerk.Handle == ped.Handle)
                         return true;
 
-                    // ⭐ NEW: Dummy clerk also counts as "ours" so it is never removed
-                    if (s.DummyClerk != null && s.DummyClerk.Exists() && s.DummyClerk.Handle == ped.Handle)
-                        return true;
+                    // ⭐ Dummy clerks are NOT treated as real clerks for behavior
+                    // They are only used internally by the replacement system
+                    // so we explicitly do NOT return true for them here.
                 }
 
                 return false;
@@ -277,6 +403,13 @@ namespace StoreRobberyTrackerMod.Systems
                 if (store == null)
                     return;
 
+                // ⭐ Remove dummy clerk before spawning real clerk
+                if (store.DummyClerk != null && store.DummyClerk.Exists())
+                {
+                    store.DummyClerk.Delete();
+                    store.DummyClerk = null;
+                }
+
                 Ped clerk = World.CreatePed(PedHash.ShopKeep01, store.ClerkPos, store.ClerkHeading);
                 if (clerk == null || !clerk.Exists())
                     return;
@@ -284,7 +417,13 @@ namespace StoreRobberyTrackerMod.Systems
                 store.IsOurClerk = true;
                 store.Clerk = clerk;
 
+                // ⭐ Record spawn time for interior detach logic
+                store.ClerkSpawnTime = Game.GameTime;
+
                 clerk.IsPersistent = true;
+
+                // Voice + ambient
+                ApplyClerkVoiceAndAmbientSettings(clerk);
 
                 // Allow ambient / speech / gestures
                 clerk.BlockPermanentEvents = false;
@@ -293,7 +432,13 @@ namespace StoreRobberyTrackerMod.Systems
                 Function.Call(Hash.SET_PED_CAN_PLAY_GESTURE_ANIMS, clerk, true);
                 Function.Call(Hash.SET_PED_CAN_USE_AUTO_CONVERSATION_LOOKAT, clerk, true);
 
-                clerk.Task.ClearAllImmediately();
+                // ⭐ Ensure ped is free to animate immediately
+                clerk.IsPositionFrozen = false;
+                Function.Call(Hash.CLEAR_PED_TASKS_IMMEDIATELY, clerk);
+
+                // ⭐ Preload anim dicts for idle and greeting
+                Function.Call(Hash.REQUEST_ANIM_DICT, "amb@world_human_shopkeeper@male@idle_a");
+                Function.Call(Hash.REQUEST_ANIM_DICT, "mp_am_hold_up");
 
                 store.ClerkIdle = true;
             }
@@ -316,6 +461,13 @@ namespace StoreRobberyTrackerMod.Systems
                 if (store.Clerk != null && store.Clerk.Exists())
                     return;
 
+                // ⭐ Remove dummy clerk before spawning real clerk
+                if (store.DummyClerk != null && store.DummyClerk.Exists())
+                {
+                    store.DummyClerk.Delete();
+                    store.DummyClerk = null;
+                }
+
                 Ped clerk = World.CreatePed(PedHash.ShopKeep01, store.ClerkPos, store.ClerkHeading);
                 if (clerk == null || !clerk.Exists())
                     return;
@@ -323,7 +475,13 @@ namespace StoreRobberyTrackerMod.Systems
                 store.Clerk = clerk;
                 store.IsOurClerk = true;
 
+                // ⭐ Record spawn time for interior detach logic
+                store.ClerkSpawnTime = Game.GameTime;
+
                 clerk.IsPersistent = true;
+
+                // Voice + ambient
+                ApplyClerkVoiceAndAmbientSettings(clerk);
 
                 // Same flags as SpawnClerk
                 clerk.BlockPermanentEvents = false;
@@ -332,7 +490,12 @@ namespace StoreRobberyTrackerMod.Systems
                 Function.Call(Hash.SET_PED_CAN_PLAY_GESTURE_ANIMS, clerk, true);
                 Function.Call(Hash.SET_PED_CAN_USE_AUTO_CONVERSATION_LOOKAT, clerk, true);
 
+                clerk.IsPositionFrozen = false;
                 clerk.Task.ClearAllImmediately();
+
+                // ⭐ Preload anim dicts for idle and greeting
+                Function.Call(Hash.REQUEST_ANIM_DICT, "amb@world_human_shopkeeper@male@idle_a");
+                Function.Call(Hash.REQUEST_ANIM_DICT, "mp_am_hold_up");
 
                 store.ClerkIdle = true;
             }
@@ -406,6 +569,9 @@ namespace StoreRobberyTrackerMod.Systems
             }
         }
 
+        // ------------------------------------------------------------
+        // NATIVE ANIMATION WRAPPER (SHVDN 3.9.0 SAFE, SIMPLE REQUEST)
+        // ------------------------------------------------------------
         private void PlayAnimNative(Ped ped, string dict, string anim, AnimationFlags flags)
         {
             if (ped == null || !ped.Exists())
@@ -413,29 +579,40 @@ namespace StoreRobberyTrackerMod.Systems
 
             try
             {
+                // Always request the dict – game will cache it
                 Function.Call(Hash.REQUEST_ANIM_DICT, dict);
-                // No Script.Wait here; just fire the task
+
+                DebugLogger.Info(string.Format(
+                    "[ANIM] Requesting anim {0}/{1} on ped {2}",
+                    dict,
+                    anim,
+                    ped.Handle
+                ));
+
                 Function.Call(
                     Hash.TASK_PLAY_ANIM,
                     ped,
                     dict,
                     anim,
-                    8.0f,   // speed
-                    -8.0f,  // speedMult
-                    -1,     // duration
+                    8.0f,    // speed
+                    -8.0f,   // speedMult
+                    -1,      // duration
                     (int)flags,
-                    0.0f,   // playbackRate
+                    0.0f,    // playbackRate
                     false, false, false
                 );
             }
             catch (Exception ex)
             {
-                DebugLogger.LogException($"ClerkSystem.PlayAnimNative {dict}/{anim}", ex);
+                DebugLogger.LogException(
+                    string.Format("ClerkSystem.PlayAnimNative {0}/{1}", dict, anim),
+                    ex
+                );
             }
         }
 
         // ------------------------------------------------------------
-        // IDLE BEHAVIOR
+        // IDLE BEHAVIOR (patched to prevent flicker)
         // ------------------------------------------------------------
         private void RunIdleBehavior(TrackedStore store, Ped clerk)
         {
@@ -445,6 +622,11 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
 
                 if (!store.ClerkIdle)
+                    return;
+
+                // Cooldown so we don't spam anim requests
+                int now = Game.GameTime;
+                if (now - store.LastIdleTime < 4000) // 4‑second buffer
                     return;
 
                 string dict = "amb@world_human_shopkeeper@male@idle_a";
@@ -458,7 +640,11 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!playing)
                 {
                     string anim = idles[_rng.Next(idles.Length)];
+                    DebugLogger.Info(string.Format("[IDLE] Starting idle '{0}' on clerk {1}", anim, clerk.Handle));
                     PlayAnimNative(clerk, dict, anim, AnimationFlags.Loop);
+
+                    // Record timestamp so we don't restart immediately
+                    store.LastIdleTime = now;
                 }
             }
             catch (Exception ex)
@@ -614,43 +800,16 @@ namespace StoreRobberyTrackerMod.Systems
 
                 store.ClerkThrowingBag = false;
 
-                Model bagModel = new Model("prop_poly_bag_01");
-                if (bagModel.IsInCdImage && bagModel.IsValid)
-                {
-                    Vector3 spawnPos = clerk.Position + clerk.ForwardVector * 0.3f + new Vector3(0, 0, 0.8f);
-                    Prop bag = World.CreateProp(bagModel, spawnPos, true, false);
-
-                    if (bag != null && bag.Exists())
-                    {
-                        bag.ApplyForce(clerk.ForwardVector * 2.0f + new Vector3(0, 0, 1.0f));
-                    }
-                }
-
-                Ped player = Game.Player.Character;
-
+                // After bag toss, clerk may panic or flee depending on reaction type
                 switch (store.ReactionType)
                 {
                     case ClerkReactionType.NormalPanic:
                         store.ClerkPanicking = true;
-                        clerk.Task.Cower(-1);
                         break;
-
                     case ClerkReactionType.Flee:
-                        store.ClerkFleeing = true;
-                        if (player != null && player.Exists())
-                            clerk.Task.ReactAndFlee(player);
-                        break;
-
                     case ClerkReactionType.FightPistol:
-                        clerk.Weapons.Give(WeaponHash.Pistol, 60, true, true);
-                        if (player != null && player.Exists())
-                            clerk.Task.FightAgainst(player);
-                        break;
-
                     case ClerkReactionType.FightShotgun:
-                        clerk.Weapons.Give(WeaponHash.PumpShotgun, 20, true, true);
-                        if (player != null && player.Exists())
-                            clerk.Task.FightAgainst(player);
+                        store.ClerkFleeing = true;
                         break;
                 }
             }
@@ -670,7 +829,12 @@ namespace StoreRobberyTrackerMod.Systems
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
 
-                clerk.Task.Cower(-1);
+                // Simple cower behavior
+                if (!clerk.IsInCombat && !clerk.IsFleeing)
+                {
+                    clerk.Task.ClearAllImmediately();
+                    clerk.Task.Cower(-1);
+                }
             }
             catch (Exception ex)
             {
@@ -689,8 +853,12 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
 
                 Ped player = Game.Player.Character;
-                if (player != null && player.Exists())
+
+                if (!clerk.IsFleeing)
+                {
+                    clerk.Task.ClearAllImmediately();
                     clerk.Task.ReactAndFlee(player);
+                }
             }
             catch (Exception ex)
             {
@@ -714,14 +882,18 @@ namespace StoreRobberyTrackerMod.Systems
                 if (!store.ClerkReacted)
                     return;
 
+                // Simple chance-based alarm
                 int chance = store.ClerkRecognizedPlayer ? 40 : 20;
-
                 if (_rng.Next(0, 100) < chance)
                 {
                     store.SilentAlarmPressed = true;
                     store.SilentAlarmUtc = DateTime.UtcNow;
 
+                    Game.Player.WantedLevel = Math.Max(Game.Player.WantedLevel, 2);
+
                     SafePlaySpeech(clerk, "GENERIC_SHOCKED_HIGH", "SPEECH_PARAMS_FORCE");
+
+                    DebugLogger.Info($"Silent alarm triggered at store {store.Id}");
                 }
             }
             catch (Exception ex)
@@ -731,13 +903,13 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // CLERK CALLING POLICE
+        // POLICE CALL
         // ------------------------------------------------------------
         private void TryTriggerPoliceCall(TrackedStore store, Ped clerk, Ped player)
         {
             try
             {
-                if (store == null || clerk == null || !clerk.Exists())
+                if (store == null || clerk == null || !clerk.Exists() || player == null || !player.Exists())
                     return;
 
                 if (store.ClerkCallingPolice)
@@ -752,14 +924,24 @@ namespace StoreRobberyTrackerMod.Systems
                 if (_ctx.Player.IsThreatening(clerk))
                     return;
 
-                int chance = store.ClerkRecognizedPlayer ? 50 : 25;
+                if (!store.IsRobberyActive)
+                    return;
 
-                if (_rng.Next(0, 100) < chance)
+                // If player leaves the store radius, clerk may call police
+                if (!store.IsPlayerInsideStore)
                 {
-                    store.ClerkCallingPolice = true;
-                    store.ClerkCallStartUtc = DateTime.UtcNow;
+                    int chance = store.ClerkRecognizedPlayer ? 50 : 25;
+                    if (_rng.Next(0, 100) < chance)
+                    {
+                        store.ClerkCallingPolice = true;
+                        store.ClerkCallStartUtc = DateTime.UtcNow;
 
-                    SafePlaySpeech(clerk, "GENERIC_SHOCKED_MED", "SPEECH_PARAMS_FORCE");
+                        SafePlaySpeech(clerk, "GENERIC_SHOCKED_MED", "SPEECH_PARAMS_FORCE");
+
+                        Game.Player.WantedLevel = Math.Max(Game.Player.WantedLevel, 2);
+
+                        DebugLogger.Info($"Police called for robbery at store {store.Id}");
+                    }
                 }
             }
             catch (Exception ex)
@@ -769,7 +951,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // DEATH HANDLING
+        // CLERK DEATH HANDLING
         // ------------------------------------------------------------
         private void HandleClerkDeath(TrackedStore store)
         {
@@ -778,35 +960,16 @@ namespace StoreRobberyTrackerMod.Systems
                 if (store == null)
                     return;
 
-                if (store.ClerkDeathHandled)
-                    return;
-
-                store.ClerkDeathHandled = true;
-
-                Ped player = Game.Player.Character;
-                WeaponHash weapon = WeaponHash.Unarmed;
-
-                if (player != null && player.Exists())
-                    weapon = player.Weapons.Current.Hash;
-
-                if (weapon == WeaponHash.Unarmed)
-                {
-                    store.ClerkKilledWithGun = false;
-                    _ctx.Ui.TextNotification("DIA_SILENT", "Silent Takedown", "LOS ANGELES PD", "Clerk knocked out silently.");
-                    _ctx.Stalker.QueueKnockoutMessage();
-                }
-                else if (_ctx.Player.IsMeleeWeapon(weapon))
-                {
-                    store.ClerkKilledWithGun = false;
-                    _ctx.Ui.TextNotification("DIA_POLICE", "Robbery Reported", "LOS ANGELES PD", "Clerk found injured at " + store.Name);
-                    _ctx.Stalker.QueueMeleeKillMessage();
-                }
-                else
-                {
-                    store.ClerkKilledWithGun = true;
-                    _ctx.Ui.TextNotification("DIA_POLICE", "All Units Responding", "LOS ANGELES PD", "Reported armed robbery in progress, shots fired at " + store.Name);
-                    _ctx.Stalker.QueueGunKillMessage();
-                }
+                store.Clerk = null;
+                store.IsOurClerk = false;
+                store.ClerkIdle = false;
+                store.ClerkReacted = false;
+                store.ClerkStalling = false;
+                store.ClerkOpeningRegister = false;
+                store.ClerkGrabbingCash = false;
+                store.ClerkThrowingBag = false;
+                store.ClerkPanicking = false;
+                store.ClerkFleeing = false;
             }
             catch (Exception ex)
             {
@@ -815,23 +978,27 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // SAFE SPEECH HELPER
+        // SAFE SPEECH WRAPPER (SHVDN 3.9.0 SAFE)
         // ------------------------------------------------------------
         private void SafePlaySpeech(Ped ped, string speechName, string speechParam)
         {
+            if (ped == null || !ped.Exists())
+                return;
+
             try
             {
-                if (ped == null || !ped.Exists())
-                    return;
-
-                if (string.IsNullOrEmpty(speechName) || string.IsNullOrEmpty(speechParam))
-                    return;
-
-                Function.Call(Hash.PLAY_PED_AMBIENT_SPEECH_NATIVE, ped, speechName, speechParam, 0);
+                // SHVDN 3.9.0: use native PLAY_PED_AMBIENT_SPEECH_NATIVE
+                Function.Call(
+                    Hash.PLAY_PED_AMBIENT_SPEECH_NATIVE,
+                    ped,
+                    speechName,
+                    speechParam,
+                    0 // p3 (always 0 in game scripts)
+                );
             }
             catch (Exception ex)
             {
-                DebugLogger.LogException("ClerkSystem.SafePlaySpeech", ex);
+                DebugLogger.LogException($"ClerkSystem.SafePlaySpeech {speechName}", ex);
             }
         }
     }

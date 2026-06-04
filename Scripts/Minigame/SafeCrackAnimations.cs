@@ -4,6 +4,11 @@ using GTA.Native;
 
 namespace StoreRobberyTrackerMod.Minigame
 {
+    /// <summary>
+    /// Handles animations for the SafeCrack minigame.
+    /// This stripped version leaves all positioning, freezing,
+    /// and control suppression to SafeCrackController.
+    /// </summary>
     internal class SafeCrackAnimation : ISafeCrackAnimation
     {
         private const string ANIM_DICT = "mini@safe_cracking";
@@ -13,33 +18,38 @@ namespace StoreRobberyTrackerMod.Minigame
         private const string ANIM_EXIT = "exit";
 
         // ------------------------------------------------------------
-        // BEGIN ANIMATION
+        // BEGIN ANIMATION (STRIPPED + SAFE)
         // ------------------------------------------------------------
         public void Begin(Ped player, Vector3 safePos, float safeHeading)
         {
             if (player == null || !player.Exists())
                 return;
 
-            // ⭐ Freeze player movement
+            // Controller already:
+            // - teleported
+            // - grounded
+            // - aligned
+            // - froze the player
+            // - disabled gameplay controls
+
+            // Clear tasks only (do NOT reposition or freeze here)
             player.Task.ClearAllImmediately();
-            player.IsPositionFrozen = true;
-
-            // ⭐ Disable all controls (prevents walking, turning, etc.)
-            Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
-
-            // Align player to safe
-            player.Position = safePos + player.ForwardVector * -0.5f;
-            player.Heading = safeHeading;
 
             // Load animation dictionary
             Function.Call(Hash.REQUEST_ANIM_DICT, ANIM_DICT);
             while (!Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, ANIM_DICT))
-            {
                 Script.Yield();
-            }
 
             // Play entry animation
-            player.Task.PlayAnimation(ANIM_DICT, ANIM_ENTER, 8.0f, -8.0f, -1, AnimationFlags.None, 0f);
+            player.Task.PlayAnimation(
+                ANIM_DICT,
+                ANIM_ENTER,
+                8.0f,
+                -8.0f,
+                -1,
+                AnimationFlags.None,
+                0f
+            );
         }
 
         // ------------------------------------------------------------
@@ -52,7 +62,15 @@ namespace StoreRobberyTrackerMod.Minigame
 
             if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, player, ANIM_DICT, ANIM_LOOP, 3))
             {
-                player.Task.PlayAnimation(ANIM_DICT, ANIM_LOOP, 8.0f, -8.0f, -1, AnimationFlags.Loop, 0f);
+                player.Task.PlayAnimation(
+                    ANIM_DICT,
+                    ANIM_LOOP,
+                    8.0f,
+                    -8.0f,
+                    -1,
+                    AnimationFlags.Loop,
+                    0f
+                );
             }
         }
 
@@ -64,11 +82,17 @@ namespace StoreRobberyTrackerMod.Minigame
             if (player == null || !player.Exists())
                 return;
 
-            player.Task.PlayAnimation(ANIM_DICT, ANIM_SUCCESS, 8.0f, -8.0f, -1, AnimationFlags.None, 0f);
+            player.Task.PlayAnimation(
+                ANIM_DICT,
+                ANIM_SUCCESS,
+                8.0f,
+                -8.0f,
+                -1,
+                AnimationFlags.None,
+                0f
+            );
 
-            // ⭐ Unfreeze player after success animation
-            player.IsPositionFrozen = false;
-            Function.Call(Hash.ENABLE_ALL_CONTROL_ACTIONS, 0);
+            // Controller will unfreeze + restore controls
         }
 
         // ------------------------------------------------------------
@@ -81,13 +105,20 @@ namespace StoreRobberyTrackerMod.Minigame
 
             if (!success)
             {
-                player.Task.PlayAnimation(ANIM_DICT, ANIM_EXIT, 8.0f, -8.0f, -1, AnimationFlags.None, 0f);
+                player.Task.PlayAnimation(
+                    ANIM_DICT,
+                    ANIM_EXIT,
+                    8.0f,
+                    -8.0f,
+                    -1,
+                    AnimationFlags.None,
+                    0f
+                );
             }
 
-            // ⭐ Unfreeze player on exit
-            player.IsPositionFrozen = false;
-            Function.Call(Hash.ENABLE_ALL_CONTROL_ACTIONS, 0);
+            // Controller will unfreeze + restore controls
 
+            // Safe to remove anim dict now
             Function.Call(Hash.REMOVE_ANIM_DICT, ANIM_DICT);
         }
     }

@@ -40,6 +40,11 @@ namespace StoreRobberyTrackerMod.Data
         public int ClerkAnimDurationMs;
         public bool GreetedPlayer = false;
         public int LastGreetTime = 0;
+        public int GreetingEndTime;
+        public int ClerkSpawnTime;
+
+        // Idle timing support
+        public int LastIdleTime = 0; // GameTime of last idle animation start
 
         // --- ClerkReplacementSystem timing support ---
         public bool PlayerInside { get; set; } = false;
@@ -166,6 +171,9 @@ namespace StoreRobberyTrackerMod.Data
             DummyClerk = null;
             DummyClerkSpawned = false;
             NativeClerksNeutralized = false;
+
+            // Idle timing
+            LastIdleTime = 0;
         }
     }
 

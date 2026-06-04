@@ -156,15 +156,11 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
-                // ⭐ If not active, nothing to do
                 if (!_ctx.SafeState.Active)
                     return;
 
-                // ⭐ Update logic
+                // Update logic only — controller handles UI
                 _ctx.SafeCrack.Update();
-
-                // ⭐ Draw UI (Main also draws, but this ensures debug mode works)
-                _ctx.SafeCrackUI.Draw(_ctx.SafeState, _ctx.SafeCrackSettings);
             }
             catch (Exception ex)
             {

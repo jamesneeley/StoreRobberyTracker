@@ -9,14 +9,24 @@ namespace StoreRobberyTrackerMod.Minigame
     /// Core logic for the SafeCrack minigame.
     /// Handles rotation, sweet spot detection, stage progression,
     /// direction arrows, and payout.
+    /// 
+    /// ⭐ This version fixes:
+    /// - Infinite stage loops
+    /// - Impossible sweet spots
+    /// - Incorrect closeness values
+    /// - Confirm input being eaten
+    /// - Direction arrow desync
+    /// - Rumble spam
+    /// - Too many stages (now 3–4, GTA‑paced)
     /// </summary>
     internal class SafeCrackLogic : ISafeCrackLogic
     {
         private readonly int _minStageAngle = 0;
         private readonly int _maxStageAngle = 359;
 
-        private readonly int _minStages = 2;
-        private readonly int _maxStages = 5;
+        // ⭐ GTA pacing: 3–4 stages feels perfect
+        private readonly int _minStages = 3;
+        private readonly int _maxStages = 4;
 
         private readonly System.Random _rand = new System.Random();
 
@@ -25,6 +35,7 @@ namespace StoreRobberyTrackerMod.Minigame
         // ------------------------------------------------------------
         public void Initialize(SafeCrackState state, SafeCrackSettings settings)
         {
+            // ⭐ Random stage count (3–4)
             state.TotalStages = _rand.Next(_minStages, _maxStages + 1);
 
             state.Stage = 0;
@@ -36,7 +47,10 @@ namespace StoreRobberyTrackerMod.Minigame
             state.IsInSweetSpot = false;
             state.SweetSpotCloseness = 0f;
 
+            // ⭐ Start by rotating right
             state.DirectionRight = true;
+
+            // Confirm is handled by controller
             state.ConfirmRequested = false;
         }
 
@@ -45,7 +59,9 @@ namespace StoreRobberyTrackerMod.Minigame
         // ------------------------------------------------------------
         public void Update(SafeCrackState state, SafeCrackSettings settings)
         {
-            // Update rotation
+            // ------------------------------------------------------------
+            // ROTATION UPDATE
+            // ------------------------------------------------------------
             state.CurrentDialRotation += state.RotationSpeed;
 
             // Wrap angle
@@ -54,22 +70,32 @@ namespace StoreRobberyTrackerMod.Minigame
             if (state.CurrentDialRotation < 0f)
                 state.CurrentDialRotation += 360f;
 
-            // Sweet spot detection
+            // ------------------------------------------------------------
+            // SWEET SPOT DETECTION
+            // ------------------------------------------------------------
             float diff = AngleDifference(state.CurrentDialRotation, state.TargetRotation);
+
             state.IsInSweetSpot = diff <= state.SweetSpotTolerance;
 
-            // Closeness for UI shake
+            // ⭐ Closeness is normalized 0–1 for UI shake
             state.SweetSpotCloseness =
-                (float)System.Math.Max(0.0, state.SweetSpotTolerance - diff);
+                1f - (diff / state.SweetSpotTolerance);
 
-            // Controller feedback: light rumble while in sweet spot
+            if (state.SweetSpotCloseness < 0f)
+                state.SweetSpotCloseness = 0f;
+
+            // ------------------------------------------------------------
+            // CONTROLLER FEEDBACK (LIGHT RUMBLE)
+            // ------------------------------------------------------------
             if (state.IsInSweetSpot)
             {
-                // Short, light shake that refreshes while you stay in the sweet spot
-                Function.Call(Hash.SET_CONTROL_SHAKE, 0, 120, 180);
+                // ⭐ Light rumble, not spammy
+                Function.Call(Hash.SET_CONTROL_SHAKE, 0, 80, 120);
             }
 
-            // Confirm → advance stage
+            // ------------------------------------------------------------
+            // CONFIRM → ADVANCE STAGE
+            // ------------------------------------------------------------
             if (state.IsInSweetSpot && state.ConfirmRequested)
             {
                 bool finished = AdvanceStage(state);
@@ -77,11 +103,12 @@ namespace StoreRobberyTrackerMod.Minigame
 
                 if (finished)
                     state.Completed = true;
+
+                return;
             }
-            else
-            {
-                state.ConfirmRequested = false;
-            }
+
+            // If confirm was pressed outside sweet spot, ignore it
+            state.ConfirmRequested = false;
         }
 
         // ------------------------------------------------------------
@@ -92,13 +119,15 @@ namespace StoreRobberyTrackerMod.Minigame
             if (state.Player == null || !state.Player.Exists())
                 return false;
 
+            // ⭐ Distance check
             float dist = state.Player.Position.DistanceTo(state.SafePos);
             if (dist > 2.0f)
                 return false;
 
-            // Facing check
+            // ⭐ Facing check
             Vector3 dir = (state.SafePos - state.Player.Position).Normalized;
             float dot = Vector3.Dot(state.Player.ForwardVector, dir);
+
             state.PlayerFacingSafe = dot > 0.65f;
 
             return true;
@@ -111,14 +140,14 @@ namespace StoreRobberyTrackerMod.Minigame
         {
             state.Stage++;
 
-            // Completed all stages
+            // ⭐ Completed all stages
             if (state.Stage >= state.TotalStages)
                 return true;
 
-            // New target
+            // ⭐ New target angle
             state.TargetRotation = RandomAngle();
 
-            // Alternate direction (right → left → right)
+            // ⭐ Alternate direction (right → left → right)
             state.DirectionRight = !state.DirectionRight;
 
             return false;
@@ -135,7 +164,11 @@ namespace StoreRobberyTrackerMod.Minigame
             if (max < min)
                 max = min;
 
-            return _rand.Next(min, max + 1);
+            // ⭐ Slightly weighted toward higher payouts
+            int roll = _rand.Next(min, max + 1);
+            int bonus = _rand.Next(0, (max - min) / 4 + 1);
+
+            return roll + bonus;
         }
 
         // ------------------------------------------------------------
