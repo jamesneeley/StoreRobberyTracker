@@ -80,6 +80,9 @@ namespace StoreRobberyTrackerMod
             {
                 _script = script;
 
+                // ⭐ IMPORTANT: make this the global active context
+                Active = this;
+
                 Stores = new List<TrackedStore>();
                 StoreBlips = new Dictionary<int, Blip>();
 
@@ -159,6 +162,10 @@ namespace StoreRobberyTrackerMod
                 Stalker = new StalkerSystem(this);
                 ClerkReplacement = new ClerkReplacementSystem(this);
 
+                // ⭐ CORRECT PLACE — ClerkReplacement now exists
+                //foreach (TrackedStore store in Stores)
+                //    ClerkReplacement.InitializeStore(store);
+
                 // ⭐ REQUIRED — this was missing
                 Safes = new SafeSystem(this);
 
@@ -236,6 +243,24 @@ namespace StoreRobberyTrackerMod
                 Ped player = Game.Player.Character;
                 if (player == null || !player.Exists())
                     return;
+
+                // ⭐ Clamp wanted level briefly after native clerk removal
+                var now = DateTime.UtcNow;
+                foreach (var store in Stores)
+                {
+                    if (store.NativeClerkRemovedRecently)
+                    {
+                        if ((now - store.NativeClerkRemovedUtc).TotalSeconds < 3)
+                        {
+                            // Kill any star spike caused by Rockstar shop logic
+                            Game.Player.WantedLevel = 0;
+                        }
+                        else
+                        {
+                            store.NativeClerkRemovedRecently = false;
+                        }
+                    }
+                }
 
                 // ⭐ Update blips first
                 Blips.Update();

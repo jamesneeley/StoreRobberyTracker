@@ -4,195 +4,135 @@ using GTA.Native;
 using StoreRobberyTrackerMod.Data;
 using StoreRobberyTrackerMod.Debug;
 using System;
-using System.Collections.Generic;
 
 namespace StoreRobberyTrackerMod.Systems
 {
     internal class ClerkReplacementSystem
     {
         private readonly StoreContext _ctx;
-        private readonly TimeSpan _sweepInterval = TimeSpan.FromSeconds(1);
+        private readonly TimeSpan _sweepInterval = TimeSpan.FromSeconds(3);
 
-        // Rockstar interior clerk models
-        private readonly int[] _interiorClerkModels =
-        {
-            Function.Call<int>(Hash.GET_HASH_KEY, "s_m_m_shopkeep_01"),
-            Function.Call<int>(Hash.GET_HASH_KEY, "mp_m_shopkeep_01")
-        };
-
-        // Ambient clerk models (rarely used but included)
-        private readonly int[] _ambientClerkModels =
+        // All Rockstar clerk models
+        private readonly int[] _defaultClerkModels =
         {
             (int)PedHash.ShopKeep01,
-            (int)PedHash.ShopMaskSMY
+            (int)PedHash.ShopMaskSMY,
+            Function.Call<int>(Hash.GET_HASH_KEY, "mp_m_shopkeep_01"),
+            Function.Call<int>(Hash.GET_HASH_KEY, "s_m_m_shopkeep_01")
         };
 
         public ClerkReplacementSystem(StoreContext ctx)
         {
-            _ctx = ctx;
-            DebugLogger.Info("ClerkReplacementSystem initialized");
+            try
+            {
+                _ctx = ctx;
+                DebugLogger.Info("ClerkReplacementSystem initialized");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("ClerkReplacementSystem.ctor", ex);
+            }
         }
 
-        // ------------------------------------------------------------
-        // MAIN ENTRY
-        // ------------------------------------------------------------
         public void UpdateForStore(TrackedStore store, Ped player)
         {
             if (store == null)
                 return;
 
+            // Only care if player is near this store
             float dist = player.Position.DistanceTo(store.StorePos);
-
-            // Replace BEFORE interior loads
-            if (dist > store.Radius + 60f)
+            if (dist > store.Radius + 10f)
                 return;
 
-            // ⭐ Temporarily suppress wanted level while replacement runs
-            Function.Call(Hash.SET_MAX_WANTED_LEVEL, 0);
-            Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, Game.Player, true);
-            Game.Player.WantedLevel = 0;
+            // Ensure replacement when near (Option 1)
+            EnsureDefaultClerkRemoved(store);
 
-            try
+            // Periodic sweep to prevent respawns (Option 3)
+            if (DateTime.UtcNow - store.LastClerkSweepUtc >= _sweepInterval)
             {
-                // ⭐ Sweep interior clerks every tick (safe)
-                RemoveInteriorClerks(store);
+                store.LastClerkSweepUtc = DateTime.UtcNow;
+                EnsureDefaultClerkRemoved(store);
+            }
+        }
 
-                // ⭐ Ensure our clerk exists (spawns only once)
-                EnsureCustomClerk(store);
+        private void EnsureDefaultClerkRemoved(TrackedStore store)
+        {
+            try 
+            {
+                // ⭐ Suppress wanted level only during replacement
+                Function.Call(Hash.SET_MAX_WANTED_LEVEL, 0);
+                Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, Game.Player, true);
+                Game.Player.WantedLevel = 0;
+                _ctx.Police.SuppressPoliceForDebug = true;
 
-                // ⭐ Periodic sweep to prevent respawns
-                if (DateTime.UtcNow - store.LastClerkSweepUtc >= _sweepInterval)
-                {
-                    store.LastClerkSweepUtc = DateTime.UtcNow;
-                    RemoveInteriorClerks(store);
-                }
+                // If our clerk already exists, just keep the area clean
+                if (store.Clerk != null && store.Clerk.Exists())
+            {
+                RemoveNearbyDefaultClerks(store, store.Clerk);
+                store.DefaultClerkRemoved = true;
+                return;
+            }
+
+            // First time: remove default clerk, then spawn ours
+            RemoveNearbyDefaultClerks(store, null);
+
+            _ctx.Clerks?.ForceSpawnClerk(store);
+
+            if (store.Clerk != null && store.Clerk.Exists())
+                store.DefaultClerkRemoved = true;
             }
             catch (Exception ex)
             {
-                DebugLogger.LogException("ClerkReplacementSystem.UpdateForStore", ex);
+                DebugLogger.LogException("ClerkReplacementSystem.EnsureDefaultClerkRemoved", ex);
             }
             finally
             {
-                // ⭐ Restore normal police behavior
                 Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, Game.Player, false);
                 Function.Call(Hash.SET_MAX_WANTED_LEVEL, 5);
+                _ctx.Police.SuppressPoliceForDebug = false;
             }
         }
 
-        // ------------------------------------------------------------
-        // REMOVE INTERIOR SCRIPT CLERKS (THE REAL FIX)
-        // ------------------------------------------------------------
-        private readonly HashSet<int> _neutralizedHandles = new HashSet<int>();
-
-        private void RemoveInteriorClerks(TrackedStore store)
+        private void RemoveNearbyDefaultClerks(TrackedStore store, Ped skip)
         {
-            try
-            {
-                Ped[] all = World.GetAllPeds();
+            Vector3 pos = store.ClerkPos;
+            float radius = 3.0f;
 
-                foreach (Ped ped in all)
+            Ped[] nearby = World.GetNearbyPeds(pos, radius);
+            if (nearby == null || nearby.Length == 0)
+                return;
+
+            foreach (Ped ped in nearby)
+            {
+                if (ped == null || !ped.Exists())
+                    continue;
+
+                if (skip != null && ped.Handle == skip.Handle)
+                    continue;
+
+                // mark that this was NOT our clerk
+                store.IsOurClerk = false;
+
+                // SHVDN 3.9.0: valid store clerk models
+                if (Array.IndexOf(_defaultClerkModels, ped.Model.Hash) != -1)
                 {
-                    if (ped == null || !ped.Exists())
-                        continue;
+                    // Neutralize default clerk safely (NO wanted level)
+                    ped.Task.ClearAllImmediately();
+                    ped.BlockPermanentEvents = true;
+                    ped.IsInvincible = true;
+                    ped.CanBeTargetted = false;
 
-                    int handle = ped.Handle;
-                    int hash = ped.Model.Hash;
+                    // Move him far away so Rockstar never sees him "die"
+                    ped.Position = new Vector3(0f, 0f, 50f);
 
-                    // Skip already neutralized peds
-                    if (_neutralizedHandles.Contains(handle))
-                        continue;
+                    // Release him cleanly
+                    ped.IsPersistent = false;
+                    ped.MarkAsNoLongerNeeded();
 
-                    // Skip our clerk and dummy
-                    if ((store.Clerk != null && handle == store.Clerk.Handle) ||
-                        (store.DummyClerk != null && handle == store.DummyClerk.Handle))
-                        continue;
-
-                    if (Array.IndexOf(_interiorClerkModels, hash) != -1 ||
-                        Array.IndexOf(_ambientClerkModels, hash) != -1)
-                    {
-                        NeutralizeInteriorClerk(ped, store);
-                        _neutralizedHandles.Add(handle);
-                    }
+                    // Mark that we just removed a native clerk for this store
+                    store.NativeClerkRemovedRecently = true;
+                    store.NativeClerkRemovedUtc = DateTime.UtcNow;
                 }
-
-                // Clean up stale handles
-                _neutralizedHandles.RemoveWhere(h => !Function.Call<bool>(Hash.DOES_ENTITY_EXIST, h));
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.LogException("ClerkReplacementSystem.RemoveInteriorClerks", ex);
-            }
-        }
-
-        // ------------------------------------------------------------
-        // NEUTRALIZE INTERIOR CLERK
-        // ------------------------------------------------------------
-        private void NeutralizeInteriorClerk(Ped ped, TrackedStore store)
-        {
-            try
-            {
-                ped.Task.ClearAllImmediately();
-                ped.BlockPermanentEvents = true;
-                ped.CanBeTargetted = false;
-                ped.IsInvincible = true;
-                ped.IsVisible = false;
-                ped.IsCollisionEnabled = false;
-
-                // Move far above store so GTA considers them alive
-                ped.Position = store.ClerkPos + new Vector3(0f, 0f, 50f);
-
-                ped.IsPersistent = true;
-                ped.IsPositionFrozen = true;
-
-                // Spawn dummy if needed
-                if (store.Clerk == null || !store.Clerk.Exists())
-                {
-                    _ctx.Clerks.SpawnDummyClerk(store);
-                }
-
-                DebugLogger.Info($"Interior clerk neutralized for store {store.Id}");
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.LogException("ClerkReplacementSystem.NeutralizeInteriorClerk", ex);
-            }
-        }
-
-        // ------------------------------------------------------------
-        // ENSURE CUSTOM CLERK EXISTS
-        // ------------------------------------------------------------
-        private void EnsureCustomClerk(TrackedStore store)
-        {
-            try
-            {
-                if (store.Clerk != null && store.Clerk.Exists())
-                {
-                    store.DefaultClerkRemoved = true;
-                    return;
-                }
-
-                // Remove interior clerks again before spawning
-                RemoveInteriorClerks(store);
-
-                // Remove dummy if present
-                if (store.DummyClerk != null && store.DummyClerk.Exists())
-                {
-                    store.DummyClerk.Delete();
-                    store.DummyClerk = null;
-                }
-
-                // Spawn our clerk
-                _ctx.Clerks.ForceSpawnClerk(store);
-
-                if (store.Clerk != null && store.Clerk.Exists())
-                {
-                    store.DefaultClerkRemoved = true;
-                    DebugLogger.Info($"Custom clerk spawned for store {store.Id}");
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.LogException("ClerkReplacementSystem.EnsureCustomClerk", ex);
             }
         }
     }

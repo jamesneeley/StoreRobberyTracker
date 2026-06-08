@@ -42,6 +42,7 @@ namespace StoreRobberyTrackerMod.Data
         public int LastGreetTime = 0;
         public int GreetingEndTime;
         public int ClerkSpawnTime;
+        public int ClerkSurrenderStage = 0;
 
         // Idle timing support
         public int LastIdleTime = 0; // GameTime of last idle animation start
@@ -114,8 +115,15 @@ namespace StoreRobberyTrackerMod.Data
         public bool AlarmTriggered;
         public int HeatLevel;
 
+        // ⭐ NEW — suppress base‑game wanted spike after native clerk despawn
+        public bool NativeClerkRemovedRecently;
+        public DateTime NativeClerkRemovedUtc = DateTime.MinValue;
+
         // Player state at robbery start
         public bool PlayerMaskedAtStart;
+
+        // LOOT BAG PROP
+        public Prop LootBag;
 
         // Blip reference
         public Blip Blip;

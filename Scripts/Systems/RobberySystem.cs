@@ -307,6 +307,26 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
                 }
 
+                // BAG PICKUP
+                if (store.LootBag != null && store.LootBag.Exists())
+                {
+                    float dist = player.Position.DistanceTo(store.LootBag.Position);
+
+                    if (dist < 1.2f)
+                    {
+                        store.LootBag.Delete();
+                        store.LootBag = null;
+
+                        DebugLogger.Info($"Player picked up loot bag at store {store.Id}");
+
+                        // Bag pickup does NOT pay immediately — payout is handled by PendingPayout
+                        _ctx.Ui.ShowNotification("~g~Loot bag collected!");
+
+                        // Optional: sound
+                        Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                    }
+                }
+
                 // ⭐ Debug escape subtitle loop
                 if (_debugEscapeActive && store.Id == _debugEscapeStoreId && !store.CooldownActive)
                 {
@@ -415,50 +435,83 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // START ROBBERY (FULLY PATCHED)
+        // START ROBBERY (FULLY PATCHED — FINAL)
         // ------------------------------------------------------------
         private void TryStartRegisterRobbery(TrackedStore store, Ped player)
         {
             try
             {
-                // Debug timer guard
+                // ------------------------------------------------------------
+                // DEBUG TIMER GUARD
+                // ------------------------------------------------------------
                 if (_ctx.Config.EnableDebugTimer && _testTimerActive)
                     return;
 
-                // Already robbed or invalid clerk
+                // ------------------------------------------------------------
+                // INVALID STORE / CLERK
+                // ------------------------------------------------------------
                 if (store.IsRobbed || store.Clerk == null || !store.Clerk.Exists())
                     return;
 
-                // Distance + aiming check
+                // ------------------------------------------------------------
+                // DISTANCE CHECK
+                // ------------------------------------------------------------
                 float dist = player.Position.DistanceTo(store.Clerk.Position);
-                if (dist < 12f && _ctx.Player.IsAiming() && _ctx.Player.IsArmed())
+                if (dist > 12f)
+                    return;
+
+                // ------------------------------------------------------------
+                // ⭐ FIXED AIM CHECK (NO MORE FALSE POSITIVES)
+                // SHVDN's IsAiming() is unreliable after clerk replacement,
+                // animation resets, or SafeCrack control suppression.
+                // This checks the ACTUAL physical aim button.
+                // ------------------------------------------------------------
+                bool isPhysicallyAiming = Game.IsControlPressed(Control.Aim) || Game.IsControlPressed(Control.VehicleAim);
+
+                if (!isPhysicallyAiming)
+                    return;
+
+                // ------------------------------------------------------------
+                // MUST BE ARMED
+                // ------------------------------------------------------------
+                if (!_ctx.Player.IsArmed())
+                    return;
+
+                // ------------------------------------------------------------
+                // MASK STATE AT START
+                // ------------------------------------------------------------
+                store.PlayerMaskedAtStart = _ctx.Player.IsMasked();
+
+                DebugLogger.Info($"Robbery started at store {store.Id}");
+
+                // ------------------------------------------------------------
+                // ⭐ SAFECRACK STEALTH SUPPRESSION
+                // ------------------------------------------------------------
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                 {
-                    store.PlayerMaskedAtStart = _ctx.Player.IsMasked();
+                    DebugLogger.Trace($"[RobberySystem] Suppressed — SafeCrack active for store {store.Id}");
 
-                    DebugLogger.Info($"Robbery started at store {store.Id}");
+                    store.SilentRobbery = true;
+                    store.AlarmTriggered = false;
+                    store.ClerkCallingPolice = false;
+                    store.SilentAlarmPressed = false;
+                    store.HeatLevel = 0;
 
-                    // ⭐ SafeCrack stealth suppression
-                    if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
-                    {
-                        DebugLogger.Trace($"[RobberySystem] Suppressed — SafeCrack active for store {store.Id}");
-                        store.SilentRobbery = true;
-                        store.AlarmTriggered = false;
-                        store.ClerkCallingPolice = false;
-                        store.SilentAlarmPressed = false;
-                        store.HeatLevel = 0;
-                        return;
-                    }
-
-                    StartRegisterRobbery(store);
-
-                    if (_ctx.Config.EnableMessages)
-                        _ctx.Ui.ShowNotification("~y~Robbery started!");
-
-                    if (_ctx.Config.EnableStalkerMsg)
-                        _ctx.Stalker.QueueRobberyMessage();
-
-                    Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET");
+                    return;
                 }
+
+                // ------------------------------------------------------------
+                // START ROBBERY
+                // ------------------------------------------------------------
+                StartRegisterRobbery(store);
+
+                if (_ctx.Config.EnableMessages)
+                    _ctx.Ui.ShowNotification("~y~Robbery started!");
+
+                if (_ctx.Config.EnableStalkerMsg)
+                    _ctx.Stalker.QueueRobberyMessage();
+
+                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET");
             }
             catch (Exception ex)
             {
@@ -606,7 +659,8 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
 
                 // ⭐ Ignore if default clerk was replaced safely
-                if (!store.IsOurClerk)
+                // OLD: if (!store.IsOurClerk) return;
+                if (store.Clerk == null || !store.Clerk.Exists() || !_ctx.Clerks.IsOurClerk(store.Clerk))
                     return;
 
                 if (store.AlarmTriggered)
@@ -641,6 +695,46 @@ namespace StoreRobberyTrackerMod.Systems
             catch (Exception ex)
             {
                 DebugLogger.LogException("RobberySystem.CheckCameraTriggeredAlarm", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // SPAWN LOOT BAG
+        // ------------------------------------------------------------
+        public void SpawnLootBag(TrackedStore store, Ped clerk)
+        {
+            try
+            {
+                if (store == null || clerk == null || !clerk.Exists())
+                    return;
+
+                // Prevent duplicates
+                if (store.LootBag != null && store.LootBag.Exists())
+                    return;
+
+                Vector3 dropPos = clerk.Position + new Vector3(0f, 0f, -0.9f);
+
+                Prop bag = World.CreateProp(
+                    new Model("prop_cs_heist_bag_02"),
+                    dropPos,
+                    true,
+                    true
+                );
+
+                if (bag == null || !bag.Exists())
+                    return;
+
+                bag.IsPersistent = true;
+                bag.IsPositionFrozen = false;
+
+                // Store reference
+                store.LootBag = bag;
+
+                DebugLogger.Info($"Spawned loot bag for store {store.Id} at {dropPos}");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("RobberySystem.SpawnLootBag", ex);
             }
         }
 

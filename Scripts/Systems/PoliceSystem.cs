@@ -23,7 +23,7 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
-                // ⭐ SafeCrack stealth mode — completely suppress police logic
+                // SafeCrack + SilentRobbery guards (unchanged)
                 if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                 {
                     store.HeatLevel = 0;
@@ -35,7 +35,6 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
                 }
 
-                // ⭐ SilentRobbery mode (set by SafeCrackController)
                 if (store.SilentRobbery)
                 {
                     store.HeatLevel = 0;
@@ -48,19 +47,18 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
                 }
 
-                // ⭐ NEW: Debug override — completely disable police logic
                 if (SuppressPoliceForDebug)
                     return;
 
-                // ⭐ If our clerk does not exist yet, do NOT treat anything as a robbery
-                if (store.Clerk == null || !store.Clerk.Exists())
+                // ⭐ NEW: if this is NOT one of our clerks, never treat it as a robbery
+                if (store.Clerk == null || !store.Clerk.Exists() || !_ctx.Clerks.IsOurClerk(store.Clerk))
                 {
                     store.IsRobberyActive = false;
+                    store.HeatLevel = 0;
+                    store.AlarmTriggered = false;
                     store.ClerkDeathHandled = false;
                     store.ClerkCallingPolice = false;
                     store.SilentAlarmPressed = false;
-                    store.AlarmTriggered = false;
-                    store.ClerkReacted = false;
                     return;
                 }
 
@@ -446,6 +444,10 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                // Before any heat / wanted logic:
+                if (!store.IsRobberyActive || !store.ClerkReacted)
+                    return;
+
                 if (store.TimeEscalationApplied)
                     return;
 
