@@ -8,7 +8,7 @@ robbery ecosystem.
 
 FEATURES
 --------
-- 21 fully supported stores (20 Online stores + Ace Liquor)
+- 20 fully supported stores (19 Online stores + Ace Liquor)
 - Clerk AI: fear, surrender, flee, escalation
 - Register payouts and alarm escalation
 - SafeCrack minigame with UI and difficulty scaling
