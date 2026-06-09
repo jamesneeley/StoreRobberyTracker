@@ -40,7 +40,6 @@ namespace StoreRobberyTrackerMod.Systems
             return false;
         }
 
-
         // ------------------------------------------------------------
         // MAIN UPDATE
         // ------------------------------------------------------------
@@ -211,18 +210,36 @@ namespace StoreRobberyTrackerMod.Systems
         // ------------------------------------------------------------
         private void SpawnClerk(TrackedStore store)
         {
-            // Replace with our clerk model
-            Ped clerk = World.CreatePed(PedHash.Business01AMM, store.ClerkPos, store.ClerkHeading);
-            if (clerk == null || !clerk.Exists())
-                return;
+            try
+            {
+                if (store == null)
+                    return;
 
-            store.IsOurClerk = true;
-            store.Clerk = clerk;
+                // If clerk already exists, do nothing
+                if (store.Clerk != null && store.Clerk.Exists())
+                    return;
 
-            clerk.IsPersistent = true;
-            clerk.BlockPermanentEvents = true;
+                // Replace with our clerk model
+                Ped clerk = World.CreatePed(PedHash.Business01AMM, store.ClerkPos, store.ClerkHeading);
 
-            store.ClerkIdle = true;
+                if (clerk == null || !clerk.Exists())
+                    return;
+
+                store.IsOurClerk = true;
+                store.Clerk = clerk;
+
+                // ⭐ Record spawn time for interior detach logic
+                store.ClerkSpawnTime = Game.GameTime;
+
+                clerk.IsPersistent = true;
+                clerk.BlockPermanentEvents = true;
+
+                store.ClerkIdle = true;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("ClerkSystem.SpawnClerk", ex);
+            }
         }
 
         // ------------------------------------------------------------
@@ -230,23 +247,38 @@ namespace StoreRobberyTrackerMod.Systems
         // ------------------------------------------------------------
         public void ForceSpawnClerk(TrackedStore store)
         {
-            // If clerk already exists, do nothing
-            if (store.Clerk != null && store.Clerk.Exists())
+            try
+            {
+                if (store == null)
+                    return;
+
+                // If clerk already exists, do nothing
+                if (store.Clerk != null && store.Clerk.Exists())
                 return;
 
-            Ped clerk = World.CreatePed(PedHash.Business01AMM, store.ClerkPos, store.ClerkHeading);
-            if (clerk == null || !clerk.Exists())
-                return;
+                Ped clerk = World.CreatePed(PedHash.Business01AMM, store.ClerkPos, store.ClerkHeading);
 
-            store.Clerk = clerk;
-            store.IsOurClerk = true;
+                if (clerk == null || !clerk.Exists())
+                    return;
 
-            clerk.IsPersistent = true;
-            clerk.BlockPermanentEvents = true;
-            clerk.Task.ClearAllImmediately();
+                store.Clerk = clerk;
 
-            // Idle state
-            store.ClerkIdle = true;
+                // ⭐ Record spawn time for interior detach logic
+                store.ClerkSpawnTime = Game.GameTime;
+
+                store.IsOurClerk = true;
+
+                clerk.IsPersistent = true;
+                clerk.BlockPermanentEvents = true;
+                clerk.Task.ClearAllImmediately();
+
+                // Idle state
+                store.ClerkIdle = true;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("ClerkSystem.ForceSpawnClerk", ex);
+            }
         }
 
         // ------------------------------------------------------------
@@ -256,6 +288,9 @@ namespace StoreRobberyTrackerMod.Systems
         {
             try
             {
+                if (store == null)
+                    return;
+
                 // If dummy already exists, skip
                 if (store.DummyClerk != null && store.DummyClerk.Exists())
                     return;

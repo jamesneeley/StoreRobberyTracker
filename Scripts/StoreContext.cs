@@ -141,7 +141,6 @@ namespace StoreRobberyTrackerMod
 
                 // 3. Build stores
                 StoreInitializer.BuildStores(this);
-                StoreInitializer.BuildStores(this);
 
                 // ⭐ FIX: Rebuild cameras AFTER IPLs and store state load
                 Script.Wait(500);

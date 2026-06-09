@@ -30,33 +30,6 @@ namespace StoreRobberyTrackerMod.Systems
 
                 DebugLogger.Info("RobberySystem initialized");
 
-                // ⭐ Hook SafeCrack payout into robbery flow
-                // SafeCrack DOES NOT pay the player directly.
-                // It ONLY:
-                //  - Marks the safe as cracked
-                //  - Adds its payout into store.PendingPayout
-                //SafeCrackEvents.SafeCracked += (pos, payout) =>
-                //{
-                //    try
-                //    {
-                //        var store = _ctx.GetNearestStore();
-                //        if (store == null)
-                //            return;
-
-                //        // Mark safe as cracked
-                //        store.SafeCracked = true;
-
-                //        // Add safe payout into robbery total
-                //        store.PendingPayout += payout;
-
-                //        DebugLogger.Info($"[SafeCrack] Store {store.Id} safe cracked, added payout={payout}, totalPending={store.PendingPayout}");
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        DebugLogger.LogException("RobberySystem.SafeCrackEvents.SafeCracked", ex);
-                //    }
-                //};
-
                 if (_ctx.Config.EnableDebug && _ctx.Config.EnableDebugTimer)
                 {
                     _testTimerActive = true;
