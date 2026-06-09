@@ -307,6 +307,14 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
                 }
 
+                // ⭐ Non-blocking safe subtitle trigger
+                if (store.NextSafeSubtitleUtc != DateTime.MinValue &&
+                    DateTime.UtcNow >= store.NextSafeSubtitleUtc)
+                {
+                    _ctx.Ui.ShowSubtitle("There is a safe in the office — crack it too.", 4000);
+                    store.NextSafeSubtitleUtc = DateTime.MinValue;
+                }
+
                 // BAG PICKUP
                 if (store.LootBag != null && store.LootBag.Exists())
                 {
@@ -520,7 +528,7 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // REGISTER ROBBERY INITIALIZATION (FULLY PATCHED)
+        // REGISTER ROBBERY INITIALIZATION (FULLY PATCHED — NON-BLOCKING)
         // ------------------------------------------------------------
         private void StartRegisterRobbery(TrackedStore store)
         {
@@ -550,11 +558,10 @@ namespace StoreRobberyTrackerMod.Systems
                 // Subtitle #1
                 _ctx.Ui.ShowSubtitle("Rob the store and escape.", 3000);
 
-                // ⭐ If store has a safe, show follow-up subtitle
+                // ⭐ Non-blocking follow-up subtitle for safe
                 if (store.SafePos != Vector3.Zero)
                 {
-                    Script.Wait(3200);
-                    _ctx.Ui.ShowSubtitle("There is a safe in the office — crack it too.", 4000);
+                    store.NextSafeSubtitleUtc = DateTime.UtcNow.AddMilliseconds(3200);
                 }
 
                 // Save state + update blip
@@ -566,6 +573,7 @@ namespace StoreRobberyTrackerMod.Systems
                 DebugLogger.LogException("RobberySystem.StartRegisterRobbery", ex);
             }
         }
+
 
         // ------------------------------------------------------------
         // ROBBERY TIMER

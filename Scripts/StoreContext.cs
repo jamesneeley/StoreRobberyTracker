@@ -162,10 +162,6 @@ namespace StoreRobberyTrackerMod
                 Stalker = new StalkerSystem(this);
                 ClerkReplacement = new ClerkReplacementSystem(this);
 
-                // ⭐ CORRECT PLACE — ClerkReplacement now exists
-                //foreach (TrackedStore store in Stores)
-                //    ClerkReplacement.InitializeStore(store);
-
                 // ⭐ REQUIRED — this was missing
                 Safes = new SafeSystem(this);
 

@@ -51,6 +51,7 @@ namespace StoreRobberyTrackerMod.Data
         public bool PlayerInside { get; set; } = false;
         public DateTime PlayerEnteredUtc { get; set; } = DateTime.MinValue;
 
+        public DateTime NextSafeSubtitleUtc = DateTime.MinValue;
 
         public ClerkReactionType ReactionType;
 

@@ -23,21 +23,23 @@ namespace StoreRobberyTrackerMod.Systems
             if (player == null || !player.Exists() || clerk == null || !clerk.Exists())
                 return false;
 
-            // Direct aim
+            // Direct aim at clerk
             if (Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, clerk))
                 return true;
 
-            // Weapon out + close
+            // Weapon out + close range
             if (player.Weapons.Current.Hash != WeaponHash.Unarmed &&
-                player.Position.DistanceTo(clerk.Position) < 6f)
+                player.Position.DistanceTo(clerk.Position) < 4.5f)
                 return true;
 
-            // Masked robber
-            if (_ctx.Player.IsMasked())
+            // Gun pointed (even if not aiming directly at clerk)
+            if (Game.IsControlPressed(Control.Aim) &&
+                player.Weapons.Current.Hash != WeaponHash.Unarmed)
                 return true;
 
             return false;
         }
+
 
         // ------------------------------------------------------------
         // MAIN UPDATE
@@ -94,7 +96,6 @@ namespace StoreRobberyTrackerMod.Systems
                     Function.Call(Hash.CLEAR_PED_TASKS_IMMEDIATELY, clerk);
                 }
 
-
                 // HARD GUARD: never run behavior on dummy clerk
                 if (store.DummyClerk != null && store.DummyClerk.Exists() &&
                     clerk.Handle == store.DummyClerk.Handle)
@@ -124,13 +125,17 @@ namespace StoreRobberyTrackerMod.Systems
                 // ------------------------------------------------------------
                 // REACTION / ROBBERY LOGIC
                 // ------------------------------------------------------------
-
                 // Threat detection
-                if (!store.ClerkReacted && _ctx.Player.IsThreatening(clerk))
+                if (!store.ClerkReacted && IsThreateningSoft(player, clerk))
                 {
                     BeginFearReaction(store, clerk);
                     return;
                 }
+                //if (!store.ClerkReacted && _ctx.Player.IsThreatening(clerk))
+                //{
+                //    BeginFearReaction(store, clerk);
+                //    return;
+                //}
 
                 // Stall
                 if (store.ClerkStalling)
@@ -167,6 +172,7 @@ namespace StoreRobberyTrackerMod.Systems
                     return;
                 }
 
+                // Fleeing is disabled, but if it somehow triggers, override with surrender or feelfroggy fight back logic chance
                 if (store.ClerkFleeing)
                 {
                     ProcessFlee(store, clerk);
@@ -403,6 +409,7 @@ namespace StoreRobberyTrackerMod.Systems
             {
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
+
                 store.ClerkReacted = true;
                 store.ClerkIdle = false;
                 store.IsRobberyActive = true;
@@ -416,6 +423,22 @@ namespace StoreRobberyTrackerMod.Systems
                 if (store.TimesRobbed >= 2)
                     store.ClerkRecognizedPlayer = true;
 
+                // 🎲 Random chance to fight back (10–20% typical)
+                int roll = _rng.Next(0, 100);
+                if (roll < 15) // 15% chance to fight
+                {
+                    // Pick weapon type randomly
+                    bool useShotgun = _rng.Next(0, 2) == 0;
+                    store.ReactionType = useShotgun ? ClerkReactionType.FightShotgun : ClerkReactionType.FightPistol;
+
+                    DebugLogger.Info($"Clerk at store {store.Id} decided to fight back ({store.ReactionType})");
+
+                    // Trigger combat behavior immediately
+                    ProcessfeelingFroggy(store, clerk);
+                    return;
+                }
+
+                // Default panic behavior
                 store.ReactionType = ClerkReactionType.NormalPanic;
 
                 // Stall
