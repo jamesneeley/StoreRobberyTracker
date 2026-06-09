@@ -69,6 +69,27 @@ namespace StoreRobberyEnhanced.Systems
             {
                 DebugLogger.Trace($"UpdateStoreCameras({store.Id})");
 
+                // ⭐ Suppress cameras during debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                {
+                    DebugLogger.Trace($"CameraSystem suppressed — DebugEscape active for store {store.Id}");
+                    return;
+                }
+
+                // ⭐ Suppress cameras after robbery ended
+                if (store.RobberyEnded)
+                {
+                    DebugLogger.Trace($"CameraSystem suppressed — robbery ended for store {store.Id}");
+                    return;
+                }
+
+                // ⭐ Suppress cameras during cooldown
+                if (store.CooldownActive)
+                {
+                    DebugLogger.Trace($"CameraSystem suppressed — cooldown active for store {store.Id}");
+                    return;
+                }
+
                 if (!_ctx.Config.EnableCameras)
                 {
                     DebugLogger.Trace("Cameras disabled via config");
@@ -133,6 +154,18 @@ namespace StoreRobberyEnhanced.Systems
             {
                 DebugLogger.Trace($"ProcessInteriorCameras({store.Id})");
 
+                // ⭐ Suppress interior cameras during debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return false;
+
+                // ⭐ Suppress after robbery ended
+                if (store.RobberyEnded)
+                    return false;
+
+                // ⭐ Suppress during cooldown
+                if (store.CooldownActive)
+                    return false;
+
                 if (!_ctx.Config.EnableCameras)
                     return false;
 
@@ -162,28 +195,41 @@ namespace StoreRobberyEnhanced.Systems
                     foundAny = true;
 
                     // ------------------------------------------------------------
+                    // ⭐ PATCH 6E — AUTO‑EXPIRE GRACE WINDOW FOR INTERIOR CAMERAS
+                    // ------------------------------------------------------------
+                    CameraData nearest = null;
+                    float bestDist = 9999f;
+
+                    foreach (var fcam in store.Cameras)
+                    {
+                        float d = fcam.Position.DistanceTo(cam.Position);
+                        if (d < bestDist)
+                        {
+                            bestDist = d;
+                            nearest = fcam;
+                        }
+                    }
+
+                    if (nearest != null && nearest.GraceActive && nearest.GraceDurationSeconds > 0)
+                    {
+                        double graceElapsed = (DateTime.UtcNow - nearest.GraceStartUtc).TotalSeconds;
+                        if (graceElapsed >= nearest.GraceDurationSeconds)
+                        {
+                            nearest.GraceActive = false;
+                            DebugLogger.Trace(
+                                $"Interior camera grace expired naturally for store {store.Id}"
+                            );
+                        }
+                    }
+
+                    // ------------------------------------------------------------
                     // ⭐ INTERIOR CAMERA DESTRUCTION → SYNC WITH FALLBACK CAMERAS
                     // ------------------------------------------------------------
                     if (PlayerDestroyedCamera(cam, player))
                     {
                         DebugLogger.Info($"Interior camera destroyed at {cam.Position} for store {store.Id}");
 
-                        // Delete the prop
                         cam.Delete();
-
-                        // ⭐ Mark the nearest fallback camera as destroyed
-                        CameraData nearest = null;
-                        float bestDist = 9999f;
-
-                        foreach (var fcam in store.Cameras)
-                        {
-                            float d = fcam.Position.DistanceTo(cam.Position);
-                            if (d < bestDist)
-                            {
-                                bestDist = d;
-                                nearest = fcam;
-                            }
-                        }
 
                         if (nearest != null)
                         {
@@ -200,25 +246,10 @@ namespace StoreRobberyEnhanced.Systems
                     // ------------------------------------------------------------
                     if (CameraSeesPlayer(cam.Position, cam.ForwardVector, player))
                     {
-                        // ⭐ Clerk must have reacted before cameras can trigger alarms
-                        if (!store.ClerkReacted)
+                        if (!IsCameraThreat(store, player, store.Clerk))
                         {
                             DebugLogger.Trace($"Interior camera sees player but clerk not reacted — ignoring for store {store.Id}");
                             continue;
-                        }
-
-                        // ⭐ Start grace period on nearest fallback camera
-                        CameraData nearest = null;
-                        float bestDist = 9999f;
-
-                        foreach (var fcam in store.Cameras)
-                        {
-                            float d = fcam.Position.DistanceTo(cam.Position);
-                            if (d < bestDist)
-                            {
-                                bestDist = d;
-                                nearest = fcam;
-                            }
                         }
 
                         if (nearest != null)
@@ -243,7 +274,6 @@ namespace StoreRobberyEnhanced.Systems
                                         $"Interior camera alarm triggered after grace for store {store.Id}"
                                     );
 
-                                    // ⭐ ONE-SHOT
                                     nearest.GraceActive = false;
                                     nearest.Destroyed = true;
 
@@ -292,6 +322,18 @@ namespace StoreRobberyEnhanced.Systems
             {
                 DebugLogger.Trace($"ProcessFallbackCameras({store.Id})");
 
+                // ⭐ Suppress fallback cameras during debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                // ⭐ Suppress after robbery ended
+                if (store.RobberyEnded)
+                    return;
+
+                // ⭐ Suppress during cooldown
+                if (store.CooldownActive)
+                    return;
+
                 if (!_ctx.Config.EnableCameras)
                     return;
 
@@ -311,6 +353,21 @@ namespace StoreRobberyEnhanced.Systems
                 for (int i = 0; i < count; i++)
                 {
                     CameraData cam = store.Cameras[i];
+
+                    // ------------------------------------------------------------
+                    // ⭐ AUTO‑EXPIRE GRACE WINDOW (PATCH 6D)
+                    // ------------------------------------------------------------
+                    if (cam.GraceActive && cam.GraceDurationSeconds > 0)
+                    {
+                        double graceElapsed = (DateTime.UtcNow - cam.GraceStartUtc).TotalSeconds;
+                        if (graceElapsed >= cam.GraceDurationSeconds)
+                        {
+                            cam.GraceActive = false;
+                            DebugLogger.Trace(
+                                $"Fallback camera {i} grace expired naturally for store {store.Id}"
+                            );
+                        }
+                    }
 
                     // ------------------------------------------------------------
                     // ⭐ DESTROYED CAMERAS ARE FULLY IGNORED
@@ -348,7 +405,7 @@ namespace StoreRobberyEnhanced.Systems
                     if (seesPlayer)
                     {
                         // ⭐ Clerk must have reacted before cameras can escalate
-                        if (!store.ClerkReacted)
+                        if (!IsCameraThreat(store, player, store.Clerk))
                         {
                             DebugLogger.Trace(
                                 $"Fallback camera {i} sees player but clerk not reacted — ignoring for store {store.Id}"
@@ -524,7 +581,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // CAMERA ALARM FLAG
+        // CAMERA ALARM FLAG (PATCH 8A APPLIED)
         // ------------------------------------------------------------
         private void TriggerCameraFlag(TrackedStore store)
         {
@@ -537,6 +594,27 @@ namespace StoreRobberyEnhanced.Systems
                 if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                 {
                     DebugLogger.Trace($"Camera alarm suppressed — SafeCrack active for store {store.Id}");
+                    return;
+                }
+
+                // ⭐ PATCH 8A — Suppress during debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                {
+                    DebugLogger.Trace($"Camera alarm suppressed — DebugEscape active for store {store.Id}");
+                    return;
+                }
+
+                // ⭐ PATCH 8A — Suppress after robbery ended
+                if (store.RobberyEnded)
+                {
+                    DebugLogger.Trace($"Camera alarm suppressed — robbery ended for store {store.Id}");
+                    return;
+                }
+
+                // ⭐ PATCH 8A — Suppress during cooldown
+                if (store.CooldownActive)
+                {
+                    DebugLogger.Trace($"Camera alarm suppressed — cooldown active for store {store.Id}");
                     return;
                 }
 
@@ -556,7 +634,12 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
+                // ------------------------------------------------------------
+                // ⭐ PATCH 8A — SAFE HEAT INCREMENT
+                // ------------------------------------------------------------
                 store.AlarmTriggered = true;
+
+                // No MaxHeat config → just increment safely
                 store.HeatLevel += 1;
 
                 DebugLogger.Info($"Camera alarm triggered for store {store.Id}, heat={store.HeatLevel}");
@@ -564,6 +647,49 @@ namespace StoreRobberyEnhanced.Systems
             catch (Exception ex)
             {
                 DebugLogger.LogException("CameraSystem.TriggerCameraFlag", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // CAMERA THREAT CHECK (GUN-ONLY)
+        // ------------------------------------------------------------
+        private bool IsCameraThreat(TrackedStore store, Ped player, Ped clerk)
+        {
+            try
+            {
+                if (store == null || player == null || !player.Exists() || clerk == null || !clerk.Exists())
+                    return false;
+
+                // ⭐ SilentRobbery: cameras NEVER escalate
+                if (store.SilentRobbery)
+                    return false;
+
+                // ⭐ Must have reacted first
+                if (!store.ClerkReacted)
+                    return false;
+
+                Weapon current = player.Weapons.Current;
+                if (current == null)
+                    return false;
+
+                // ⭐ Only guns count as threats
+                bool isGun =
+                    current.Hash != WeaponHash.Unarmed &&
+                    current.Group != WeaponGroup.Melee;
+
+                if (!isGun)
+                    return false;
+
+                // ⭐ Must be aiming AND have LOS
+                bool aiming = Game.IsControlPressed(Control.Aim);
+                bool los = Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, player.Handle, clerk.Handle, 17);
+
+                return aiming && los;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("CameraSystem.IsCameraThreat", ex);
+                return false;
             }
         }
 

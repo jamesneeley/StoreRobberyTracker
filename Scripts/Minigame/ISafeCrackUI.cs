@@ -6,5 +6,8 @@ namespace StoreRobberyEnhanced.Minigame
     {
         void Draw(SafeCrackState state, SafeCrackSettings settings);
         void Clear();
+
+        // ⭐ Add this:
+        void Enable();
     }
 }

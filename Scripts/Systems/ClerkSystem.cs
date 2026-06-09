@@ -23,25 +23,40 @@ namespace StoreRobberyEnhanced.Systems
             if (player == null || !player.Exists() || clerk == null || !clerk.Exists())
                 return false;
 
-            // Direct aim at clerk
-            if (Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, clerk))
+            WeaponHash hash = player.Weapons.Current.Hash;
+            bool isMelee = _ctx.Player.IsMeleeWeapon(hash);
+
+            // ------------------------------------------------------------
+            // ⭐ 1. Direct aim at clerk (ONLY guns count)
+            // ------------------------------------------------------------
+            if (!isMelee &&
+                Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, clerk))
                 return true;
 
-            // Weapon out + close range
-            if (player.Weapons.Current.Hash != WeaponHash.Unarmed &&
+            // ------------------------------------------------------------
+            // ⭐ 2. Gun out + close range (melee does NOT count)
+            // ------------------------------------------------------------
+            if (!isMelee &&
+                hash != WeaponHash.Unarmed &&
                 player.Position.DistanceTo(clerk.Position) < 4.5f)
                 return true;
 
-            // Gun pointed (even if not aiming directly at clerk)
-            if (Game.IsControlPressed(Control.Aim) &&
-                player.Weapons.Current.Hash != WeaponHash.Unarmed)
+            // ------------------------------------------------------------
+            // ⭐ 3. Aiming a gun (melee aim is NOT a threat)
+            // ------------------------------------------------------------
+            if (!isMelee &&
+                Game.IsControlPressed(Control.Aim) &&
+                hash != WeaponHash.Unarmed)
                 return true;
 
+            // ------------------------------------------------------------
+            // ⭐ 4. Melee weapons NEVER trigger clerk reaction
+            // ------------------------------------------------------------
             return false;
         }
 
         // ------------------------------------------------------------
-        // MAIN UPDATE
+        // MAIN UPDATE (PATCH 7 + PATCH 10 APPLIED)
         // ------------------------------------------------------------
         public void UpdateClerk(TrackedStore store, Ped player)
         {
@@ -50,15 +65,12 @@ namespace StoreRobberyEnhanced.Systems
                 if (store == null)
                     return;
 
+                // ⭐ Cooldown → clerk logic disabled
                 if (store.CooldownActive)
                     return;
 
                 if (player == null || !player.Exists())
                     return;
-
-                //// Track player inside store
-                //store.IsPlayerInsideStore =
-                //    player.Position.DistanceTo(store.StorePos) <= store.Radius;
 
                 // BLOCK spawning until replacement system has removed defaults
                 if (!store.DefaultClerkRemoved)
@@ -71,7 +83,6 @@ namespace StoreRobberyEnhanced.Systems
                     store.IsRobberyActive = false;
                     store.ClerkReacted = false;
                     store.HeatLevel = 0;
-
                     return;
                 }
 
@@ -80,18 +91,91 @@ namespace StoreRobberyEnhanced.Systems
                 if (clerk == null || !clerk.Exists())
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ PATCH 10 — CLERK STATE MACHINE INTEGRITY GUARD
+                // ------------------------------------------------------------
+
+                // If clerk is dead → force all states off
+                if (clerk.IsDead)
+                {
+                    store.ClerkStalling = false;
+                    store.ClerkOpeningRegister = false;
+                    store.ClerkGrabbingCash = false;
+                    store.ClerkThrowingBag = false;
+                    store.ClerkPanicking = false;
+                    store.ClerkFleeing = false;
+                    store.ClerkSurrenderStage = 0;
+                    return;
+                }
+
+                // If robbery ended → no clerk phases allowed
+                if (store.RobberyEnded || store.CooldownActive)
+                {
+                    store.ClerkStalling = false;
+                    store.ClerkOpeningRegister = false;
+                    store.ClerkGrabbingCash = false;
+                    store.ClerkThrowingBag = false;
+                    store.ClerkPanicking = false;
+                    store.ClerkFleeing = false;
+                    store.ClerkSurrenderStage = 0;
+                    return;
+                }
+
+                // If SafeCrack running → freeze clerk
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                {
+                    store.ClerkStalling = false;
+                    store.ClerkOpeningRegister = false;
+                    store.ClerkGrabbingCash = false;
+                    store.ClerkThrowingBag = false;
+                    store.ClerkPanicking = false;
+                    // Fleeing allowed (surrender safe)
+                }
+
+                // If SilentRobbery → clerk must never react
+                if (store.SilentRobbery)
+                {
+                    store.ClerkStalling = false;
+                    store.ClerkOpeningRegister = false;
+                    store.ClerkGrabbingCash = false;
+                    store.ClerkThrowingBag = false;
+                    store.ClerkPanicking = false;
+                    store.ClerkFleeing = false;
+                    store.ClerkSurrenderStage = 0;
+                    return;
+                }
+
+                // Ensure only ONE phase is active
+                int activePhases =
+                    (store.ClerkStalling ? 1 : 0) +
+                    (store.ClerkOpeningRegister ? 1 : 0) +
+                    (store.ClerkGrabbingCash ? 1 : 0) +
+                    (store.ClerkThrowingBag ? 1 : 0) +
+                    (store.ClerkPanicking ? 1 : 0) +
+                    (store.ClerkFleeing ? 1 : 0);
+
+                if (activePhases > 1)
+                {
+                    DebugLogger.Warn($"[PATCH10] Clerk state corruption detected for store {store.Id} — resetting to surrender.");
+
+                    store.ClerkStalling = false;
+                    store.ClerkOpeningRegister = false;
+                    store.ClerkGrabbingCash = false;
+                    store.ClerkThrowingBag = false;
+                    store.ClerkPanicking = false;
+
+                    store.ClerkFleeing = true;
+                    store.ClerkSurrenderStage = 0;
+                }
+
+                // ------------------------------------------------------------
                 // ⭐ SAFETY RESET: only if clerk is actually stuck AND no robbery is active
+                // ------------------------------------------------------------
                 bool usingScenario = Function.Call<bool>(Hash.IS_PED_USING_ANY_SCENARIO, clerk);
 
                 if (!store.IsRobberyActive && (clerk.IsRagdoll || usingScenario))
                 {
-                    DebugLogger.Info(string.Format(
-                        "[RESET] Forcing task clear on clerk {0} (ragdoll={1} scenario={2})",
-                        clerk.Handle,
-                        clerk.IsRagdoll,
-                        usingScenario
-                    ));
-
+                    DebugLogger.Info($"[RESET] Forcing task clear on clerk {clerk.Handle} (ragdoll={clerk.IsRagdoll} scenario={usingScenario})");
                     Function.Call(Hash.CLEAR_PED_TASKS_IMMEDIATELY, clerk);
                 }
 
@@ -102,6 +186,7 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
+                // ⭐ Clerk dead → no reaction logic
                 if (clerk.IsDead)
                 {
                     if (store.IsOurClerk)
@@ -109,7 +194,34 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
-                // Normal idle logic
+                // ------------------------------------------------------------
+                // ⭐ PATCH 7 — REACTION SAFETY GUARDS
+                // ------------------------------------------------------------
+
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                if (store.ClerkFleeing || clerk.IsFleeing)
+                    return;
+
+                if (clerk.IsRagdoll)
+                    return;
+
+                if (!store.IsPlayerInsideStore)
+                    return;
+
+                // ------------------------------------------------------------
+                // NORMAL IDLE LOGIC
+                // ------------------------------------------------------------
                 if (!store.ClerkReacted &&
                     !store.ClerkStalling &&
                     !store.ClerkOpeningRegister &&
@@ -122,16 +234,38 @@ namespace StoreRobberyEnhanced.Systems
                 }
 
                 // ------------------------------------------------------------
-                // REACTION / ROBBERY LOGIC
+                // ⭐ PATCH 7 — THREAT VALIDATION
                 // ------------------------------------------------------------
-                // Threat detection
-                if (!store.ClerkReacted && IsThreateningSoft(player, clerk))
+                if (!store.ClerkReacted)
                 {
-                    BeginFearReaction(store, clerk);
-                    return;
+                    Weapon weapon = player.Weapons.Current;
+                    bool isGun =
+                        weapon != null &&
+                        weapon.Hash != WeaponHash.Unarmed &&
+                        weapon.Group != WeaponGroup.Melee;
+
+                    if (isGun)
+                    {
+                        bool aiming = Game.IsControlPressed(Control.Aim);
+
+                        bool los = Function.Call<bool>(
+                            Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY,
+                            clerk.Handle,
+                            player.Handle,
+                            17
+                        );
+
+                        if (aiming && los && IsThreateningSoft(player, clerk))
+                        {
+                            BeginFearReaction(store, clerk);
+                            return;
+                        }
+                    }
                 }
 
-                // Stall
+                // ------------------------------------------------------------
+                // REMAINING BEHAVIOR
+                // ------------------------------------------------------------
                 if (store.ClerkStalling)
                 {
                     ProcessStall(store, clerk);
@@ -249,7 +383,7 @@ namespace StoreRobberyEnhanced.Systems
 
                 // If clerk already exists, do nothing
                 if (store.Clerk != null && store.Clerk.Exists())
-                return;
+                    return;
 
                 Ped clerk = World.CreatePed(PedHash.Business01AMM, store.ClerkPos, store.ClerkHeading);
 
@@ -269,6 +403,16 @@ namespace StoreRobberyEnhanced.Systems
 
                 // Idle state
                 store.ClerkIdle = true;
+
+                // ------------------------------------------------------------
+                // ⭐ SECOND FIX — STOP FUTURE CLERK SWEEPS
+                // ------------------------------------------------------------
+                store.DefaultClerkRemoved = true;
+
+                // Push next sweep far into the future so ClerkReplacementSystem stops touching this store
+                store.LastClerkSweepUtc = DateTime.UtcNow + TimeSpan.FromHours(12);
+
+                DebugLogger.Info($"ForceSpawnClerk: Clerk spawned and sweeps disabled for store {store.Id}");
             }
             catch (Exception ex)
             {
@@ -387,6 +531,65 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
+        // SILENT ROBBERY COSMETIC ANIM
+        // ------------------------------------------------------------
+        public void PlaySilentRobberyAnim(TrackedStore store)
+        {
+            try
+            {
+                var clerk = store.Clerk;
+                if (clerk == null || !clerk.Exists())
+                    return;
+
+                // Cosmetic-only animation
+                clerk.Task.ClearAllImmediately();
+
+                Function.Call(Hash.REQUEST_ANIM_DICT, "mp_common");
+
+                if (Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, "mp_common"))
+                {
+                    Function.Call(
+                        Hash.TASK_PLAY_ANIM,
+                        clerk.Handle,
+                        "mp_common",
+                        "givetake1_a",   // subtle handover motion
+                        4.0f,
+                        -4.0f,
+                        1500,
+                        (int)AnimationFlags.None,
+                        0f,
+                        false, false, false
+                    );
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ PLAY QUIET REGISTER / MONEY SOUND
+                // ------------------------------------------------------------
+                // "ROBBERY_MONEY" is a subtle cash-handling sound used in GTA V
+                Function.Call(Hash.PLAY_SOUND_FROM_ENTITY,
+                    -1,
+                    "ROBBERY_MONEY",
+                    clerk.Handle,
+                    "HUD_AWARDS",   // sound set
+                    false,
+                    0
+                );
+                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+
+                // ------------------------------------------------------------
+                // ⭐ PLAYER NOTIFICATION
+                // ------------------------------------------------------------
+                _ctx.Ui.ShowNotification(
+                    "~g~Clerk quietly hands over the register cash.~s~ Crack the safe before leaving."
+                );
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("ClerkSystem.PlaySilentRobberyAnim", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
         // IDLE BEHAVIOR
         // ------------------------------------------------------------
         private void RunIdleBehavior(TrackedStore store, Ped clerk)
@@ -488,7 +691,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // STALL PROCESSING
+        // STALL PROCESSING (PATCH 9A APPLIED)
         // ------------------------------------------------------------
         private void ProcessStall(TrackedStore store, Ped clerk)
         {
@@ -497,7 +700,29 @@ namespace StoreRobberyEnhanced.Systems
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
 
-                // Still stalling? Keep playing nervous idle
+                // ⭐ PATCH 9A — Suppression states
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.CooldownActive)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                // ⭐ Clerk cannot continue stall if invalid state
+                if (clerk.IsDead || clerk.IsRagdoll || store.ClerkFleeing)
+                    return;
+
+                // ------------------------------------------------------------
+                // STILL STALLING?
+                // ------------------------------------------------------------
                 if ((DateTime.UtcNow - store.StallStartUtc).TotalMilliseconds < store.StallDurationMs)
                 {
                     // Ensure nervous idle is playing
@@ -525,18 +750,24 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
-                // Stall finished → move to register opening
+                // ------------------------------------------------------------
+                // ⭐ PATCH 9A — Stall finished → transition safety
+                // ------------------------------------------------------------
                 store.ClerkStalling = false;
 
-                clerk.Task.ClearAllImmediately();
-                clerk.Position = store.RegisterPos;
-                clerk.Heading = store.RegisterHeading;
+                // Prevent teleporting clerk while ragdolled or fleeing
+                if (!clerk.IsRagdoll && !store.ClerkFleeing)
+                {
+                    clerk.Task.ClearAllImmediately();
+                    clerk.Position = store.RegisterPos;
+                    clerk.Heading = store.RegisterHeading;
+                }
 
+                // Begin register opening
                 store.ClerkOpeningRegister = true;
                 store.ClerkAnimStartUtc = DateTime.UtcNow;
                 store.ClerkAnimDurationMs = 1800;
 
-                //clerk.Task.PlayAnimation("mp_am_hold_up", "purchase_beer_shopkeeper", 8f, -1, AnimationFlags.None);
                 PlayAnimNative(clerk, "mp_am_hold_up", "purchase_beer_shopkeeper", AnimationFlags.None);
             }
             catch (Exception ex)
@@ -546,7 +777,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // REGISTER OPENING
+        // REGISTER OPENING (PATCH 9B APPLIED)
         // ------------------------------------------------------------
         private void ProcessRegisterOpening(TrackedStore store, Ped clerk)
         {
@@ -555,22 +786,47 @@ namespace StoreRobberyEnhanced.Systems
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
 
-                // Still playing the "enter" animation?
+                // ⭐ PATCH 9B — Suppression states
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.CooldownActive)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                // ⭐ Clerk cannot continue register opening if invalid state
+                if (clerk.IsDead || clerk.IsRagdoll || store.ClerkFleeing)
+                    return;
+
+                // ------------------------------------------------------------
+                // STILL IN FIRST ANIMATION PHASE?
+                // ------------------------------------------------------------
                 if ((DateTime.UtcNow - store.ClerkAnimStartUtc).TotalMilliseconds < store.ClerkAnimDurationMs)
                     return;
 
-                // First phase: play "enter"
+                // ------------------------------------------------------------
+                // FIRST PHASE: PLAY "ENTER" ANIMATION
+                // ------------------------------------------------------------
                 if (!store.ClerkGrabbingCash)
                 {
                     store.ClerkGrabbingCash = true; // move to cash grab phase
 
-                    clerk.Task.ClearAllImmediately();
+                    // Safety: clear tasks only if clerk is stable
+                    if (!clerk.IsRagdoll && !store.ClerkFleeing)
+                        clerk.Task.ClearAllImmediately();
 
                     Function.Call(Hash.REQUEST_ANIM_DICT, "anim@heists@ornate_bank@grab_cash");
 
                     if (Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, "anim@heists@ornate_bank@grab_cash"))
                     {
-                        // Clerk leans forward and opens the register
                         Function.Call(
                             Hash.TASK_PLAY_ANIM,
                             clerk.Handle,
@@ -584,6 +840,10 @@ namespace StoreRobberyEnhanced.Systems
                             false, false, false
                         );
                     }
+                    else
+                    {
+                        DebugLogger.Warn("RegisterOpening: anim dict failed to load");
+                    }
 
                     // Set timer for next phase
                     store.ClerkAnimStartUtc = DateTime.UtcNow;
@@ -591,22 +851,28 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
-                // Second phase: idle at open register
+                // ------------------------------------------------------------
+                // SECOND PHASE: IDLE AT OPEN REGISTER
+                // ------------------------------------------------------------
                 store.ClerkGrabbingCash = false;
                 store.ClerkThrowingBag = true;
 
-                Function.Call(
-                    Hash.TASK_PLAY_ANIM,
-                    clerk.Handle,
-                    "anim@heists@ornate_bank@grab_cash",
-                    "idle",
-                    8.0f,
-                    -8.0f,
-                    -1,
-                    (int)AnimationFlags.Loop,
-                    0f,
-                    false, false, false
-                );
+                // Safety: only play idle if clerk is stable
+                if (!clerk.IsRagdoll && !store.ClerkFleeing)
+                {
+                    Function.Call(
+                        Hash.TASK_PLAY_ANIM,
+                        clerk.Handle,
+                        "anim@heists@ornate_bank@grab_cash",
+                        "idle",
+                        8.0f,
+                        -8.0f,
+                        -1,
+                        (int)AnimationFlags.Loop,
+                        0f,
+                        false, false, false
+                    );
+                }
             }
             catch (Exception ex)
             {
@@ -615,7 +881,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // CASH GRAB
+        // CASH GRAB (PATCH 9C APPLIED)
         // ------------------------------------------------------------
         private void ProcessCashGrab(TrackedStore store, Ped clerk)
         {
@@ -624,16 +890,45 @@ namespace StoreRobberyEnhanced.Systems
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
 
-                // Still playing previous phase?
+                // ⭐ PATCH 9C — Suppression states
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.CooldownActive)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                // ⭐ Clerk cannot continue cash grab if invalid state
+                if (clerk.IsDead || clerk.IsRagdoll || store.ClerkFleeing)
+                    return;
+
+                // ------------------------------------------------------------
+                // STILL IN PREVIOUS PHASE?
+                // ------------------------------------------------------------
                 if ((DateTime.UtcNow - store.ClerkAnimStartUtc).TotalMilliseconds < store.ClerkAnimDurationMs)
                     return;
 
+                // ------------------------------------------------------------
+                // TRANSITION TO BAG TOSS PHASE
+                // ------------------------------------------------------------
                 store.ClerkGrabbingCash = false;
-                store.ClerkThrowingBag = true; // correct, but only AFTER anim finishes
+                store.ClerkThrowingBag = true;
 
-                clerk.Task.ClearAllImmediately();
+                // Safety: only clear tasks if clerk is stable
+                if (!clerk.IsRagdoll && !store.ClerkFleeing)
+                    clerk.Task.ClearAllImmediately();
 
-                // Load anim dict
+                // ------------------------------------------------------------
+                // LOAD ANIM DICT
+                // ------------------------------------------------------------
                 Function.Call(Hash.REQUEST_ANIM_DICT, "mp_common");
 
                 if (Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, "mp_common"))
@@ -652,14 +947,23 @@ namespace StoreRobberyEnhanced.Systems
                         false, false, false
                     );
                 }
+                else
+                {
+                    DebugLogger.Warn("CashGrab: anim dict 'mp_common' failed to load");
+                }
 
-                // Set timing for next phase
+                // ------------------------------------------------------------
+                // SET TIMING FOR NEXT PHASE
+                // ------------------------------------------------------------
                 store.ClerkAnimStartUtc = DateTime.UtcNow;
                 store.ClerkAnimDurationMs = 1500;
 
-                // Add payout
+                // ------------------------------------------------------------
+                // PATCH 9C — SAFE PAYOUT (ONE-SHOT)
+                // ------------------------------------------------------------
                 int payout = _ctx.Rng.Next(_ctx.Config.RegisterMinAmount, _ctx.Config.RegisterMaxAmount + 1);
                 payout = (int)(payout * _ctx.Config.PayoutMultiplier);
+
                 store.PendingPayout += payout;
             }
             catch (Exception ex)
@@ -669,7 +973,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // BAG TOSS
+        // BAG TOSS (PATCH 9D APPLIED)
         // ------------------------------------------------------------
         private void ProcessBagToss(TrackedStore store, Ped clerk)
         {
@@ -678,14 +982,40 @@ namespace StoreRobberyEnhanced.Systems
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
 
-                // Wait for previous animation to finish
+                // ⭐ PATCH 9D — Suppression states
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.CooldownActive)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                // ⭐ Clerk cannot toss bag if invalid state
+                if (clerk.IsDead || clerk.IsRagdoll || store.ClerkFleeing)
+                    return;
+
+                // ⭐ Wait for previous animation to finish
                 if ((DateTime.UtcNow - store.ClerkAnimStartUtc).TotalMilliseconds < store.ClerkAnimDurationMs)
                     return;
 
+                // ⭐ End bag‑toss phase
                 store.ClerkThrowingBag = false;
 
-                // ⭐ Play the actual toss animation
-                clerk.Task.ClearAllImmediately();
+                // ⭐ Safety: only clear tasks if clerk is stable
+                if (!clerk.IsRagdoll && !store.ClerkFleeing)
+                    clerk.Task.ClearAllImmediately();
+
+                // ------------------------------------------------------------
+                // PLAY BAG TOSS ANIMATION
+                // ------------------------------------------------------------
                 Function.Call(Hash.REQUEST_ANIM_DICT, "mp_common");
 
                 if (Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, "mp_common"))
@@ -703,15 +1033,23 @@ namespace StoreRobberyEnhanced.Systems
                         false, false, false
                     );
                 }
+                else
+                {
+                    DebugLogger.Warn("BagToss: anim dict 'mp_common' failed to load");
+                }
 
-                store.ClerkThrowingBag = false;
-
-                // ⭐ Spawn the REAL loot bag on the floor
+                // ------------------------------------------------------------
+                // SPAWN REAL LOOT BAG (ONE-SHOT)
+                // ------------------------------------------------------------
                 _ctx.Robberies.SpawnLootBag(store, clerk);
 
-                // ⭐ Force surrender instead of flee
+                // ------------------------------------------------------------
+                // TRANSITION TO SURRENDER SEQUENCE
+                // ------------------------------------------------------------
                 store.ClerkPanicking = false;
-                store.ClerkFleeing = true; // triggers surrender handler
+
+                // ⭐ PATCH 9D — force surrender, not flee
+                store.ClerkFleeing = true;
                 store.ClerkSurrenderStage = 0;   // triggers surrender sequence next tick
             }
             catch (Exception ex)
@@ -721,7 +1059,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // PANIC
+        // PANIC (PATCH 9E APPLIED)
         // ------------------------------------------------------------
         private void ProcessPanic(TrackedStore store, Ped clerk)
         {
@@ -730,7 +1068,27 @@ namespace StoreRobberyEnhanced.Systems
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
 
-                // Simple cower behavior
+                // ⭐ PATCH 9E — Suppression states
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.CooldownActive)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                // ⭐ Clerk cannot panic if invalid state
+                if (clerk.IsDead || clerk.IsRagdoll || store.ClerkFleeing)
+                    return;
+
+                // ⭐ Simple cower behavior (safe)
                 if (!clerk.IsInCombat && !clerk.IsFleeing)
                 {
                     clerk.Task.ClearAllImmediately();
@@ -744,7 +1102,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // FLEE / SURRENDER OVERRIDE (SAFE, FULLY PATCHED)
+        // FLEE / SURRENDER OVERRIDE (PATCH 9E APPLIED)
         // ------------------------------------------------------------
         private void ProcessFlee(TrackedStore store, Ped clerk)
         {
@@ -753,7 +1111,23 @@ namespace StoreRobberyEnhanced.Systems
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
 
-                // Fleeing is disabled — clerks surrender instead
+                // ⭐ PATCH 9E — Suppression states
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.CooldownActive)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                // ⭐ Fleeing is disabled — clerks surrender instead
                 store.ClerkFleeing = false;
 
                 if (store.ClerkSurrenderStage == 0)
@@ -772,11 +1146,15 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // CLERK SURRENDER & KNEEL HANDLING
+        // CLERK SURRENDER START (PATCH 9E APPLIED)
         // ------------------------------------------------------------
         private void StartClerkSurrender(TrackedStore store, Ped clerk)
         {
             if (clerk == null || !clerk.Exists())
+                return;
+
+            // ⭐ Safety: do not start surrender if clerk is invalid
+            if (clerk.IsDead || clerk.IsRagdoll)
                 return;
 
             clerk.Task.ClearAllImmediately();
@@ -803,9 +1181,16 @@ namespace StoreRobberyEnhanced.Systems
             store.ClerkAnimDurationMs = 1500;
         }
 
+        // ------------------------------------------------------------
+        // CLERK SURRENDER UPDATE (PATCH 9E APPLIED)
+        // ------------------------------------------------------------
         private void UpdateClerkSurrender(TrackedStore store, Ped clerk)
         {
             if (clerk == null || !clerk.Exists())
+                return;
+
+            // ⭐ Safety: surrender cannot continue if clerk is invalid
+            if (clerk.IsDead || clerk.IsRagdoll)
                 return;
 
             double elapsed = (DateTime.UtcNow - store.ClerkAnimStartUtc).TotalMilliseconds;
@@ -854,7 +1239,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // FIGHT OR FLIGHT PISTOL / SHOTGUN
+        // FIGHT OR FLIGHT PISTOL / SHOTGUN (PATCH 9F APPLIED)
         // ------------------------------------------------------------
         private void ProcessFeelingFroggy(TrackedStore store, Ped clerk)
         {
@@ -863,29 +1248,77 @@ namespace StoreRobberyEnhanced.Systems
                 if (store == null || clerk == null || !clerk.Exists())
                     return;
 
+                // ⭐ PATCH 9F — Suppression states
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.CooldownActive)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                // ⭐ Clerk cannot fight if invalid state
+                if (clerk.IsDead || clerk.IsRagdoll || store.ClerkFleeing)
+                    return;
+
+                // ⭐ Wait for previous animation to finish
                 if ((DateTime.UtcNow - store.ClerkAnimStartUtc).TotalMilliseconds < store.ClerkAnimDurationMs)
                     return;
 
                 Ped player = Game.Player.Character;
+                if (player == null || !player.Exists())
+                    return;
 
+                // ⭐ Must have LOS to player
+                bool los = Function.Call<bool>(
+                    Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY,
+                    clerk.Handle,
+                    player.Handle,
+                    17
+                );
+                if (!los)
+                    return;
+
+                // ⭐ Must be facing player (prevents 180° instant snap)
+                Vector3 toPlayer = (player.Position - clerk.Position).Normalized;
+                float dot = Vector3.Dot(clerk.ForwardVector, toPlayer);
+                if (dot < 0.25f) // ~75° cone
+                    return;
+
+                // ⭐ Must not be in another phase
+                if (store.ClerkStalling ||
+                    store.ClerkOpeningRegister ||
+                    store.ClerkGrabbingCash ||
+                    store.ClerkThrowingBag ||
+                    store.ClerkPanicking)
+                    return;
+
+                // ------------------------------------------------------------
+                // ⭐ FIGHT BACK
+                // ------------------------------------------------------------
                 switch (store.ReactionType)
                 {
                     case ClerkReactionType.FightPistol:
                         clerk.Weapons.Give(WeaponHash.Pistol, 60, true, true);
-                        if (player != null && player.Exists())
-                            clerk.Task.Combat(player);
+                        clerk.Task.Combat(player);
                         break;
 
                     case ClerkReactionType.FightShotgun:
                         clerk.Weapons.Give(WeaponHash.PumpShotgun, 20, true, true);
-                        if (player != null && player.Exists())
-                            clerk.Task.Combat(player);
+                        clerk.Task.Combat(player);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                DebugLogger.LogException("ClerkSystem.ProcessBagToss", ex);
+                DebugLogger.LogException("ClerkSystem.ProcessFeelingFroggy", ex);
             }
         }
 
@@ -974,13 +1407,29 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // POLICE CALL
+        // POLICE CALL (PATCH 8B APPLIED)
         // ------------------------------------------------------------
         private void TryTriggerPoliceCall(TrackedStore store, Ped clerk, Ped player)
         {
             try
             {
                 if (store == null || clerk == null || !clerk.Exists() || player == null || !player.Exists())
+                    return;
+
+                // ⭐ PATCH 8B — HEAT SAFETY GUARDS
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
+                if (store.RobberyEnded)
+                    return;
+
+                if (store.CooldownActive)
+                    return;
+
+                if (store.SilentRobbery)
+                    return;
+
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                     return;
 
                 if (store.ClerkStalling || store.ClerkOpeningRegister || store.ClerkGrabbingCash || store.ClerkThrowingBag)
@@ -995,6 +1444,7 @@ namespace StoreRobberyEnhanced.Systems
                 if (store.ClerkFleeing)
                     return;
 
+                // Player still threatening → clerk does NOT call police
                 if (_ctx.Player.IsThreatening(clerk))
                     return;
 
@@ -1011,6 +1461,9 @@ namespace StoreRobberyEnhanced.Systems
                         store.ClerkCallStartUtc = DateTime.UtcNow;
 
                         SafePlaySpeech(clerk, "GENERIC_SHOCKED_MED", "SPEECH_PARAMS_FORCE");
+
+                        // ⭐ PATCH 8B — SAFE HEAT INCREMENT
+                        store.HeatLevel += 1;
 
                         Game.Player.WantedLevel = Math.Max(Game.Player.WantedLevel, 2);
 

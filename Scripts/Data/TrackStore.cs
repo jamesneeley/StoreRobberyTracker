@@ -97,6 +97,7 @@ namespace StoreRobberyEnhanced.Data
         public bool PendingCompletion;
         public int PendingPayout;
         public DateTime RobberyStartUtc = DateTime.MinValue;
+        public bool RobberyEnded = false;
 
         // Cooldown
         public bool CooldownActive;

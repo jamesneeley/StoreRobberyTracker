@@ -11,7 +11,6 @@ namespace StoreRobberyEnhanced
         private StoreContext _ctx;
         private bool _initialized;
 
-        private UiHelpers _ui;
         private DebugController _debug;
 
         private static string ScriptVersion =>
@@ -78,11 +77,9 @@ namespace StoreRobberyEnhanced
                 DebugFileManager.Initialize(_ctx.Config.EnableFileManager);
                 DebugProfiler.Initialize(_ctx.Config.EnableProfiler);
 
-                _ui = new UiHelpers(_ctx.Config);
-
-                DebugActions.Init(_ui, _ctx);
-
-                _debug = new DebugController(this, _ui, _ctx);
+                // ⭐ DebugActions + DebugController now use the unified UI instance
+                DebugActions.Init(StoreContext.GlobalUi, _ctx);
+                _debug = new DebugController(this, StoreContext.GlobalUi, _ctx);
 
                 _debug.ApplyKeybindConfig(
                     _ctx.Config.ModifierKey,
@@ -120,7 +117,7 @@ namespace StoreRobberyEnhanced
         }
 
         // ------------------------------------------------------------
-        // MAIN TICK LOOP
+        // MAIN TICK LOOP (BANNER-SAFE)
         // ------------------------------------------------------------
         private void OnTick(object sender, EventArgs e)
         {
@@ -128,21 +125,26 @@ namespace StoreRobberyEnhanced
             {
                 if (_ctx != null)
                 {
-                    // Core systems + SafeCrack logic (StoreContext handles SafeCrack.Update when active)
                     _ctx.Update();
-
-                    // Draw SafeCrack UI when the minigame is active (SHVDN 3.9.0-safe)
-                    if (_ctx.SafeState != null && _ctx.SafeState.Active)
-                        _ctx.SafeCrackUI.Draw(_ctx.SafeState, _ctx.SafeCrackSettings);
                 }
 
-                _ui.Draw();
+                // SafeCrack UI first
+                if (_ctx != null &&
+                    _ctx.SafeState != null &&
+                    _ctx.SafeState.Active)
+                {
+                    _ctx.SafeCrackUI.Draw(_ctx.SafeState, _ctx.SafeCrackSettings);
+                }
 
+                // Debug overlays next
                 if (DebugState.OverlayVisible)
                     DebugOverlay.Draw(_ctx.Config);
 
                 if (DebugState.OverlayVisible)
                     DebugStoreOverlay.Draw(_ctx);
+
+                // ⭐ Banner + Timer LAST — always on top
+                StoreContext.GlobalUi.Draw();
             }
             catch (Exception ex)
             {

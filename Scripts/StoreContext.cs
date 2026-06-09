@@ -22,6 +22,8 @@ namespace StoreRobberyEnhanced
         // ------------------------------------------------------------
         internal IniConfig Config { get; private set; }
         internal UiHelpers Ui { get; private set; }
+        public static UiHelpers GlobalUi => Active?.Ui;
+
         internal PlayerHelper Player { get; private set; }
         public static StoreContext Active { get; private set; }
 
@@ -42,19 +44,12 @@ namespace StoreRobberyEnhanced
         internal ClerkReplacementSystem ClerkReplacement { get; private set; }
 
         internal DebugScenarios Scenarios { get; private set; }
-
-        // ⭐ BLIP SYSTEM
         internal BlipSystem Blips { get; private set; }
-
-        // ⭐ PHASE 3 — POLICE SYSTEM
         internal PoliceSystem Police { get; private set; }
 
-        // ⭐ SAFECRACK MINIGAME (NEW)
         internal SafeCrackState SafeState { get; private set; }
         internal SafeCrackController SafeCrack { get; private set; }
         internal SafeCrackSettings SafeCrackSettings { get; private set; }
-
-        // ⭐ NEW — EXPOSE UI INSTANCE FOR MAIN.FRAME RENDER
         internal ISafeCrackUI SafeCrackUI { get; private set; }
 
         // ------------------------------------------------------------
@@ -80,7 +75,6 @@ namespace StoreRobberyEnhanced
             {
                 _script = script;
 
-                // ⭐ IMPORTANT: make this the global active context
                 Active = this;
 
                 Stores = new List<TrackedStore>();
@@ -178,17 +172,16 @@ namespace StoreRobberyEnhanced
                     SafeCrackSettings,
                     new SafeCrackLogic(),
                     new SafeCrackInput(),
-                    SafeCrackUI,            // ⭐ UI now stored and exposed
+                    SafeCrackUI,
                     new SafeCrackAnimation(),
-                    Ui,                     // ⭐ PASS UiHelpers INSTANCE
+                    Ui,
                     Robberies,
-                    this,        // StoreContext
-                    Config       // IniConfig                    
+                    this,
+                    Config
                 );
 
                 SafeCrackEvents.SafeCracked += (pos, payout) =>
                 {
-                    // ⭐ Hand off payout to RobberySystem instead of spawning pickups
                     var store = GetNearestStore();
                     if (store == null)
                         return;
@@ -196,8 +189,7 @@ namespace StoreRobberyEnhanced
                     store.SafeCracked = true;
                     store.PendingPayout += payout;
 
-                    DebugLogger.Info(string.Format("[SafeCrack] Store {0} safe cracked, added payout={1}, totalPending={2}", store.Id, payout, store.PendingPayout));
-               
+                    DebugLogger.Info($"[SafeCrack] Store {store.Id} safe cracked, added payout={payout}, totalPending={store.PendingPayout}");
                 };
 
                 // ⭐ PHASE 3 — POLICE SYSTEM
@@ -281,15 +273,15 @@ namespace StoreRobberyEnhanced
                     // 2) Clerk replacement: neutralize natives + spawn dummy + ensure our clerk
                     ClerkReplacement.UpdateForStore(store, player);
 
-                    // 3) Cameras (safe now that clerks are neutralized / dummy present)
-                    Cameras.UpdateStoreCameras(this, store);
-
-                    // 4) Our clerk behavior
-                    Clerks.UpdateClerk(store, player);
-
-                    // 5) Robbery logic
+                    // 3) Robbery logic
                     Robberies.UpdateRobbery(store, player);
 
+                    // 4) Cameras (safe now that clerks are neutralized / dummy present)
+                    Cameras.UpdateStoreCameras(this, store);
+
+                    // 5) Our clerk behavior
+                    Clerks.UpdateClerk(store, player);
+                    
                     // 6) Police / heat per store
                     Police.UpdatePoliceLogic(store, player);
                 }

@@ -28,6 +28,13 @@ namespace StoreRobberyEnhanced.Minigame
         private const string SPRITE_LOCK_OPEN = "lock_open";
         private const string SPRITE_ARROW = "PuttingMarker";
 
+        private bool _enabled = true;
+
+        public void Enable()
+        {
+            _enabled = true;
+        }
+
         // ------------------------------------------------------------
         // MAIN DRAW ENTRY
         // ------------------------------------------------------------
@@ -35,8 +42,19 @@ namespace StoreRobberyEnhanced.Minigame
         {
             try
             {
-                if (!state.Active)
+                if (!_enabled)
                     return;
+                
+                // ⭐ HARD STOP: Do NOT draw SafeCrack UI while the heist banner is active
+                if (StoreContext.Active != null &&
+                    StoreContext.Active.Ui != null &&
+                    StoreContext.Active.Ui.IsBannerActive)
+                {
+                    return;
+                }
+
+                if (!state.Active)
+                    return;                
 
                 // Debug trace (safe to leave on — extremely lightweight)
                 DebugLogger.Trace("[SafeCrackUI] Draw() called — state active");
@@ -58,7 +76,8 @@ namespace StoreRobberyEnhanced.Minigame
 
         public void Clear()
         {
-            // UI is drawn per-frame; nothing persistent to clear.
+            // Stop drawing the SafeCrack UI
+            _enabled = false;
         }
 
         // ------------------------------------------------------------

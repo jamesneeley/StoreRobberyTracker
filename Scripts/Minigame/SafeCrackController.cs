@@ -125,6 +125,11 @@ namespace StoreRobberyEnhanced.Minigame
                 _state.LastUpdateTime = Game.GameTime;
 
                 // ------------------------------------------------------------
+                // ⭐ RE‑ENABLE SAFETY UI DRAWING
+                // ------------------------------------------------------------
+                _ui.Enable();   // ← THIS IS THE FIX
+
+                // ------------------------------------------------------------
                 // ⭐ STEALTH ROBBERY MODE ENABLED
                 // ------------------------------------------------------------
                 SuppressStoreSystems();
@@ -180,11 +185,16 @@ namespace StoreRobberyEnhanced.Minigame
         }
 
         // ------------------------------------------------------------
-        // UPDATE LOOP
+        // UPDATE LOOP (PATCHED FOR BANNER SAFETY)
         // ------------------------------------------------------------
         public void Update()
         {
+            // If the minigame is not active, nothing to do
             if (!_state.Active)
+                return;
+
+            // ⭐ HARD STOP: If the heist banner is active, do NOT draw or update SafeCrack UI
+            if (_UiHelp.IsBannerActive)
                 return;
 
             DisableGameplayControls();
@@ -210,7 +220,7 @@ namespace StoreRobberyEnhanced.Minigame
 
             if (now - _state.LastTimerUpdate > 1000)
             {
-                _UiHelp.SetTimerText($"Safe time left: {remaining}", remaining);
+                StoreContext.GlobalUi.SetTimerText($"Safe time left: {remaining}", remaining);
                 _state.LastTimerUpdate = now;
             }
 
@@ -237,9 +247,11 @@ namespace StoreRobberyEnhanced.Minigame
             _logic.Update(_state, _settings);
 
             // ------------------------------------------------------------
-            // UI
+            // UI (PATCHED)
             // ------------------------------------------------------------
-            _ui.Draw(_state, _settings);
+            // ⭐ Do NOT draw SafeCrack UI if banner is active
+            if (!_UiHelp.IsBannerActive)
+                _ui.Draw(_state, _settings);
 
             // ------------------------------------------------------------
             // COMPLETION / FAILURE
@@ -328,6 +340,7 @@ namespace StoreRobberyEnhanced.Minigame
         public void Stop(bool success)
         {
             _state.Active = false;
+            StoreContext.Active.SafeState.Active = false;   // ⭐ CRITICAL FIX
             _state.ConfirmRequested = false;
 
             if (Game.IsLoading)
@@ -354,6 +367,9 @@ namespace StoreRobberyEnhanced.Minigame
 
             _anim.End(_state.Player, success);
             _ui.Clear();
+
+            // ⭐ NEW: always kill the SafeCrack timer UI when the minigame stops
+            StoreContext.GlobalUi.ClearTimer();
 
             RestoreControls();
 

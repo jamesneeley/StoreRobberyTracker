@@ -1,8 +1,9 @@
 ﻿using GTA;
-using GTA.Native;
 using GTA.Math;
+using GTA.Native;
 using StoreRobberyEnhanced.Data;
 using StoreRobberyEnhanced.Debug;
+using System;
 
 namespace StoreRobberyEnhanced.UI
 {
@@ -85,17 +86,24 @@ namespace StoreRobberyEnhanced.UI
                 if (player == null || !player.Exists())
                     return false;
 
-                int drawable = Function.Call<int>(
-                    Hash.GET_PED_DRAWABLE_VARIATION,
-                    player.Handle,
-                    1
-                );
+                // Component 1 = masks
+                int maskDrawable = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, player.Handle, 1);
 
-                bool result = drawable != 0;
-                DebugLogger.Trace($"IsMasked() = {result}");
-                return result;
+                // Component 0 = hats / helmets
+                int hatDrawable = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, player.Handle, 0);
+
+                // Component 7 = accessories (bandanas, scarves)
+                int accessoryDrawable = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, player.Handle, 7);
+
+                bool masked =
+                    maskDrawable != 0 ||      // actual mask
+                    hatDrawable != 0 ||       // hat / helmet
+                    accessoryDrawable != 0;   // bandana / scarf
+
+                DebugLogger.Trace($"IsMasked() = {masked} (mask={maskDrawable}, hat={hatDrawable}, acc={accessoryDrawable})");
+                return masked;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 DebugLogger.LogException("PlayerHelper.IsMasked", ex);
                 return false;
@@ -209,7 +217,7 @@ namespace StoreRobberyEnhanced.UI
         }
 
         // ------------------------------------------------------------
-        // THREAT CHECK
+        // THREAT CHECK (GUN-ONLY)
         // ------------------------------------------------------------
         public bool IsThreatening(Ped target)
         {
@@ -218,12 +226,34 @@ namespace StoreRobberyEnhanced.UI
                 if (target == null || !target.Exists())
                     return false;
 
-                bool result = IsAiming() && IsArmed() && IsInLOS(target);
+                Ped player = Game.Player.Character;
+                if (player == null || !player.Exists())
+                    return false;
 
-                DebugLogger.Trace($"IsThreatening(target={target.Handle}) = {result}");
+                Weapon current = player.Weapons.Current;
+                if (current == null)
+                    return false;
+
+                // ⭐ Only guns count as threats
+                bool isGun =
+                    current.Hash != WeaponHash.Unarmed &&
+                    current.Group != WeaponGroup.Melee;
+
+                if (!isGun)
+                {
+                    DebugLogger.Trace($"IsThreatening(target={target.Handle}) = false (melee ignored)");
+                    return false;
+                }
+
+                // ⭐ Must be aiming AND have LOS
+                bool result =
+                    IsAiming() &&
+                    IsInLOS(target);
+
+                DebugLogger.Trace($"IsThreatening(target={target.Handle}) = {result} (gun={current.Hash})");
                 return result;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 DebugLogger.LogException("PlayerHelper.IsThreatening", ex);
                 return false;

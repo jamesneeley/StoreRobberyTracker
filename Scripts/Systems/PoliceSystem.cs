@@ -435,13 +435,17 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
+                // ⭐ FULL suppression for debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
                 if (!_ctx.Config.EnablePolice)
                     return;
 
                 if (store.MaskEscalationApplied)
                     return;
 
-                // ⭐ NEW: Only escalate on repeat robberies
+                // ⭐ Only escalate on repeat robberies
                 if (store.TimesRobbed <= 1)
                     return;
 
@@ -465,6 +469,10 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
+                // ⭐ FULL suppression for debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
                 if (store.FightEscalationApplied)
                     return;
 
@@ -489,13 +497,17 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
+                // ⭐ FULL suppression for debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
                 if (!store.IsRobberyActive || !store.ClerkReacted)
                     return;
 
                 if (store.TimeEscalationApplied)
                     return;
 
-                // ⭐ NEW: Only escalate on repeat robberies
+                // ⭐ Only escalate on repeat robberies
                 if (store.TimesRobbed <= 1)
                     return;
 
@@ -514,12 +526,16 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // CLERK RECOGNITION ESCALATION (Polish Fix #1)
+        // CLERK RECOGNITION ESCALATION
         // ------------------------------------------------------------
         private void HandleRecognitionEscalation(TrackedStore store)
         {
             try
             {
+                // ⭐ FULL suppression for debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                    return;
+
                 // ⭐ Only escalate during an active robbery
                 if (!store.IsRobberyActive)
                     return;
@@ -545,6 +561,13 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
+                // ⭐ FULL suppression for debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                {
+                    Game.Player.WantedLevel = 0;
+                    return;
+                }
+
                 if (!_ctx.Config.EnablePolice)
                     return;
 
@@ -581,37 +604,37 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // TRIGGER POLICE (FULLY PATCHED)
+        // TRIGGER POLICE
         // ------------------------------------------------------------
         private void TriggerPolice(TrackedStore store, int wantedLevel, string message)
         {
             try
             {
+                // ⭐ FULL suppression for debug escape
+                if (_ctx.Police.SuppressPoliceForDebug)
+                {
+                    DebugLogger.Trace($"[TriggerPolice] Suppressed for debug at store {store.Id}");
+                    return;
+                }
+
                 if (!_ctx.Config.EnablePolice)
                     return;
 
                 if (!store.IsRobberyActive)
                     return;
 
-                // ------------------------------------------------------------
                 // ⭐ Suppress ALL police triggers during SafeCrack or SilentRobbery
-                // ------------------------------------------------------------
                 if ((_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning) || store.SilentRobbery)
                 {
                     DebugLogger.Trace($"[TriggerPolice] Suppressed — SafeCrack or SilentRobbery active for store {store.Id}");
                     return;
                 }
 
-                // ------------------------------------------------------------
                 // ⭐ Prevent double-triggering
-                // ------------------------------------------------------------
                 if (store.AlarmTriggered)
                     return;
 
-                // ------------------------------------------------------------
                 // ⭐ Prevent police triggers if all cameras are destroyed
-                // (no witnesses, no alarm system)
-                // ------------------------------------------------------------
                 bool anyCameraAlive = false;
                 foreach (var cam in store.Cameras)
                 {
@@ -628,25 +651,17 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
-                // ------------------------------------------------------------
                 // ⭐ Mark alarm as triggered
-                // ------------------------------------------------------------
                 store.AlarmTriggered = true;
 
-                // ------------------------------------------------------------
                 // ⭐ Apply wanted level escalation
-                // ------------------------------------------------------------
                 if (wantedLevel > Game.Player.WantedLevel)
                     Game.Player.WantedLevel = wantedLevel;
 
-                // ------------------------------------------------------------
                 // ⭐ UI feedback
-                // ------------------------------------------------------------
                 _ctx.Ui.ShowNotification(message);
 
-                // ------------------------------------------------------------
                 // ⭐ Heat system
-                // ------------------------------------------------------------
                 store.HeatLevel += 1;
                 _ctx.GlobalHeatLevel += 1;
 
@@ -654,9 +669,7 @@ namespace StoreRobberyEnhanced.Systems
                     $"TriggerPolice: store={store.Name}, wanted={wantedLevel}, heat={store.HeatLevel}, globalHeat={_ctx.GlobalHeatLevel}"
                 );
 
-                // ------------------------------------------------------------
                 // ⭐ Persist state
-                // ------------------------------------------------------------
                 _ctx.SaveStoreState(store);
             }
             catch (Exception ex)

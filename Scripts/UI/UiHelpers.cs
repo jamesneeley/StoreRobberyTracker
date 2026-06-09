@@ -35,6 +35,9 @@ namespace StoreRobberyEnhanced.UI
 
         private Scaleform _timerScaleform = null;
         private int _heistBannerEndTime = 0;
+        private bool _suppressUiUntilBannerDone = false;
+        public bool IsBannerActive => _heistScaleform != null && Game.GameTime <= _heistBannerEndTime;
+
 
         // ------------------------------------------------------------
         // NOTIFICATION
@@ -97,6 +100,9 @@ namespace StoreRobberyEnhanced.UI
                 _heistScaleform.CallFunction("SHOW_SHARD_CENTERED_MP_MESSAGE", title, subtitle, 21, true, false);
 
                 _heistBannerEndTime = Game.GameTime + 6000;
+
+                // ⭐ NEW — suppress all UI drawing while banner is active
+                _suppressUiUntilBannerDone = true;
             }
             catch (Exception ex)
             {
@@ -135,23 +141,58 @@ namespace StoreRobberyEnhanced.UI
         }
 
         // ------------------------------------------------------------
-        // DRAW LOOP
+        // DRAW LOOP (FINAL FIXED VERSION)
         // ------------------------------------------------------------
         public void Draw()
         {
             try
             {
-                if (_heistScaleform != null)
-                {
-                    _heistScaleform.Render2D();
+                // ⭐ ALWAYS draw UiHelpers ABOVE SafeCrackUI and all other script UI
+                Function.Call(Hash.SET_SCRIPT_GFX_DRAW_ORDER, 1000);
 
-                    if (Game.GameTime > _heistBannerEndTime)
+                // ⭐ If UI is suppressed because a banner is active, skip everything
+                if (_suppressUiUntilBannerDone)
+                {
+                    // But still draw the banner if it exists
+                    if (_heistScaleform != null)
                     {
+                        if (_heistScaleform.IsValid)
+                            _heistScaleform.Render2D();
+
+                        // If banner still active, stop here
+                        if (Game.GameTime <= _heistBannerEndTime)
+                            return;
+
+                        // Banner expired → clear and re-enable UI
                         DebugLogger.Trace("Heist banner expired");
                         _heistScaleform = null;
+                        _suppressUiUntilBannerDone = false;
                     }
+
+                    return;
                 }
 
+                // ------------------------------------------------------------
+                // ⭐ 1. If banner is active, draw ONLY the banner
+                // ------------------------------------------------------------
+                if (_heistScaleform != null)
+                {
+                    DebugLogger.Trace($"[BannerDraw] Active={_heistScaleform != null}, Valid={_heistScaleform.IsValid}, Time={Game.GameTime}/{_heistBannerEndTime}");
+
+                    if (_heistScaleform.IsValid)
+                        _heistScaleform.Render2D();
+
+                    if (Game.GameTime <= _heistBannerEndTime)
+                        return;
+
+                    DebugLogger.Trace("Heist banner expired");
+                    _heistScaleform = null;
+                    _suppressUiUntilBannerDone = false;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ 2. If no banner, draw timer (if active)
+                // ------------------------------------------------------------
                 if (_activeTimerText != null)
                     DrawTimer(_activeTimerText, _activeTimerSeconds);
             }
