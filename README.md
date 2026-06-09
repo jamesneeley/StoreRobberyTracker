@@ -47,7 +47,7 @@ The goal was simple:
 # 🔥 Features (Player Overview)
 
 ## 🏪 Dynamic Store Robberies
-- 21 fully supported stores (20 Online stores + Ace Liquor)  
+- 20 fully supported stores (19 Online stores + Ace Liquor)  
 - Persistent store states:
   - Robbed / Not Robbed  
   - Cooldown active  

@@ -7,7 +7,7 @@ achievement experience.
 
 FEATURES INCLUDED IN THIS RELEASE
 ---------------------------------
-- Full 21‑store dataset (20 Online stores + Ace Liquor)
+- Full 20‑store dataset (19 Online stores + Ace Liquor)
 - Store ID remapping finalized (Old Store 14 → New Store 8)
 - Complete robbery system:
     - Register payouts
