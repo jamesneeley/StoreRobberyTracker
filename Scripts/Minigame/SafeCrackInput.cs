@@ -1,8 +1,8 @@
 ﻿using GTA;
 using GTA.Native;
-using StoreRobberyTrackerMod.Config;
+using StoreRobberyEnhanced.Config;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     /// <summary>
     /// Handles player input for the SafeCrack minigame.

@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>StoreRobberyTracker</RootNamespace>
-    <AssemblyName>StoreRobberyTracker</AssemblyName>
+    <AssemblyName>StoreRobberyEnhanced</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -101,10 +101,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
-    <None Include="StoreRobberyTracker\DebugSettings.ini" />
-    <None Include="StoreRobberyTracker\StalkerMessages.ini" />
-    <None Include="StoreRobberyTracker\MainSettings.ini" />
-    <None Include="StoreRobberyTracker\StoreState.ini" />
+    <None Include="StoreRobberyEnhanced\DebugSettings.ini" />
+    <None Include="StoreRobberyEnhanced\StalkerMessages.ini" />
+    <None Include="StoreRobberyEnhanced\MainSettings.ini" />
+    <None Include="StoreRobberyEnhanced\StoreState.ini" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="LICENSE.txt" />

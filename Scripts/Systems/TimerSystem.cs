@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using GTA;
 
-namespace StoreRobberyTrackerMod.Systems
+namespace StoreRobberyEnhanced.Systems
 {
     internal class TimerSystem
     {

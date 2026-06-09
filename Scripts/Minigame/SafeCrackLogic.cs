@@ -1,9 +1,9 @@
 ﻿using GTA;
 using GTA.Math;
 using GTA.Native;
-using StoreRobberyTrackerMod.Config;
+using StoreRobberyEnhanced.Config;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     /// <summary>
     /// Core logic for the SafeCrack minigame.

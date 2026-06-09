@@ -1,10 +1,10 @@
 ﻿using GTA;
 using GTA.Math;
-using StoreRobberyTrackerMod.Systems;
-using StoreRobberyTrackerMod.UI;
+using StoreRobberyEnhanced.Systems;
+using StoreRobberyEnhanced.UI;
 using System;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal static class DebugActions
     {

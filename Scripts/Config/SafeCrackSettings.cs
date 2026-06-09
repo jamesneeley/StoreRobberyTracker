@@ -2,7 +2,7 @@
 using GTA;
 using GTA.Math;
 
-namespace StoreRobberyTrackerMod.Config
+namespace StoreRobberyEnhanced.Config
 {
     /// <summary>
     /// Read‑only settings for the SafeCrack minigame.

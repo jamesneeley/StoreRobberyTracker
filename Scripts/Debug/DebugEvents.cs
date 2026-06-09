@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     /// <summary>
     /// Central event bus for structured debug events.
@@ -73,7 +73,7 @@ namespace StoreRobberyTrackerMod.Debug
 
                 string folder = Path.Combine(
                     AppDomain.CurrentDomain.BaseDirectory,
-                    "StoreRobberyTracker",
+                    "StoreRobberyEnhanced",
                     "Events"
                 );
 

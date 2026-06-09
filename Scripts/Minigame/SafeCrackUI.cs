@@ -1,9 +1,9 @@
 ﻿using GTA;
 using GTA.Native;
-using StoreRobberyTrackerMod.Config;
-using StoreRobberyTrackerMod.Debug;
+using StoreRobberyEnhanced.Config;
+using StoreRobberyEnhanced.Debug;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     /// <summary>
     /// Draws the SafeCrack UI each frame:

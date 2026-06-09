@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     /// <summary>
     /// Centralized state container for the entire debug platform.

@@ -1,7 +1,7 @@
 ﻿using GTA;
 using GTA.Math;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     /// <summary>
     /// Holds all runtime state for the SafeCrack minigame.

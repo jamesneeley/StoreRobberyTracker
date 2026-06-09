@@ -4,9 +4,9 @@ using GTA;
 using GTA.Native;
 using GTA.UI;
 using GTA.Math;
-using StoreRobberyTrackerMod.Data;
+using StoreRobberyEnhanced.Data;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal static class DebugCameraRender
     {

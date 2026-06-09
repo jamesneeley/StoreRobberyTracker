@@ -1,11 +1,11 @@
 ﻿using GTA;
 using GTA.Math;
 using GTA.Native;
-using StoreRobberyTrackerMod.Data;
-using StoreRobberyTrackerMod.Debug;
+using StoreRobberyEnhanced.Data;
+using StoreRobberyEnhanced.Debug;
 using System;
 
-namespace StoreRobberyTrackerMod.Systems
+namespace StoreRobberyEnhanced.Systems
 {
     internal class ClerkSystem
     {

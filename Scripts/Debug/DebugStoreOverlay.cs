@@ -4,7 +4,7 @@ using GTA.Native;
 using GTA.UI;
 using System.Drawing;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal static class DebugStoreOverlay
     {

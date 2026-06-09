@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal static class DebugLogger
     {
@@ -31,7 +31,7 @@ namespace StoreRobberyTrackerMod.Debug
                     return;
                 }
 
-                string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StoreRobberyTracker", "Logs");
+                string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StoreRobberyEnhanced", "Logs");
 
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
@@ -120,7 +120,7 @@ namespace StoreRobberyTrackerMod.Debug
                 // If debug disabled → create a minimal emergency log file
                 if (!_enabled)
                 {
-                    string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StoreRobberyTracker", "Logs");
+                    string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StoreRobberyEnhanced", "Logs");
                     if (!Directory.Exists(folder))
                         Directory.CreateDirectory(folder);
 

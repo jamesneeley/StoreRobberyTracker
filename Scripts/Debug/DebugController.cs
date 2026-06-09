@@ -1,8 +1,8 @@
 ﻿using GTA;
-using StoreRobberyTrackerMod.Debug;
-using StoreRobberyTrackerMod.UI;
+using StoreRobberyEnhanced.Debug;
+using StoreRobberyEnhanced.UI;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal class DebugController
     {

@@ -1,9 +1,9 @@
 ﻿using GTA;
 using System;
 using System.Threading.Tasks;
-using StoreRobberyTrackerMod.UI;
+using StoreRobberyEnhanced.UI;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal class DebugScenarios
     {

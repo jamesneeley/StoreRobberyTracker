@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using GTA;
 using GTA.Math;
-using StoreRobberyTrackerMod.Data;
-using StoreRobberyTrackerMod.Systems;
-using StoreRobberyTrackerMod.Initialization;
-using StoreRobberyTrackerMod.UI;
-using StoreRobberyTrackerMod.Config;
-using StoreRobberyTrackerMod.Debug;
-using StoreRobberyTrackerMod.Minigame;
+using StoreRobberyEnhanced.Data;
+using StoreRobberyEnhanced.Systems;
+using StoreRobberyEnhanced.Initialization;
+using StoreRobberyEnhanced.UI;
+using StoreRobberyEnhanced.Config;
+using StoreRobberyEnhanced.Debug;
+using StoreRobberyEnhanced.Minigame;
 
-namespace StoreRobberyTrackerMod
+namespace StoreRobberyEnhanced
 {
     internal class StoreContext
     {

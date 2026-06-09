@@ -3,7 +3,7 @@ using GTA.Native;
 using System;
 using System.Text;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal static class DebugOverlay
     {
@@ -19,7 +19,7 @@ namespace StoreRobberyTrackerMod.Debug
             StringBuilder sb = new StringBuilder();
 
             // Header
-            sb.AppendLine("~y~STORE ROBBERY DEBUG~s~");
+            sb.AppendLine("~y~STORE ROBBERY ENHANCED DEBUG~s~");
 
             // Session info
             TimeSpan uptime = DateTime.UtcNow - DebugState.SessionStart;
@@ -54,6 +54,9 @@ namespace StoreRobberyTrackerMod.Debug
             sb.AppendLine($"9 Banner:       ~{(config.Debug_Banner ? "g" : "r")}~{config.Debug_Banner}");
             sb.AppendLine($"0 Timer:        ~{(config.Debug_Timer ? "g" : "r")}~{config.Debug_Timer}");
             sb.AppendLine($"F10 StoreDiag:  ~{(config.Debug_StoreDiag ? "g" : "r")}~{config.Debug_StoreDiag}");
+            sb.AppendLine($"/ MultiPos:  ~{(config.Debug_MultiPos ? "g" : "r")}~{config.Debug_MultiPos}");
+            sb.AppendLine($"* MultiActions:  ~{(config.Debug_MultiActions ? "g" : "r")}~{config.Debug_MultiActions}");
+            sb.AppendLine($"F3 CameraDebug:  ~{(config.Debug_CameraDebug ? "g" : "r")}~{config.Debug_CameraDebug}");
 
             DrawTextTopRight(sb.ToString(), 0.985f, 0.015f, 0.35f);
         }

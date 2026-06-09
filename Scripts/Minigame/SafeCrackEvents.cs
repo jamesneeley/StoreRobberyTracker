@@ -1,7 +1,7 @@
 ﻿using System;
 using GTA.Math;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     /// <summary>
     /// Provides event hooks for the SafeCrack minigame.

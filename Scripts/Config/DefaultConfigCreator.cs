@@ -1,12 +1,12 @@
 ﻿using System;
 using System.IO;
 
-namespace StoreRobberyTrackerMod.Config
+namespace StoreRobberyEnhanced.Config
 {
     internal static class DefaultConfigCreator
     {
-        private const string FolderName = "scripts/StoreRobberyTracker";
-        private const string FileName = "StoreRobberyTracker.ini";
+        private const string FolderName = "scripts/StoreRobberyEnhanced";
+        private const string FileName = "MainSettings.ini";
 
         public static void EnsureDefaultConfigExists(string gameDir)
         {
@@ -25,7 +25,7 @@ namespace StoreRobberyTrackerMod.Config
             }
             catch (Exception ex)
             {
-                File.AppendAllText("StoreRobberyTracker_Error.log",
+                File.AppendAllText("StoreRobberyEnhanced_Error.log",
                     "[DefaultConfigCreator] " + ex + Environment.NewLine);
             }
         }

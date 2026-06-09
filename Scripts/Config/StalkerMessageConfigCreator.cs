@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace StoreRobberyTrackerMod.Config
+namespace StoreRobberyEnhanced.Config
 {
     internal static class StalkerMessageConfigCreator
     {
@@ -27,7 +27,7 @@ namespace StoreRobberyTrackerMod.Config
             }
             catch (Exception ex)
             {
-                File.AppendAllText("StoreRobberyTracker_Error.log",
+                File.AppendAllText("StoreRobberyEnhanced_Error.log",
                     "[StalkerMessageConfigCreator] " + ex + Environment.NewLine);
             }
         }

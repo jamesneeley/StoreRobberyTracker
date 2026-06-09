@@ -2,11 +2,11 @@
 using GTA;
 using GTA.Math;
 using GTA.Native;
-using StoreRobberyTrackerMod.Data;
-using StoreRobberyTrackerMod.Debug;
-using StoreRobberyTrackerMod.Minigame;
+using StoreRobberyEnhanced.Data;
+using StoreRobberyEnhanced.Debug;
+using StoreRobberyEnhanced.Minigame;
 
-namespace StoreRobberyTrackerMod.Systems
+namespace StoreRobberyEnhanced.Systems
 {
     internal class RobberySystem
     {

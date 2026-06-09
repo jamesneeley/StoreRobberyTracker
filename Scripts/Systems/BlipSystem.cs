@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using GTA;
 using GTA.Native;
-using StoreRobberyTrackerMod.Data;
-using StoreRobberyTrackerMod.Config;
-using StoreRobberyTrackerMod.Debug;
+using StoreRobberyEnhanced.Data;
+using StoreRobberyEnhanced.Config;
+using StoreRobberyEnhanced.Debug;
 
-namespace StoreRobberyTrackerMod.Systems
+namespace StoreRobberyEnhanced.Systems
 {
     internal class BlipSystem
     {

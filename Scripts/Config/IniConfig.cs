@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using GTA;
-using StoreRobberyTrackerMod.Data;
-using StoreRobberyTrackerMod.Config;
+using StoreRobberyEnhanced.Data;
+using StoreRobberyEnhanced.Config;
 
-namespace StoreRobberyTrackerMod
+namespace StoreRobberyEnhanced
 {
     internal class IniConfig
     {
@@ -93,7 +93,7 @@ namespace StoreRobberyTrackerMod
         {
             string scriptsFolder = AppDomain.CurrentDomain.BaseDirectory;
 
-            _settingsFolder = Path.Combine(scriptsFolder, "StoreRobberyTracker");
+            _settingsFolder = Path.Combine(scriptsFolder, "StoreRobberyEnhanced");
             Directory.CreateDirectory(_settingsFolder);
 
             _mainIniPath = Path.Combine(_settingsFolder, "MainSettings.ini");
@@ -467,6 +467,9 @@ namespace StoreRobberyTrackerMod
         public bool Debug_Banner { get; set; }
         public bool Debug_Timer { get; set; }
         public bool Debug_StoreDiag { get; set; }
+        public bool Debug_MultiPos { get; set; }
+        public bool Debug_MultiActions { get; set; }
+        public bool Debug_CameraDebug { get; set; }
 
         // NEW DEBUG PLATFORM SETTINGS
         public bool OverlayVisible { get; set; }

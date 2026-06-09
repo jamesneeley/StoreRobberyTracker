@@ -1,7 +1,7 @@
 ﻿using GTA;
 using GTA.Math;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     internal interface ISafeCrackAnimation
     {

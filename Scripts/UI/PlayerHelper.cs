@@ -1,10 +1,10 @@
 ﻿using GTA;
 using GTA.Native;
 using GTA.Math;
-using StoreRobberyTrackerMod.Data;
-using StoreRobberyTrackerMod.Debug;
+using StoreRobberyEnhanced.Data;
+using StoreRobberyEnhanced.Debug;
 
-namespace StoreRobberyTrackerMod.UI
+namespace StoreRobberyEnhanced.UI
 {
     internal class PlayerHelper
     {

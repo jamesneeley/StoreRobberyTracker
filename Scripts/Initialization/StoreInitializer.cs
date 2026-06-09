@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using GTA;
 using GTA.Math;
 using GTA.Native;
-using StoreRobberyTrackerMod.Data;
+using StoreRobberyEnhanced.Data;
 
 
-namespace StoreRobberyTrackerMod.Initialization
+namespace StoreRobberyEnhanced.Initialization
 {
     internal static class StoreInitializer
     {

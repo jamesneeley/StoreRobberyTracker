@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using GTA;
 using GTA.Math;
-using StoreRobberyTrackerMod.Minigame;
+using StoreRobberyEnhanced.Minigame;
 
-namespace StoreRobberyTrackerMod.Data
+namespace StoreRobberyEnhanced.Data
 {
     public enum ClerkReactionType
     {

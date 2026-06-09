@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Reflection;
 using GTA;
-using StoreRobberyTrackerMod.Debug;
-using StoreRobberyTrackerMod.UI;
+using StoreRobberyEnhanced.Debug;
+using StoreRobberyEnhanced.UI;
 
-namespace StoreRobberyTrackerMod
+namespace StoreRobberyEnhanced
 {
     public class Main : Script
     {

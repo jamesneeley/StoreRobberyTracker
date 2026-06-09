@@ -1,6 +1,6 @@
-﻿using StoreRobberyTrackerMod.Config;
+﻿using StoreRobberyEnhanced.Config;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     internal interface ISafeCrackInput
     {

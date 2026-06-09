@@ -1,8 +1,8 @@
 ﻿using GTA;
 using GTA.Math;
-using StoreRobberyTrackerMod.Debug;
+using StoreRobberyEnhanced.Debug;
 
-namespace StoreRobberyTrackerMod.Config
+namespace StoreRobberyEnhanced.Config
 {
     internal static class SafeCrackConfigLoader
     {

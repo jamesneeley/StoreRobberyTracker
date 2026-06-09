@@ -2,7 +2,7 @@
 using GTA.Math;
 using GTA.Native;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     /// <summary>
     /// Handles animations for the SafeCrack minigame.

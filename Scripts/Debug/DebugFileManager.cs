@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal static class DebugFileManager
     {
@@ -34,7 +34,7 @@ namespace StoreRobberyTrackerMod.Debug
 
                 _rootFolder = Path.Combine(
                     AppDomain.CurrentDomain.BaseDirectory,
-                    "StoreRobberyTracker",
+                    "StoreRobberyEnhanced",
                     "DebugOutput"
                 );
 

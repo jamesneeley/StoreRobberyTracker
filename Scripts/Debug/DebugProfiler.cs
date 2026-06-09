@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace StoreRobberyTrackerMod.Debug
+namespace StoreRobberyEnhanced.Debug
 {
     internal static class DebugProfiler
     {

@@ -1,14 +1,14 @@
 ﻿using GTA;
 using GTA.Math;
 using GTA.Native;
-using StoreRobberyTrackerMod.Config;
-using StoreRobberyTrackerMod.Data;
-using StoreRobberyTrackerMod.Debug;
-using StoreRobberyTrackerMod.Systems;
-using StoreRobberyTrackerMod.UI;
+using StoreRobberyEnhanced.Config;
+using StoreRobberyEnhanced.Data;
+using StoreRobberyEnhanced.Debug;
+using StoreRobberyEnhanced.Systems;
+using StoreRobberyEnhanced.UI;
 using System;
 
-namespace StoreRobberyTrackerMod.Minigame
+namespace StoreRobberyEnhanced.Minigame
 {
     internal class SafeCrackController
     {

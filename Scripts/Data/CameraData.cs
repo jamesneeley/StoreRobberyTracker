@@ -1,7 +1,7 @@
 ﻿using System;
 using GTA.Math;
 
-namespace StoreRobberyTrackerMod.Data
+namespace StoreRobberyEnhanced.Data
 {
     internal class CameraData
     {

@@ -2,9 +2,9 @@
 using System.Drawing;
 using GTA;
 using GTA.Native;
-using StoreRobberyTrackerMod.Debug;
+using StoreRobberyEnhanced.Debug;
 
-namespace StoreRobberyTrackerMod.UI
+namespace StoreRobberyEnhanced.UI
 {
     internal class UiHelpers
     {
