@@ -18,67 +18,130 @@ namespace StoreRobberyTrackerMod.Debug
 
         private static readonly Dictionary<string, ProfileEntry> _profiles = new Dictionary<string, ProfileEntry>();
 
-        // ------------------------------
-        // Public API
-        // ------------------------------
+        // ⭐ NEW — global enable/disable flag
+        private static bool _enabled = true;
+        private static bool _initialized = false;
 
+        // ------------------------------------------------------------
+        // INITIALIZE
+        // ------------------------------------------------------------
+        internal static void Initialize(bool enableProfiler)
+        {
+            try
+            {
+                _enabled = enableProfiler;
+                _initialized = true;
+
+                if (_enabled)
+                    DebugLogger.Info("DebugProfiler initialized.");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugProfiler.Initialize", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // PUBLIC API
+        // ------------------------------------------------------------
         internal static void Begin(string name)
         {
-            if (!_profiles.ContainsKey(name))
-                _profiles[name] = new ProfileEntry();
+            try
+            {
+                if (!_initialized || !_enabled)
+                    return;
 
-            _profiles[name].StartTime = DateTime.UtcNow.Ticks;
+                if (!_profiles.ContainsKey(name))
+                    _profiles[name] = new ProfileEntry();
+
+                _profiles[name].StartTime = DateTime.UtcNow.Ticks;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugProfiler.Begin", ex);
+            }
         }
 
         internal static void End(string name)
         {
-            if (!_profiles.ContainsKey(name))
-                return;
+            try
+            {
+                if (!_initialized || !_enabled)
+                    return;
 
-            long now = DateTime.UtcNow.Ticks;
-            ProfileEntry entry = _profiles[name];
+                if (!_profiles.ContainsKey(name))
+                    return;
 
-            long duration = now - entry.StartTime;
-            entry.LastDuration = duration;
+                long now = DateTime.UtcNow.Ticks;
+                ProfileEntry entry = _profiles[name];
 
-            entry.Min = Math.Min(entry.Min, duration);
-            entry.Max = Math.Max(entry.Max, duration);
+                long duration = now - entry.StartTime;
+                entry.LastDuration = duration;
 
-            entry.Total += duration;
-            entry.Count++;
+                entry.Min = Math.Min(entry.Min, duration);
+                entry.Max = Math.Max(entry.Max, duration);
 
-            DebugLogger.Trace($"Profiler [{name}] = {duration / 10000f:0.000} ms");
+                entry.Total += duration;
+                entry.Count++;
+
+                DebugLogger.Trace($"Profiler [{name}] = {duration / 10000f:0.000} ms");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugProfiler.End", ex);
+            }
         }
 
         internal static string GetReport()
         {
-            if (_profiles.Count == 0)
-                return "No profiler data.";
-
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.AppendLine("~y~DEBUG PROFILER~s~");
-
-            foreach (var kv in _profiles)
+            try
             {
-                string name = kv.Key;
-                ProfileEntry e = kv.Value;
+                if (!_initialized || !_enabled)
+                    return "Profiler disabled.";
 
-                float last = e.LastDuration / 10000f;
-                float avg = (e.Total / (float)e.Count) / 10000f;
-                float min = e.Min / 10000f;
-                float max = e.Max / 10000f;
+                if (_profiles.Count == 0)
+                    return "No profiler data.";
 
-                sb.AppendLine($"{name}: ~c~Last {last:0.000} ms | Avg {avg:0.000} ms | Min {min:0.000} | Max {max:0.000}");
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                sb.AppendLine("~y~DEBUG PROFILER~s~");
+
+                foreach (var kv in _profiles)
+                {
+                    string name = kv.Key;
+                    ProfileEntry e = kv.Value;
+
+                    float last = e.LastDuration / 10000f;
+                    float avg = (e.Total / (float)e.Count) / 10000f;
+                    float min = e.Min / 10000f;
+                    float max = e.Max / 10000f;
+
+                    sb.AppendLine($"{name}: ~c~Last {last:0.000} ms | Avg {avg:0.000} ms | Min {min:0.000} | Max {max:0.000}");
+                }
+
+                return sb.ToString();
             }
-
-            return sb.ToString();
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugProfiler.GetReport", ex);
+                return "Profiler error.";
+            }
         }
 
         internal static void DumpToFile()
         {
-            string report = GetReport();
-            DebugFileManager.WriteText($"Profiler_{DateTime.Now:HH-mm-ss}.txt", report);
-            DebugLogger.Info("Profiler report dumped to file.");
+            try
+            {
+                if (!_initialized || !_enabled)
+                    return;
+
+                string report = GetReport();
+                DebugFileManager.WriteText($"Profiler_{DateTime.Now:HH-mm-ss}.txt", report);
+                DebugLogger.Info("Profiler report dumped to file.");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugProfiler.DumpToFile", ex);
+            }
         }
     }
 }

@@ -22,7 +22,7 @@ namespace StoreRobberyTrackerMod
             try
             {
                 if (_ctx.Config.EnableMessages)
-                    GTA.UI.Notification.Show($"~b~Store Robbery Tracker v{ScriptVersion}~w~ is now active.");
+                    _ui.ShowNotification($"~b~Store Robbery Tracker v{ScriptVersion}~w~ is now active.");
 
                 DebugLogger.Info($"Loaded notification shown (v{ScriptVersion})");
             }
@@ -76,6 +76,7 @@ namespace StoreRobberyTrackerMod
                 DebugLogger.Initialize(_ctx.Config.EnableLogging);
                 DebugEvents.Initialize(_ctx.Config.EnableEvents);
                 DebugFileManager.Initialize(_ctx.Config.EnableFileManager);
+                DebugProfiler.Initialize(_ctx.Config.EnableProfiler);
 
                 _ui = new UiHelpers(_ctx.Config);
 

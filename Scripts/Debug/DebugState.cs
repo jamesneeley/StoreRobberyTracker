@@ -29,23 +29,43 @@ namespace StoreRobberyTrackerMod.Debug
         public static DateTime SessionStart { get; set; } = DateTime.UtcNow;
         public static int ActionCount { get; private set; } = 0;
 
-        // --- Methods ---
+        // --- NEW: Global Debug Toggles ---
+        public static bool EnableLogging { get; set; } = true;         // Renamed from EnableDebug
+        public static bool EnableFileManager { get; set; } = true;
+        public static bool EnableEvents { get; set; } = true;
+        public static bool EnableProfiler { get; set; } = true;
 
+        // ------------------------------------------------------------
+        // APPLY CONFIG FROM INI
+        // ------------------------------------------------------------
         /// <summary>
         /// Called by IniConfig after loading debug settings.
         /// </summary>
-        public static void ApplyConfig(bool enabled, int level, bool hotkeys, Dictionary<string, bool> flags)
+        public static void ApplyConfig(
+            bool enableLogging,
+            int level,
+            bool hotkeys,
+            Dictionary<string, bool> flags,
+            bool enableFileManager,
+            bool enableEvents,
+            bool enableProfiler)
         {
-            IsDebugMode = enabled;
+            IsDebugMode = enableLogging;      // Debug mode follows logging toggle
+            EnableLogging = enableLogging;    // NEW name
+
             DebugLevel = level;
             HotkeysEnabled = hotkeys;
 
             Flags = flags ?? new Dictionary<string, bool>();
+
+            EnableFileManager = enableFileManager;
+            EnableEvents = enableEvents;
+            EnableProfiler = enableProfiler;
         }
 
-        /// <summary>
-        /// Records the last triggered debug action for overlay display.
-        /// </summary>
+        // ------------------------------------------------------------
+        // RECORD ACTION
+        // ------------------------------------------------------------
         public static void RecordAction(string actionName)
         {
             LastActionName = actionName;
@@ -53,18 +73,18 @@ namespace StoreRobberyTrackerMod.Debug
             ActionCount++;
         }
 
-        /// <summary>
-        /// Toggles the overlay visibility.
-        /// </summary>
+        // ------------------------------------------------------------
+        // TOGGLE OVERLAY
+        // ------------------------------------------------------------
         public static void ToggleOverlay()
         {
             OverlayVisible = !OverlayVisible;
             LastOverlayToggle = DateTime.UtcNow;
         }
 
-        /// <summary>
-        /// Returns true if a named debug flag exists and is enabled.
-        /// </summary>
+        // ------------------------------------------------------------
+        // FLAG LOOKUP
+        // ------------------------------------------------------------
         public static bool Flag(string name)
         {
             if (Flags.TryGetValue(name, out bool value))

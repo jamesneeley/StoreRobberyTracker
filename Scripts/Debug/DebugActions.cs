@@ -1,5 +1,8 @@
-﻿using StoreRobberyTrackerMod.Systems;
+﻿using GTA;
+using GTA.Math;
+using StoreRobberyTrackerMod.Systems;
 using StoreRobberyTrackerMod.UI;
+using System;
 
 namespace StoreRobberyTrackerMod.Debug
 {
@@ -140,16 +143,63 @@ namespace StoreRobberyTrackerMod.Debug
         // ------------------------------------------------------------
         public static void TriggerMultiPos()
         {
-            _ui.ShowNotification("~b~MultiPos Triggered");
+            try
+            {
+                Ped p = Game.Player.Character;
+                if (p == null || !p.Exists())
+                {
+                    _ui.ShowNotification("~r~Player not found.");
+                    return;
+                }
+
+                Vector3 pos = p.Position;
+                float heading = p.Heading;
+
+                string formatted =
+                    $"new Vector3({pos.X:0.000}f, {pos.Y:0.000}f, {pos.Z:0.000}f), Heading={heading:0.00}f";
+
+                // Show on-screen
+                _ui.ShowNotification($"~b~POS:~w~ {pos.X:0.000}, {pos.Y:0.000}, {pos.Z:0.000}\n~b~Heading:~w~ {heading:0.00}");
+
+                // Also show in your mod’s UI
+                _ui.ShowNotification("~g~MultiPos captured");
+
+                // Log it for later use
+                DebugLogger.Info($"[MultiPos] {formatted}");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugActions.TriggerMultiPos", ex);
+            }
         }
 
         // ------------------------------------------------------------
         // MISC ACTIONS TEST
         // ------------------------------------------------------------
-        public static void TriggerMiscActionsI()
+        public static void TriggerMiscActions()
         {
-            StoreChecker();
-            _ui.ShowNotification("~b~Misc Actions Triggered");
+            try
+            {
+                // 1. Run store checker (existing)
+                StoreChecker();
+
+                // 2. Dump profiler report (if enabled)
+                if (DebugState.EnableProfiler)
+                    DebugProfiler.DumpToFile();
+
+                // 3. Dump store snapshot (if file manager enabled)
+                if (DebugState.EnableFileManager)
+                    DebugFileManager.WriteSnapshot("StoreSnapshot", _ctx.Stores);
+
+                // 4. Log global heat
+                DebugLogger.Info($"[MiscActions] GlobalHeat={_ctx.GlobalHeatLevel}");
+
+                _ui.ShowNotification("~b~Misc Actions Executed");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugActions.TriggerMiscActions", ex);
+            }
         }
 
         // ------------------------------------------------------------

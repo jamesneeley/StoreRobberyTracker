@@ -85,8 +85,8 @@ namespace StoreRobberyTrackerMod.Debug
                 case "Banner": DebugActions.TriggerBanner(); break;
                 case "Timer": DebugActions.TriggerTimer(); break;
                 case "StoreDiag": DebugActions.TriggerStoreDiagnostics(); break;
-                case "MultiPos": DebugActions.TriggerStoreDiagnostics(); break;
-                case "MiscAction": DebugActions.TriggerStoreDiagnostics(); break;
+                case "MultiPos": DebugActions.TriggerMultiPos(); break;
+                case "MiscAction": DebugActions.TriggerMiscActions(); break;
                 case "ScenarioFullRobbery": DebugActions.TriggerScenarioFullRobbery(); break;
                 case "ScnearioQuickLoot": DebugActions.TriggeScenarioQuickLoot(); break;
                 case "CameraDebug": DebugActions.ToggleCameraDebug(); break;

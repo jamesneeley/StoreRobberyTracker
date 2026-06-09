@@ -44,7 +44,7 @@ namespace StoreRobberyTrackerMod.UI
             try
             {
                 DebugLogger.Trace($"ShowNotification: {msg}");
-                GTA.UI.Notification.Show(msg);
+                GTA.UI.Notification.PostTicker(msg, true);
             }
             catch (Exception ex)
             {
