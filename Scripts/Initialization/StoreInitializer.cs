@@ -35,7 +35,7 @@ namespace StoreRobberyTrackerMod.Initialization
                 90.00f,                                              // RegisterHeading
                 new Vector3(28.34f, -1339.23f, 29.49f),              // SafePos
                 356.39f,                                             // SafeHeading
-                new Vector3(29.16f, -1349.70f, 29.32f),              // DoorPos
+                new Vector3(29.15f, -1349.65f, 29.32f),              // DoorPos
                 "v_ilev_gasdoor",
                 0.00f,                                               // DoorHeading
                 3.0f
@@ -45,16 +45,16 @@ namespace StoreRobberyTrackerMod.Initialization
             ctx.Stores.Add(CreateStore(
                 id++,
                 "24/7 Supermarket (Chumash)",
-                new Vector3(-3242.180f, 999.900f, 12.830f),
-                new Vector3(-3242.20f, 999.20f, 12.83f),             // ClerkPos
-                0.00f,                                               // ClerkHeading
+                new Vector3(-3242.650f, 1003.800f, 12.830f),
+                new Vector3(-3244.55f, 1000.10f, 12.83f),            // ClerkPos
+                330.00f,                                             // ClerkHeading
                 new Vector3(-3242.60f, 1000.40f, 12.83f),            // RegisterPos
                 0.00f,                                               // RegisterHeading
                 new Vector3(-3250.06f, 1004.46f, 12.83f),            // SafePos
                 81.24F,                                              // SafeHeading
-                new Vector3(-3241.90f, 1000.80f, 12.83f),            // DoorPos
+                new Vector3(-3239.50f, 1004.40f, 12.51f),            // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                80.00f,                                              // DoorHeading
                 3.0f
             ));
 
@@ -62,16 +62,16 @@ namespace StoreRobberyTrackerMod.Initialization
             ctx.Stores.Add(CreateStore(
                 id++,
                 "24/7 Supermarket (Banham Canyon)",
-                new Vector3(-3040.700f, 584.200f, 7.900f),
-                new Vector3(-3038.20f, 587.60f, 7.90f),              // ClerkPos
-                0.00f,                                               // ClerkHeading
+                new Vector3(-3040.77f, 588.65f, 7.90f),
+                new Vector3(-3041.10f, 583.70f, 7.90f),              // ClerkPos
+                340.00f,                                             // ClerkHeading
                 new Vector3(-3038.60f, 588.60f, 7.90f),              // RegisterPos
                 0.00f,                                               // RegisterHeading
                 new Vector3(-3040.10f, 590.70f, 7.90f),              // SafePos
                 111.69f,                                             // SafeHeading
-                new Vector3(-3037.90f, 589.10f, 7.90f),              // DoorPos
+                new Vector3(-3038.15f, 589.65f, 7.90f),              // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                100.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -79,16 +79,16 @@ namespace StoreRobberyTrackerMod.Initialization
             ctx.Stores.Add(CreateStore(
                 id++,
                 "24/7 Supermarket (Clinton Ave)",
-                new Vector3(373.875f, 325.896f, 103.566f),
-                new Vector3(373.10f, 326.40f, 103.57f),              // ClerkPos
-                255.00f,                                             // ClerkHeading
+                new Vector3(376.675f, 325.75f, 103.56f),
+                new Vector3(373.05f, 328.70f, 103.55f),              // ClerkPos
+                230.00f,                                             // ClerkHeading
                 new Vector3(373.50f, 327.40f, 103.57f),              // RegisterPos
                 255.00f,                                             // RegisterHeading
                 new Vector3(378.22f, 333.32f, 103.56f),              // SafePos
                 341.31f,                                             // SafeHeading
-                new Vector3(372.00f, 326.00f, 103.57f),              // DoorPos
+                new Vector3(376.55f, 322.95f, 103.57f),              // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                350.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -96,16 +96,16 @@ namespace StoreRobberyTrackerMod.Initialization
             ctx.Stores.Add(CreateStore(
                 id++,
                 "24/7 Supermarket (Harmony)",
-                new Vector3(549.380f, 2669.470f, 42.156f),
-                new Vector3(549.10f, 2668.60f, 42.16f),              // ClerkPos
-                70.00f,                                              // ClerkHeading
-                new Vector3(549.40f, 2670.40f, 42.16f),              // RegisterPos
+                new Vector3(544.405f, 2670.425f, 42.156f),
+                new Vector3(549.50f, 2669.00f, 42.15f),              // ClerkPos
+                55.00f,                                              // ClerkHeading
+                new Vector3(549.40f, 2670.40f, 42.15f),              // RegisterPos
                 180.00f,                                             // RegisterHeading
                 new Vector3(546.32f, 2662.75f, 42.15f),              // SafePos
                 186.56f,                                             // SafeHeading
-                new Vector3(549.00f, 2668.00f, 42.16f),              // DoorPos
+                new Vector3(543.95f, 2673.05f, 42.15f),              // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                190.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -113,16 +113,16 @@ namespace StoreRobberyTrackerMod.Initialization
             ctx.Stores.Add(CreateStore(
                 id++,
                 "24/7 Supermarket (Grand Senora Desert)",
-                new Vector3(2673.300f, 3286.500f, 55.200f),
-                new Vector3(2672.20f, 3285.10f, 55.20f),             // ClerkPos
-                330.00f,                                             // ClerkHeading
+                new Vector3(2679.925f, 3283.550f, 55.24f),
+                new Vector3(2675.95f, 3280.40f, 55.24f),             // ClerkPos
+                306.00f,                                             // ClerkHeading
                 new Vector3(2671.60f, 3286.00f, 55.20f),             // RegisterPos
                 330.00f,                                             // RegisterHeading
                 new Vector3(2672.77f, 3286.59f, 55.24f),             // SafePos
                 61.26f,                                              // SafeHeading
-                new Vector3(2671.00f, 3285.00f, 55.20f),             // DoorPos
+                new Vector3(2682.40f, 3282.35f, 55.24f),             // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                60.00f,                                              // DoorHeading
                 3.0f
             ));
 
@@ -130,16 +130,16 @@ namespace StoreRobberyTrackerMod.Initialization
             ctx.Stores.Add(CreateStore(
                 id++,
                 "24/7 Supermarket (Sandy Shores)",
-                new Vector3(1961.100f, 3740.600f, 32.300f),
-                new Vector3(1960.10f, 3741.40f, 32.30f),             // ClerkPos
-                300.00f,                                             // ClerkHeading
+                new Vector3(1963.475f, 3742.45f, 32.34f),
+                new Vector3(1958.725f, 3741.90f, 32.34f),            // ClerkPos
+                275.00f,                                             // ClerkHeading
                 new Vector3(1959.70f, 3742.40f, 32.30f),             // RegisterPos
                 300.00f,                                             // RegisterHeading
                 new Vector3(1959.21f, 3748.84f, 32.34f),             // SafePos
                 15.66f,                                              // SafeHeading
-                new Vector3(1959.00f, 3741.00f, 32.30f),             // DoorPos
+                new Vector3(1965.40f, 3740.35f, 32.34f),             // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                30.00f,                                              // DoorHeading
                 3.0f
             ));
 
@@ -148,15 +148,15 @@ namespace StoreRobberyTrackerMod.Initialization
                 id++,
                 "24/7 Supermarket (Grapeseed)",
                 new Vector3(1728.440f, 6414.130f, 35.037f),
-                new Vector3(1729.20f, 6415.00f, 35.04f),             // ClerkPos
-                180.00f,                                             // ClerkHeading
+                new Vector3(1728.80f, 6417.35f, 35.04f),             // ClerkPos
+                220.00f,                                             // ClerkHeading
                 new Vector3(1728.90f, 6414.80f, 35.04f),             // RegisterPos
                 180.00f,                                             // RegisterHeading
                 new Vector3(1734.83f, 6420.85f, 35.03f),             // SafePos
                 343.00f,                                             // SafeHeading
-                new Vector3(1728.00f, 6413.00f, 35.04f),             // DoorPos
+                new Vector3(1731.00f, 6411.00f, 35.00f),             // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                338.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -171,7 +171,7 @@ namespace StoreRobberyTrackerMod.Initialization
                 160.27f,                                            // RegisterHeading
                 new Vector3(2549.27f, 384.91f, 108.62f),            // SafePos
                 84.84f,                                             // SafeHeading
-                new Vector3(2559.57f, 385.35f, 108.62f),            // DoorPos
+                new Vector3(2559.78f, 385.45f, 108.62f),            // DoorPos
                 "v_ilev_gasdoor",
                 95.0f,                                              // DoorHeading
                 3.0f
@@ -186,13 +186,13 @@ namespace StoreRobberyTrackerMod.Initialization
                 id++,
                 "Ace Liquor (Route 68)",
                 new Vector3(1392.500f, 3606.000f, 34.900f),
-                new Vector3(1391.30f, 3604.80f, 34.90f),             // ClerkPos
-                200.00f,                                             // ClerkHeading
+                new Vector3(1392.45f, 3606.55f, 34.98f),             // ClerkPos
+                195.00f,                                             // ClerkHeading
                 new Vector3(1390.90f, 3605.80f, 34.90f),             // RegisterPos
                 200.00f,                                             // RegisterHeading
                 new Vector3(1394.92f, 3613.89f, 34.98f),             // SafePos
                 15.69f,                                              // SafeHeading
-                new Vector3(1390.00f, 3605.00f, 34.90f),             // DoorPos
+                new Vector3(1394.45f, 3606.55f, 34.98f),             // DoorPos
                 "v_ilev_gasdoor",                                    // Using generic mesh per your instruction
                 0.00f,                                               // DoorHeading
                 3.0f
@@ -207,15 +207,15 @@ namespace StoreRobberyTrackerMod.Initialization
                 id++,
                 "LTD Gasoline (Davis)",
                 new Vector3(-48.5f, -1757.5f, 29.4f),
-                new Vector3(-47.30f, -1758.80f, 29.42f),             // ClerkPos
+                new Vector3(-46.56f, -1758.20f, 29.42f),             // ClerkPos
                 50.00f,                                              // ClerkHeading
                 new Vector3(-46.70f, -1757.80f, 29.42f),             // RegisterPos
                 50.00f,                                              // RegisterHeading
                 new Vector3(-43.3559f, -1748.3580f, 29.4210f),       // SafePos
                 50.15f,                                              // SafeHeading
-                new Vector3(-47.00f, -1756.00f, 29.42f),             // DoorPos
+                new Vector3(-53.25f, -1756.90f, 29.42f),             // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                320.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -230,7 +230,7 @@ namespace StoreRobberyTrackerMod.Initialization
                 90.00f,                                              // RegisterHeading
                 new Vector3(-709.69f, -904.05f, 19.21f),             // SafePos
                 90.00f,                                              // SafeHeading
-                new Vector3(-706.00f, -914.00f, 19.22f),             // DoorPos
+                new Vector3(-711.72f, -917.05f, 19.22f),             // DoorPos
                 "v_ilev_gasdoor",
                 0.00f,                                               // DoorHeading
                 3.0f
@@ -240,16 +240,16 @@ namespace StoreRobberyTrackerMod.Initialization
             ctx.Stores.Add(CreateStore(
                 id++,
                 "LTD Gasoline (Richman Glen)",
-                new Vector3(-1820.5f, 792.5f, 138.2f),
-                new Vector3(-1819.50f, 793.00f, 138.20f),            // ClerkPos
+                new Vector3(-1822.90f, 792.05f, 138.20f),
+                new Vector3(-1819.90f, 794.40f, 138.20f),            // ClerkPos
                 140.00f,                                             // ClerkHeading
                 new Vector3(-1818.90f, 794.00f, 138.20f),            // RegisterPos
                 140.00f,                                             // RegisterHeading
                 new Vector3(-1829.19f, 798.84f, 138.19f),            // SafePos
                 136.25f,                                             // SafeHeading
-                new Vector3(-1818.00f, 792.00f, 138.20f),            // DoorPos
+                new Vector3(-1822.050f, 787.95f, 138.20f),           // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                45.00f,                                              // DoorHeading
                 3.0f
             ));
 
@@ -257,16 +257,16 @@ namespace StoreRobberyTrackerMod.Initialization
             ctx.Stores.Add(CreateStore(
                 id++,
                 "LTD Gasoline (Mirror Park)",
-                new Vector3(1160.3f, -314.0f, 69.2f),
-                new Vector3(1159.10f, -313.60f, 69.20f),             // ClerkPos
+                new Vector3(1161.80f, -322.88f, 69.20f),
+                new Vector3(1165.05f, -322.60f, 69.20f),             // ClerkPos
                 100.00f,                                             // ClerkHeading
-                new Vector3(1158.70f, -312.60f, 69.20f),             // RegisterPos
+                new Vector3(1165.70f, -322.60f, 69.20f),             // RegisterPos
                 100.00f,                                             // RegisterHeading
                 new Vector3(1159.55f, -314.04f, 69.20f),             // SafePos
                 97.00f,                                              // SafeHeading
-                new Vector3(1158.00f, -314.00f, 69.20f),             // DoorPos
+                new Vector3(1159.60f, -327.00f, 69.20f),             // DoorPos
                 "v_ilev_gasdoor",
-                0.00f,                                               // DoorHeading
+                235.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -275,13 +275,13 @@ namespace StoreRobberyTrackerMod.Initialization
                 id++,
                 "LTD Gasoline (Grapeseed)",
                 new Vector3(1698.3f, 4924.4f, 42.1f),
-                new Vector3(1697.10f, 4923.80f, 42.10f),             // ClerkPos
+                new Vector3(1697.85f, 4922.85f, 42.10f),             // ClerkPos
                 320.00f,                                             // ClerkHeading
                 new Vector3(1696.70f, 4924.00f, 42.10f),             // RegisterPos
                 320.00f,                                             // RegisterHeading
                 new Vector3(1707.94f, 4936.36f, 42.06f),             // Corrected SafePos (typo fixed)
                 315.88f,                                             // SafeHeading
-                new Vector3(1696.00f, 4923.00f, 42.10f),             // DoorPos
+                new Vector3(1698.45f, 4929.40f, 42.10f),             // DoorPos
                 "v_ilev_gasdoor",
                 0.00f,                                               // DoorHeading
                 3.0f
@@ -296,15 +296,15 @@ namespace StoreRobberyTrackerMod.Initialization
                 id++,
                 "Rob's Liquor (Vespucci Canals)",
                 new Vector3(-1221.9f, -908.3f, 12.3f),
-                new Vector3(-1222.30f, -907.60f, 12.33f),            // ClerkPos
+                new Vector3(-1221.75f, -908.70f, 12.33f),            // ClerkPos
                 30.00f,                                              // ClerkHeading
                 new Vector3(-1221.90f, -906.60f, 12.33f),            // RegisterPos
                 30.00f,                                              // RegisterHeading
                 new Vector3(-1220.80f, -916.02f, 11.32f),            // SafePos
                 118.63f,                                             // SafeHeading
-                new Vector3(-1222.00f, -908.00f, 12.33f),            // DoorPos
+                new Vector3(-1226.55f, -902.35f, 12.33f),            // DoorPos
                 "v_ilev_ra_door4r",
-                0.00f,                                               // DoorHeading
+                215.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -313,15 +313,15 @@ namespace StoreRobberyTrackerMod.Initialization
                 id++,
                 "Rob's Liquor (Pacific Bluffs)",
                 new Vector3(-2966.4f, 391.0f, 15.0f),
-                new Vector3(-2967.20f, 392.00f, 15.00f),             // ClerkPos
+                new Vector3(-2966.27f, 390.85f, 15.00f),             // ClerkPos
                 90.00f,                                              // ClerkHeading
                 new Vector3(-2966.80f, 392.70f, 15.00f),             // RegisterPos
                 90.00f,                                              // RegisterHeading
                 new Vector3(-2959.62f, 387.15f, 14.04f),             // SafePos
                 168.93f,                                             // SafeHeading
-                new Vector3(-2967.00f, 391.00f, 15.00f),             // DoorPos
+                new Vector3(-2974.00f, 390.75f, 15.00f),             // DoorPos
                 "v_ilev_ra_door4r",
-                0.00f,                                               // DoorHeading
+                260.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -336,9 +336,9 @@ namespace StoreRobberyTrackerMod.Initialization
                 130.00f,                                             // RegisterHeading
                 new Vector3(-1478.87f, -375.43f, 39.16f),            // SafePos
                 227.58f,                                             // SafeHeading (corrected from 22758f)
-                new Vector3(-1485.00f, -378.00f, 40.20f),            // DoorPos
+                new Vector3(-1491.15f, -383.80f, 40.16f),            // DoorPos
                 "v_ilev_ra_door4r",
-                0.00f,                                               // DoorHeading
+                320.00f,                                             // DoorHeading
                 3.0f
             ));
 
@@ -347,51 +347,51 @@ namespace StoreRobberyTrackerMod.Initialization
                 id++,
                 "Rob's Liquor (Murrieta Heigts)",
                 new Vector3(1134.2f, -982.4f, 46.4f),
-                new Vector3(1133.30f, -981.90f, 46.40f),             // ClerkPos
+                new Vector3(1133.95f, -982.60f, 46.41f),             // ClerkPos
                 275.00f,                                             // ClerkHeading
-                new Vector3(1132.70f, -980.80f, 46.40f),             // RegisterPos
+                new Vector3(1132.70f, -980.80f, 46.41f),             // RegisterPos
                 275.00f,                                             // RegisterHeading
                 new Vector3(1126.81f, -980.15f, 45.41f),             // SafePos
                 359.61f,                                             // SafeHeading
-                new Vector3(1132.00f, -982.00f, 46.40f),             // DoorPos
+                new Vector3(1141.55f, -981.00f, 46.41f),             // DoorPos
                 "v_ilev_ra_door4r",
-                0.00f,                                               // DoorHeading
+                95.00f,                                              // DoorHeading
                 3.0f
             ));
-
-            // 19 - Rob's Liquor (Chumash)
-            ctx.Stores.Add(CreateStore(
-                id++,
-                "Rob's Liquor (Chumash)",
-                new Vector3(-2966.4f, 391.0f, 15.0f),
-                new Vector3(-2967.20f, 392.00f, 15.00f),             // ClerkPos
-                90.00f,                                              // ClerkHeading
-                new Vector3(-2966.80f, 392.70f, 15.00f),             // RegisterPos
-                90.00f,                                              // RegisterHeading
-                new Vector3(-2959.56f, 387.09f, 14.04f),             // SafePos
-                175.72f,                                             // SafeHeading
-                new Vector3(-2967.00f, 391.00f, 15.00f),             // DoorPos
-                "v_ilev_ra_door4r",
-                265.75f,                                             // DoorHeading
-                3.0f
-            ));
-
-            // 20 - Rob's Liquor (Grand Senora Desert)
+            
+            // 19 - Rob's Liquor (Grand Senora Desert)
             ctx.Stores.Add(CreateStore(
                 id++,
                 "Rob's Liquor (Grand Senora Desert)",
                 new Vector3(1166.66f, 2708.02f, 38.157f),
-                new Vector3(-2967.20f, 392.00f, 15.00f),             // ClerkPos (placeholder from your file)
-                90.00f,                                              // ClerkHeading
-                new Vector3(-2966.80f, 392.70f, 15.00f),             // RegisterPos
+                new Vector3(1165.85f, 2711.05f, 38.157f),            // ClerkPos (placeholder from your file)
+                175.00f,                                             // ClerkHeading
+                new Vector3(1165.80f, 2711.70f, 38.157f),            // RegisterPos
                 90.00f,                                              // RegisterHeading
                 new Vector3(1169.30f, 2717.81f, 37.15f),             // SafePos
                 270.44f,                                             // SafeHeading
-                new Vector3(-2973.9430f, 390.7313f, 15.0344f),       // DoorPos
+                new Vector3(1166.55f, 2711.05f, 38.157f),            // DoorPos
                 "v_ilev_ra_door4r",
                 0.00f,                                               // DoorHeading
                 3.0f
             ));
+
+            //// 20 - Rob's Liquor (Chumash)
+            //ctx.Stores.Add(CreateStore(
+            //    id++,
+            //    "Rob's Liquor (Chumash)",
+            //    new Vector3(-2966.4f, 391.0f, 15.0f),
+            //    new Vector3(-2966.27f, 390.85f, 15.00f),             // ClerkPos
+            //    90.00f,                                              // ClerkHeading
+            //    new Vector3(-2966.80f, 392.70f, 15.00f),             // RegisterPos
+            //    90.00f,                                              // RegisterHeading
+            //    new Vector3(-2959.62f, 387.15f, 14.04f),             // SafePos
+            //    168.93f,                                             // SafeHeading
+            //    new Vector3(-2974.00f, 390.75f, 15.00f),             // DoorPos
+            //    "v_ilev_ra_door4r",
+            //    260.00f,                                             // DoorHeading
+            //    3.0f
+            //));
 
         }
 
@@ -432,8 +432,7 @@ namespace StoreRobberyTrackerMod.Initialization
         242.5f, 0.0f, 0.0f, 255.0f, 70.0f,
         330.0f, 300.0f, 180.0f, 320.0f, 200.0f,
         50.0f, 90.0f, 140.0f, 100.0f, 320.0f,
-        30.0f, 90.0f, 130.0f, 275.0f, 90.0f,
-        90.0f
+        30.0f, 90.0f, 130.0f, 275.0f, 90.0f
     };
 
             // Determine interior type
