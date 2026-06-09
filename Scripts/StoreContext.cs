@@ -288,9 +288,6 @@ namespace StoreRobberyTrackerMod
 
                     // 6) Police / heat per store
                     Police.UpdatePoliceLogic(store, player);
-
-                    // ⭐ SafeCrack trigger logic
-                    // HandleSafeCrackForStore(store, player);
                 }
 
                 // Draw global UI
@@ -472,46 +469,6 @@ namespace StoreRobberyTrackerMod
                     return false;
                 }
             }
-        }
-
-        // ------------------------------------------------------------
-        // SAFECRACK TRIGGER LOGIC
-        // ------------------------------------------------------------
-        private void HandleSafeCrackForStore(TrackedStore store, Ped player)
-        {
-            // If safe already cracked, skip
-            if (store.SafeCracked)
-                return;
-
-            // Distance check
-            float dist = player.Position.DistanceTo(store.SafePos);
-            bool inRange = dist < 1.4f;
-
-            // If player leaves range while cracking → abort
-            if (!inRange && SafeState.Active)
-            {
-                SafeCrack.Abort();
-                return;
-            }
-
-            // If not in range → nothing to do
-            if (!inRange)
-                return;
-
-            // Must be facing the safe
-            Vector3 dir = (store.SafePos - player.Position).Normalized;
-            float dot = Vector3.Dot(player.ForwardVector, dir);
-            bool facing = dot > 0.65f;
-
-            if (!facing)
-                return;
-
-            // If minigame already running → let controller handle it
-            if (SafeState.Active)
-                return;
-
-            // Start minigame
-            SafeCrack.Start(store, store.SafePos, store.SafeHeading, player);
         }
     }
 }
