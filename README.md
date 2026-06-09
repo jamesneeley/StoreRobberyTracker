@@ -196,7 +196,9 @@ Shows:
 - EnableProfiler — enable profiler                   // true/false
 - Profiler_AutoDump — auto‑dump profiler data        // true/false
 - Profiler_DumpInterval — dump interval              // 30
+- EnableLogging — enable debug logging               // true/false
 - EnableFileManager — enable debug file manager      // true/false
+- EnableEvents — enable debug events                 // true/false
 - AutoSnapshotOnScenario — auto snapshot             // true/false
 
 ---
