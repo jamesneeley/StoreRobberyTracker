@@ -192,6 +192,19 @@ namespace StoreRobberyEnhanced.Systems
                 }
 
                 // ------------------------------------------------------------
+                // ⭐ Ignore knocked out but not dead clerks (prevents death alarm if player just knocks clerk out instead of killing)
+                // ------------------------------------------------------------
+                if (store.Clerk != null && store.Clerk.Exists())
+                {
+                    if (!store.Clerk.IsDead && store.Clerk.IsRagdoll)
+                    {
+                        DebugLogger.Trace($"Clerk knocked out, not dead — no death alarm for store {store.Id}");
+                        store.ClerkDeathHandled = false;
+                        return;
+                    }
+                }
+
+                // ------------------------------------------------------------
                 // ⭐ Only react if the clerk death was actually processed
                 // ------------------------------------------------------------
                 if (!store.ClerkDeathHandled)

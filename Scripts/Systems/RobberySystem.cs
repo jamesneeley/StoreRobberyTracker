@@ -710,7 +710,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // CAMERA-BASED ALARM
+        // CAMERA-BASED ALARM (Patched: Dead-body only, ignore knockouts)
         // ------------------------------------------------------------
         private void CheckCameraTriggeredAlarm(TrackedStore store)
         {
@@ -721,7 +721,6 @@ namespace StoreRobberyEnhanced.Systems
                     return;
 
                 // ⭐ Ignore if default clerk was replaced safely
-                // OLD: if (!store.IsOurClerk) return;
                 if (store.Clerk == null || !store.Clerk.Exists() || !_ctx.Clerks.IsOurClerk(store.Clerk))
                     return;
 
@@ -731,6 +730,23 @@ namespace StoreRobberyEnhanced.Systems
                 if (!_ctx.Config.EnableCameras)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ NEW: Ignore knocked-out clerks (ragdoll but alive)
+                // ------------------------------------------------------------
+                if (store.Clerk != null && store.Clerk.Exists())
+                {
+                    if (!store.Clerk.IsDead && store.Clerk.IsRagdoll)
+                    {
+                        DebugLogger.Trace(
+                            $"Camera ignored knocked-out clerk at store {store.Id} (ragdoll but alive)"
+                        );
+                        return;
+                    }
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ DEAD CLERK DETECTION (ONLY trigger on actual death)
+                // ------------------------------------------------------------
                 int count = store.Cameras.Count;
                 for (int i = 0; i < count; i++)
                 {
@@ -739,7 +755,7 @@ namespace StoreRobberyEnhanced.Systems
                     if (cam.Destroyed)
                         continue;
 
-                    // Camera sees dead clerk
+                    // ⭐ Camera sees dead clerk (NOT knocked out)
                     if (store.ClerkDeathHandled && !store.ClerkKilledWithGun)
                     {
                         DebugLogger.Info($"Camera detected dead clerk at store {store.Id}");
