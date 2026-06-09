@@ -275,7 +275,7 @@ Tracks persistent store data:
 - ClerkKilledWithGun  
 - LastRobbedUtc  
 
-All 21 stores included.
+All 20 stores included.
 
 ---
 
@@ -290,7 +290,7 @@ All 21 stores included.
 ### Install Steps
 1. Install ScriptHookV  
 2. Install ScriptHookVDotNet 3.9.0 Enhanced  
-3. Drag `StoreRobberyTracker.dll` into:
+3. Drag `StoreRobberyEnhanced.dll` and `StoreRobberyEnhanced.pdb`into:
 
    ```
    Grand Theft Auto V/scripts/
@@ -358,13 +358,13 @@ StoreRobberyTracker/
 │   │   └── UiHelpers.cs
 │   ├── Main.cs
 │   └── StoreContext.cs
-└── StoreRobberyTracker/
+└── StoreRobberyEnhanced/
 ├── .gitattributes
 ├── .gitignore
 ├── LICENSE.txt
 ├── README.md
-├── StoreRobberyTracker.csproj
-└── StoreRobberyTracker.sln
+├── StoreRobberyEnhanced.csproj
+└── StoreRobberyEnhanced.sln
 
 ```
 
@@ -430,7 +430,7 @@ To build the project:
 
 # 🛠️ Building the Project
 
-1. Open `StoreRobberyTracker.sln` in Visual Studio  
+1. Open `StoreRobberyEnhanced.sln` in Visual Studio  
 2. Ensure **.NET Framework 4.8** is installed  
 3. Build in **Release** mode  
 4. Output DLL appears in:
