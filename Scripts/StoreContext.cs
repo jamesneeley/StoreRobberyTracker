@@ -271,6 +271,10 @@ namespace StoreRobberyEnhanced
                 {
                     TrackedStore store = Stores[i];
 
+                    // 0) Update inside-store state (consistent for all systems)
+                    store.IsPlayerInsideStore =
+                        player.Position.DistanceTo(store.StorePos) <= store.Radius;
+
                     // 1) Cooldown / availability
                     Cooldowns.UpdateStoreCooldown(store, player);
 
@@ -291,7 +295,7 @@ namespace StoreRobberyEnhanced
                 }
 
                 // Draw global UI
-                Ui.Draw();
+                // Ui.Draw();
 
                 // ⭐ SafeCrack logic tick (UI is drawn in Main.OnFrameRender)
                 if (SafeState.Active)

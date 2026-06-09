@@ -242,6 +242,11 @@ namespace StoreRobberyEnhanced.Systems
                                     DebugLogger.Info(
                                         $"Interior camera alarm triggered after grace for store {store.Id}"
                                     );
+
+                                    // ⭐ ONE-SHOT
+                                    nearest.GraceActive = false;
+                                    nearest.Destroyed = true;
+
                                     TriggerCameraFlag(store);
                                 }
                             }
@@ -312,12 +317,12 @@ namespace StoreRobberyEnhanced.Systems
                     // ------------------------------------------------------------
                     if (cam.Destroyed)
                     {
-                        DebugLogger.Trace($"Fallback camera {i} already destroyed for store {store.Id}");
+                        DebugLogger.Trace($"Fallback camera {i} destroyed for store {store.Id}");
                         continue;
                     }
 
                     // ------------------------------------------------------------
-                    // ⭐ ALLOW MELEE / GUN DESTRUCTION
+                    // ⭐ ALLOW MELEE DESTRUCTION
                     // ------------------------------------------------------------
                     if (PlayerDestroyedFallbackCamera(cam, player))
                     {
@@ -372,6 +377,11 @@ namespace StoreRobberyEnhanced.Systems
                                 DebugLogger.Info(
                                     $"Fallback camera {i} alarm triggered after grace for store {store.Id}"
                                 );
+
+                                // ⭐ ONE-SHOT ALARM — prevent spam
+                                cam.GraceActive = false;
+                                cam.Destroyed = true; // treat as "triggered" camera
+
                                 TriggerCameraFlag(store);
                             }
                         }
@@ -539,6 +549,7 @@ namespace StoreRobberyEnhanced.Systems
                 if (!store.IsRobberyActive)
                     return;
 
+                // ⭐ Prevent double-triggering
                 if (store.AlarmTriggered)
                 {
                     DebugLogger.Trace($"Camera flag ignored: store {store.Id} already alarmed");

@@ -56,9 +56,9 @@ namespace StoreRobberyEnhanced.Systems
                 if (player == null || !player.Exists())
                     return;
 
-                // Track player inside store
-                store.IsPlayerInsideStore =
-                    player.Position.DistanceTo(store.StorePos) <= store.Radius;
+                //// Track player inside store
+                //store.IsPlayerInsideStore =
+                //    player.Position.DistanceTo(store.StorePos) <= store.Radius;
 
                 // BLOCK spawning until replacement system has removed defaults
                 if (!store.DefaultClerkRemoved)
@@ -70,7 +70,7 @@ namespace StoreRobberyEnhanced.Systems
                     SpawnClerk(store);
                     store.IsRobberyActive = false;
                     store.ClerkReacted = false;
-                    store.HeatLevel = 0; // or whatever your heat variable is
+                    store.HeatLevel = 0;
 
                     return;
                 }
@@ -80,10 +80,10 @@ namespace StoreRobberyEnhanced.Systems
                 if (clerk == null || !clerk.Exists())
                     return;
 
-                // ⭐ SAFETY RESET: only if clerk is actually stuck
+                // ⭐ SAFETY RESET: only if clerk is actually stuck AND no robbery is active
                 bool usingScenario = Function.Call<bool>(Hash.IS_PED_USING_ANY_SCENARIO, clerk);
 
-                if (clerk.IsRagdoll || usingScenario)
+                if (!store.IsRobberyActive && (clerk.IsRagdoll || usingScenario))
                 {
                     DebugLogger.Info(string.Format(
                         "[RESET] Forcing task clear on clerk {0} (ragdoll={1} scenario={2})",
@@ -130,11 +130,6 @@ namespace StoreRobberyEnhanced.Systems
                     BeginFearReaction(store, clerk);
                     return;
                 }
-                //if (!store.ClerkReacted && _ctx.Player.IsThreatening(clerk))
-                //{
-                //    BeginFearReaction(store, clerk);
-                //    return;
-                //}
 
                 // Stall
                 if (store.ClerkStalling)
@@ -186,7 +181,7 @@ namespace StoreRobberyEnhanced.Systems
             {
                 DebugLogger.LogException("ClerkSystem.UpdateClerk", ex);
             }
-    }
+        }
 
         // ------------------------------------------------------------
         // HELPER: Determine if a ped is one of our custom clerks
@@ -355,11 +350,15 @@ namespace StoreRobberyEnhanced.Systems
             if (ped == null || !ped.Exists())
                 return;
 
-            // ⭐ BLOCK ALL HOLD-UP ANIMS (root motion)
+            // ⭐ BLOCK MOST ROOT-MOTION HOLD-UP ANIMS, BUT ALLOW REGISTER OPEN
             if (dict == "mp_am_hold_up")
             {
-                DebugLogger.Info($"[ANIM-BLOCK] Suppressed root-motion anim {dict}/{anim} on ped {ped.Handle}");
-                return;
+                // Allow the specific register animation we actually use
+                if (!string.Equals(anim, "purchase_beer_shopkeeper", StringComparison.OrdinalIgnoreCase))
+                {
+                    DebugLogger.Info($"[ANIM-BLOCK] Suppressed root-motion anim {dict}/{anim} on ped {ped.Handle}");
+                    return;
+                }
             }
 
             try
@@ -469,12 +468,13 @@ namespace StoreRobberyEnhanced.Systems
                     DebugLogger.Info($"Clerk at store {store.Id} decided to fight back ({store.ReactionType})");
 
                     // Trigger combat behavior immediately
-                    ProcessfeelingFroggy(store, clerk);
+                    ProcessFeelingFroggy(store, clerk);
                     return;
                 }
 
                 // Default panic behavior
-                store.ReactionType = ClerkReactionType.NormalPanic;
+                if (store.ReactionType == 0)
+                    store.ReactionType = ClerkReactionType.NormalPanic;
 
                 // Stall
                 store.ClerkStalling = true;
@@ -704,12 +704,15 @@ namespace StoreRobberyEnhanced.Systems
                     );
                 }
 
+                store.ClerkThrowingBag = false;
+
                 // ⭐ Spawn the REAL loot bag on the floor
                 _ctx.Robberies.SpawnLootBag(store, clerk);
 
                 // ⭐ Force surrender instead of flee
                 store.ClerkPanicking = false;
                 store.ClerkFleeing = true; // triggers surrender handler
+                store.ClerkSurrenderStage = 0;   // triggers surrender sequence next tick
             }
             catch (Exception ex)
             {
@@ -807,6 +810,8 @@ namespace StoreRobberyEnhanced.Systems
 
             double elapsed = (DateTime.UtcNow - store.ClerkAnimStartUtc).TotalMilliseconds;
 
+            clerk.Task.ClearSecondary();
+
             // Stage 1 → Stage 2
             if (store.ClerkSurrenderStage == 1 && elapsed >= store.ClerkAnimDurationMs)
             {
@@ -851,7 +856,7 @@ namespace StoreRobberyEnhanced.Systems
         // ------------------------------------------------------------
         // FIGHT OR FLIGHT PISTOL / SHOTGUN
         // ------------------------------------------------------------
-        private void ProcessfeelingFroggy(TrackedStore store, Ped clerk)
+        private void ProcessFeelingFroggy(TrackedStore store, Ped clerk)
         {
             try
             {

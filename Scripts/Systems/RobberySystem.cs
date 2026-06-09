@@ -227,6 +227,7 @@ namespace StoreRobberyEnhanced.Systems
             // Stealth / alarm suppression
             store.SilentRobbery = false;
             store.AlarmTriggered = false;
+            store.HeatLevel = 0;
             store.ClerkCallingPolice = false;
             store.SilentAlarmPressed = false;
 
@@ -236,6 +237,7 @@ namespace StoreRobberyEnhanced.Systems
             store.MaskEscalationApplied = false;
             store.FightEscalationApplied = false;
             store.TimeEscalationApplied = false;
+            store.SilentRobbery = false;
             store.ClerkRecognizedPlayer = false;
             store.ClerkKilledWithGun = false;
 
@@ -416,12 +418,16 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // START ROBBERY (FULLY PATCHED — FINAL)
+        // START ROBBERY (FULLY PATCHED — FINAL + SILENT ROBBERY LOGIC)
         // ------------------------------------------------------------
         private void TryStartRegisterRobbery(TrackedStore store, Ped player)
         {
             try
             {
+                // Prevent double-starting a robbery
+                if (store.IsRobberyActive)
+                    return;
+
                 // ------------------------------------------------------------
                 // DEBUG TIMER GUARD
                 // ------------------------------------------------------------
@@ -442,18 +448,72 @@ namespace StoreRobberyEnhanced.Systems
                     return;
 
                 // ------------------------------------------------------------
-                // ⭐ FIXED AIM CHECK (NO MORE FALSE POSITIVES)
-                // SHVDN's IsAiming() is unreliable after clerk replacement,
-                // animation resets, or SafeCrack control suppression.
-                // This checks the ACTUAL physical aim button.
+                // ⭐ SILENT ROBBERY CHECK (MASK + MELEE + CLOSE RANGE)
                 // ------------------------------------------------------------
-                bool isPhysicallyAiming = Game.IsControlPressed(Control.Aim) || Game.IsControlPressed(Control.VehicleAim);
+                bool isMasked = _ctx.Player.IsMasked();
+
+                bool isMelee =
+                    player.Weapons.Current != null &&
+                    player.Weapons.Current.Group == WeaponGroup.Melee;
+
+                bool closeEnough = dist < 3.0f;
+
+                bool clerkNotReacted = !store.ClerkReacted;
+
+                bool noAim = !Game.IsControlPressed(Control.Aim) &&
+                             !Game.IsControlPressed(Control.VehicleAim);
+
+                bool noAlarm = !store.AlarmTriggered;
+
+                bool canSilentRob =
+                    isMasked &&
+                    isMelee &&
+                    closeEnough &&
+                    noAim &&
+                    clerkNotReacted &&
+                    noAlarm;
+
+                if (canSilentRob)
+                {
+                    DebugLogger.Info($"SilentRobbery activated at store {store.Id}");
+
+                    store.SilentRobbery = true;
+                    store.IsRobberyActive = true;
+                    store.IsRobbed = true;
+                    store.RobberyStartUtc = DateTime.UtcNow;
+                    store.PendingCompletion = true;
+
+                    // No alarms, no heat, no clerk call
+                    store.AlarmTriggered = false;
+                    store.ClerkCallingPolice = false;
+                    store.SilentAlarmPressed = false;
+                    store.HeatLevel = 0;
+
+                    // Register payout only
+                    int payout = _ctx.Rng.Next(_ctx.Config.RegisterMinAmount, _ctx.Config.RegisterMaxAmount + 1);
+                    payout = (int)(payout * _ctx.Config.PayoutMultiplier);
+                    store.PendingPayout += payout;
+
+                    _ctx.Ui.ShowSubtitle("~g~Silent robbery successful. Leave quietly.", 4000);
+
+                    _ctx.SaveStoreState(store);
+                    _ctx.Cooldowns.UpdateStoreBlip(store);
+
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ FIXED AIM CHECK (LOUD ROBBERY)
+                // ------------------------------------------------------------
+                bool isPhysicallyAiming =
+                    Game.IsControlPressed(Control.Aim) ||
+                    Game.IsControlPressed(Control.VehicleAim);
 
                 if (!isPhysicallyAiming)
                     return;
 
                 // ------------------------------------------------------------
-                // MUST BE ARMED
+                // MUST BE ARMED (LOUD ROBBERY)
                 // ------------------------------------------------------------
                 if (!_ctx.Player.IsArmed())
                     return;
@@ -482,7 +542,7 @@ namespace StoreRobberyEnhanced.Systems
                 }
 
                 // ------------------------------------------------------------
-                // START ROBBERY
+                // START LOUD ROBBERY
                 // ------------------------------------------------------------
                 StartRegisterRobbery(store);
 
@@ -508,8 +568,10 @@ namespace StoreRobberyEnhanced.Systems
             try
             {
                 store.IsRobbed = true;
+                store.IsRobberyActive = true; // ⭐ keep in sync with clerk/police/camera systems
                 store.RobberyStartUtc = DateTime.UtcNow;
                 store.PendingCompletion = true;
+                store.ClerkSurrenderStage = 0;
 
                 // ⭐ Respect SilentRobbery flag (stealth mode)
                 if (store.SilentRobbery)
@@ -547,7 +609,6 @@ namespace StoreRobberyEnhanced.Systems
             }
         }
 
-
         // ------------------------------------------------------------
         // ROBBERY TIMER
         // ------------------------------------------------------------
@@ -555,26 +616,39 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
+                // ------------------------------------------------------------
+                // PAUSE TIMER DURING SAFECRACK
+                // ------------------------------------------------------------
                 if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
                 {
                     _ctx.Ui.ClearTimer();
                     return;
                 }
 
-                if (store.AlarmTriggered)
-                    return;
-
+                // ------------------------------------------------------------
+                // CALCULATE REMAINING TIME
+                // ------------------------------------------------------------
                 double elapsed = (DateTime.UtcNow - store.RobberyStartUtc).TotalSeconds;
                 int remaining = _ctx.Config.RobberyTimeLimit - (int)elapsed;
 
+                // ------------------------------------------------------------
+                // TIMER EXPIRED
+                // ------------------------------------------------------------
                 if (remaining <= 0)
                 {
                     DebugLogger.Info($"Robbery timer expired for store {store.Id}");
-                    TriggerPoliceIfNeeded(store);
+
+                    // ⭐ Only trigger timer-based police if NO other alarm fired
+                    if (!store.AlarmTriggered)
+                        TriggerPoliceIfNeeded(store);
+
                     _ctx.Ui.ClearTimer();
                     return;
                 }
 
+                // ------------------------------------------------------------
+                // ALWAYS UPDATE UI (EVEN IF ALARM TRIGGERED)
+                // ------------------------------------------------------------
                 if (Game.GameTime - _lastTimerUpdate > 1000)
                 {
                     int mm = remaining / 60;
@@ -598,6 +672,13 @@ namespace StoreRobberyEnhanced.Systems
                 if (_ctx.Police.SuppressPoliceForDebug)
                 {
                     DebugLogger.Info("TriggerPoliceIfNeeded suppressed for debug");
+                    return;
+                }
+
+                // ⭐ If any other alarm already fired, skip timer police
+                if (store.AlarmTriggered)
+                {
+                    DebugLogger.Info("TriggerPoliceIfNeeded skipped — alarm already triggered");
                     return;
                 }
 
@@ -974,6 +1055,13 @@ namespace StoreRobberyEnhanced.Systems
                 store.AlarmTriggered = false;
                 store.ClerkCallingPolice = false;
                 store.SilentAlarmPressed = false;
+
+                store.TimesRobbed++;
+                store.RepeatRobberyEscalationApplied = false;
+                store.MaskEscalationApplied = false;
+                store.TimeEscalationApplied = false;
+                store.FightEscalationApplied = false;
+                store.TimeEscalationApplied = false;
 
                 // Apply cooldown visuals + persistence
                 _ctx.Cooldowns.ApplyCooldownBlocker(store);

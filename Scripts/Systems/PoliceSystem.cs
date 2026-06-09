@@ -91,7 +91,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // CAMERA DETECTION (Patched)
+        // CAMERA DETECTION (Patched + All-Cameras-Destroyed Guard)
         // ------------------------------------------------------------
         private void HandleCameraTriggeredAlarm(TrackedStore store)
         {
@@ -107,6 +107,30 @@ namespace StoreRobberyEnhanced.Systems
                 if ((_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning) || store.SilentRobbery)
                     return;
 
+                // ------------------------------------------------------------
+                // ⭐ FIX #1 — If ALL cameras are destroyed, camera alarms cannot trigger
+                // ------------------------------------------------------------
+                bool anyCameraAlive = false;
+                foreach (var cam in store.Cameras)
+                {
+                    if (!cam.Destroyed)
+                    {
+                        anyCameraAlive = true;
+                        break;
+                    }
+                }
+
+                if (!anyCameraAlive)
+                {
+                    DebugLogger.Trace(
+                        $"HandleCameraTriggeredAlarm: all cameras destroyed → no camera alarm possible for store {store.Id}"
+                    );
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ NORMAL CAMERA GRACE CHECK
+                // ------------------------------------------------------------
                 foreach (CameraData cam in store.Cameras)
                 {
                     if (cam.Destroyed)
@@ -368,6 +392,10 @@ namespace StoreRobberyEnhanced.Systems
                 if (store.RepeatRobberyEscalationApplied)
                     return;
 
+                // ⭐ NEW: Never escalate on first robbery
+                if (store.TimesRobbed <= 1)
+                    return;
+
                 if (store.TimesRobbed >= 4)
                 {
                     store.HeatLevel += 2;
@@ -398,6 +426,10 @@ namespace StoreRobberyEnhanced.Systems
                     return;
 
                 if (store.MaskEscalationApplied)
+                    return;
+
+                // ⭐ NEW: Only escalate on repeat robberies
+                if (store.TimesRobbed <= 1)
                     return;
 
                 if (store.PlayerMaskedAtStart)
@@ -444,11 +476,14 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
-                // Before any heat / wanted logic:
                 if (!store.IsRobberyActive || !store.ClerkReacted)
                     return;
 
                 if (store.TimeEscalationApplied)
+                    return;
+
+                // ⭐ NEW: Only escalate on repeat robberies
+                if (store.TimesRobbed <= 1)
                     return;
 
                 double elapsed = (DateTime.UtcNow - store.RobberyStartUtc).TotalSeconds;
@@ -466,16 +501,21 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // CLERK RECOGNITION ESCALATION
+        // CLERK RECOGNITION ESCALATION (Polish Fix #1)
         // ------------------------------------------------------------
         private void HandleRecognitionEscalation(TrackedStore store)
         {
             try
             {
+                // ⭐ Only escalate during an active robbery
+                if (!store.IsRobberyActive)
+                    return;
+
                 if (store.ClerkRecognizedPlayer)
                 {
                     store.HeatLevel += 1;
                     store.ClerkRecognizedPlayer = false;
+
                     DebugLogger.Info($"Recognition escalation (+1 heat) at {store.Name}");
                 }
             }
@@ -515,6 +555,9 @@ namespace StoreRobberyEnhanced.Systems
 
                 if (store.HeatLevel >= 3 && wanted < 3)
                     Game.Player.WantedLevel = 3;
+
+                if (store.HeatLevel > 3)
+                    store.HeatLevel = 3;
 
                 DebugLogger.Trace($"ApplyHeatEffects: store={store.Name}, heat={store.HeatLevel}, wanted={Game.Player.WantedLevel}");
             }
