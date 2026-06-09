@@ -300,48 +300,63 @@ All 21 stores included.
 ## 🧩 Folder Structure (Developer Overview)
 
 ```
-StoreRobberyEnhanced/
-│
+StoreRobberyTracker/
 ├── Properties/
 │   └── AssemblyInfo.cs
-│
 ├── Scripts/
 │   ├── Config/
-│   │   ├── ConfigManager.cs
-│   │   └── StoreConfig.cs
-│   │
+│   │   ├── DefaultConfigCreator.cs
+│   │   ├── IniConfig.cs
+│   │   ├── SafeCrackConfigLoader.cs
+│   │   ├── SafeCrackSettings.cs
+│   │   ├── SimpleIni.cs
+│   │   └── StalkerMessageConfigCreator.cs
 │   ├── Data/
-│   │   ├── TrackedStore.cs
-│   │   ├── StalkerEvent.cs
-│   │   └── StoreDataLoader.cs
-│   │
+│   │   ├── CameraData.cs
+│   │   └── TrackStore.cs
 │   ├── Debug/
-│   │   ├── DebugOverlay.cs
+│   │   ├── DebugActions.cs
+│   │   ├── DebugCameraRender.cs
+│   │   ├── DebugController.cs
+│   │   ├── DebugEvents.cs
+│   │   ├── DebugFileManager.cs
+│   │   ├── DebugKeybinds.cs
 │   │   ├── DebugLogger.cs
-│   │   └── CameraDebug.cs
-│   │
+│   │   ├── DebugOverlay.cs
+│   │   ├── DebugProfiler.cs
+│   │   ├── DebugScenarios.cs
+│   │   ├── DebugState.cs
+│   │   └── DebugStoreOverlay.cs
 │   ├── Initialization/
-│   │   ├── Main.cs
-│   │   ├── StoreInitializer.cs
-│   │   └── StoreContext.cs
-│   │
+│   │   └── StoreInitializer.cs
 │   ├── Minigame/
+│   │   ├── ISafeCrackAnimation.cs
+│   │   ├── ISafeCrackInput.cs
+│   │   ├── ISafeCrackLogic.cs
+│   │   ├── SafeCrackAnimations.cs
 │   │   ├── SafeCrackController.cs
+│   │   ├── SafeCrackEvents.cs
+│   │   ├── SafeCrackInput.cs
+│   │   ├── SafeCrackLogic.cs
+│   │   ├── SafeCrackState.cs
 │   │   └── SafeCrackUI.cs
-│   │
 │   ├── Systems/
-│   │   ├── RobberySystem.cs
+│   │   ├── BlipSystem.cs
+│   │   ├── CameraSystem.cs
+│   │   ├── ClerkReplacementSystem.cs
 │   │   ├── ClerkSystem.cs
 │   │   ├── CooldownSystem.cs
-│   │   ├── AlarmSystem.cs
-│   │   ├── SubtitleSystem.cs
-│   │   └── CameraSystem.cs
-│   │
-│   └── UI/
-│       ├── NotificationUI.cs
-│       ├── StoreMenu.cs
-│       └── BlipUI.cs
-│
+│   │   ├── PoliceSystem.cs
+│   │   ├── RobberySystem.cs
+│   │   ├── SafeSystem.cs
+│   │   ├── StalkerSystem.cs
+│   │   └── TimerSystem.cs
+│   ├── UI/
+│   │   ├── PlayerHelper.cs
+│   │   └── UiHelpers.cs
+│   ├── Main.cs
+│   └── StoreContext.cs
+└── StoreRobberyTracker/
 ├── .gitattributes
 ├── .gitignore
 ├── LICENSE.txt
