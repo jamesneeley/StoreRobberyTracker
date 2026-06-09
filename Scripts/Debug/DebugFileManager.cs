@@ -11,16 +11,38 @@ namespace StoreRobberyTrackerMod.Debug
         private static readonly object _lock = new object();
         private static string _rootFolder;
 
-        internal static void Initialize()
+        // ⭐ NEW — global enable/disable flag
+        private static bool _enabled = true;
+        private static bool _initialized = false;
+
+        /// <summary>
+        /// Initialize the file manager.
+        /// If disabled, no files will be written.
+        /// </summary>
+        internal static void Initialize(bool enableFileManager)
         {
             try
             {
-                _rootFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StoreRobberyTracker", "DebugOutput");
+                _enabled = enableFileManager;
+
+                // If disabled → do not create folder, do not write anything
+                if (!_enabled)
+                {
+                    _initialized = true;
+                    return;
+                }
+
+                _rootFolder = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "StoreRobberyTracker",
+                    "DebugOutput"
+                );
 
                 if (!Directory.Exists(_rootFolder))
                     Directory.CreateDirectory(_rootFolder);
 
                 DebugLogger.Info("DebugFileManager initialized.");
+                _initialized = true;
             }
             catch (Exception ex)
             {
@@ -34,11 +56,17 @@ namespace StoreRobberyTrackerMod.Debug
 
         internal static void WriteText(string fileName, string content)
         {
+            if (!_initialized || !_enabled)
+                return;
+
             SafeWrite(fileName, content);
         }
 
         internal static void WriteJson(string fileName, object data, bool pretty = true)
         {
+            if (!_initialized || !_enabled)
+                return;
+
             try
             {
                 string json = pretty
@@ -55,11 +83,21 @@ namespace StoreRobberyTrackerMod.Debug
 
         internal static void WriteSnapshot(string name, object data)
         {
-            string file = $"{Timestamp()}_{name}.json";
-            WriteJson(file, data, true);
+            if (!_initialized || !_enabled)
+                return;
 
-            DebugEvents.EmitCustom("FileSnapshot", new { File = file });
-            DebugLogger.Info($"Snapshot saved: {file}");
+            try
+            {
+                string file = $"{Timestamp()}_{name}.json";
+                WriteJson(file, data, true);
+
+                DebugEvents.EmitCustom("FileSnapshot", new { File = file });
+                DebugLogger.Info($"Snapshot saved: {file}");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugFileManager.WriteSnapshot", ex);
+            }
         }
 
         // ------------------------------
@@ -79,7 +117,10 @@ namespace StoreRobberyTrackerMod.Debug
             catch (Exception ex)
             {
                 DebugLogger.LogException("DebugFileManager.SafeWrite", ex);
-                GTA.UI.Screen.ShowSubtitle("~r~File write failed.", 2000);
+
+                // Only show subtitle if debug is enabled
+                if (_enabled)
+                    GTA.UI.Screen.ShowSubtitle("~r~File write failed.", 2000);
             }
         }
 

@@ -11,14 +11,26 @@ namespace StoreRobberyTrackerMod.Debug
         private static string _logFilePath;
         private static bool _initialized = false;
 
+        // ⭐ NEW — global enable/disable flag
+        private static bool _enabled = true;
+
         /// <summary>
         /// Initializes the logger and creates a new session log file.
         /// Call once from main script startup.
         /// </summary>
-        internal static void Initialize()
+        internal static void Initialize(bool enableDebug)
         {
             try
             {
+                _enabled = enableDebug;
+
+                // If debug disabled → do NOT create log file
+                if (!_enabled)
+                {
+                    _initialized = true;   // still mark as initialized
+                    return;
+                }
+
                 string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StoreRobberyTracker", "Logs");
 
                 if (!Directory.Exists(folder))
@@ -60,6 +72,10 @@ namespace StoreRobberyTrackerMod.Debug
             if (!_initialized)
                 return;
 
+            // ⭐ NEW — skip all non-exception logs when disabled
+            if (!_enabled)
+                return;
+
             if (level > DebugState.DebugLevel)
                 return;
 
@@ -92,9 +108,36 @@ namespace StoreRobberyTrackerMod.Debug
             Write(2, "ACTION", actionName);
         }
 
+        // ⭐ EXCEPTIONS ALWAYS LOG — even when debug disabled
         internal static void LogException(string context, Exception ex)
         {
-            Write(0, "EXCEPTION", $"{context}: {ex.Message}\n{ex.StackTrace}");
+            try
+            {
+                if (!_initialized)
+                    return;
+
+                // If debug disabled → create a minimal emergency log file
+                if (!_enabled)
+                {
+                    string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StoreRobberyTracker", "Logs");
+                    if (!Directory.Exists(folder))
+                        Directory.CreateDirectory(folder);
+
+                    if (string.IsNullOrEmpty(_logFilePath))
+                        _logFilePath = Path.Combine(folder, "Exceptions.log");
+                }
+
+                string line = $"[{DateTime.Now:HH:mm:ss}] [EXCEPTION] {context}: {ex.Message}\n{ex.StackTrace}";
+
+                lock (_lock)
+                {
+                    File.AppendAllText(_logFilePath, line + Environment.NewLine, Encoding.UTF8);
+                }
+            }
+            catch
+            {
+                // Never throw from exception logger
+            }
         }
     }
 }

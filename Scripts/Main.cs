@@ -72,9 +72,10 @@ namespace StoreRobberyTrackerMod
                 _ctx = new StoreContext(this);
                 _ctx.Initialize();
 
-                DebugLogger.Initialize();
-                DebugEvents.Initialize();
-                DebugFileManager.Initialize();
+                // ⭐ Initialize DebugLogger using INI setting
+                DebugLogger.Initialize(_ctx.Config.EnableDebug);
+                DebugEvents.Initialize(_ctx.Config.EnableEvents);
+                DebugFileManager.Initialize(_ctx.Config.EnableFileManager);
 
                 _ui = new UiHelpers(_ctx.Config);
 

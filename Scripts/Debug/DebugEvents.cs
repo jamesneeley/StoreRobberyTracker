@@ -17,6 +17,9 @@ namespace StoreRobberyTrackerMod.Debug
         private static string _eventFilePath;
         private static bool _initialized = false;
 
+        // ⭐ NEW — global enable/disable flag
+        private static bool _enabled = true;
+
         /// <summary>
         /// Event types for structured debugging.
         /// Add more as your system grows.
@@ -55,11 +58,24 @@ namespace StoreRobberyTrackerMod.Debug
         /// <summary>
         /// Initialize event logging (called once at startup).
         /// </summary>
-        internal static void Initialize()
+        internal static void Initialize(bool enableEvents)
         {
             try
             {
-                string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StoreRobberyTracker", "Events");
+                _enabled = enableEvents;
+
+                // If disabled → do not create folder or file
+                if (!_enabled)
+                {
+                    _initialized = true;
+                    return;
+                }
+
+                string folder = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "StoreRobberyTracker",
+                    "Events"
+                );
 
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
@@ -72,7 +88,7 @@ namespace StoreRobberyTrackerMod.Debug
             }
             catch (Exception ex)
             {
-                GTA.UI.Notification.Show($"~r~DebugEvents Init Failed: {ex.Message}");
+                DebugLogger.LogException("DebugEvents.Init", ex);
             }
         }
 
@@ -81,33 +97,37 @@ namespace StoreRobberyTrackerMod.Debug
         /// </summary>
         internal static void Emit(EventType type, string source, object payload = null)
         {
-            if (!_initialized)
-                return;
-
-            DebugEvent evt = new DebugEvent
+            try
             {
-                Type = type,
-                Source = source,
-                Payload = payload,
-                Timestamp = DateTime.UtcNow
-            };
+                if (!_initialized || !_enabled)
+                    return;
 
-            string json = JsonConvert.SerializeObject(evt);
+                DebugEvent evt = new DebugEvent
+                {
+                    Type = type,
+                    Source = source,
+                    Payload = payload,
+                    Timestamp = DateTime.UtcNow
+                };
 
-            lock (_lock)
-            {
-                try
+                string json = JsonConvert.SerializeObject(evt);
+
+                lock (_lock)
                 {
                     File.AppendAllText(_eventFilePath, json + Environment.NewLine, Encoding.UTF8);
                 }
-                catch
-                {
-                    GTA.UI.Screen.ShowSubtitle("~r~DebugEvents write failed.", 2000);
-                }
-            }
 
-            // Also log to DebugLogger
-            DebugLogger.Event(source, $"{type} event emitted");
+                // Also log to DebugLogger (only if debug enabled)
+                DebugLogger.Event(source, $"{type} event emitted");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("DebugEvents.Emit", ex);
+
+                // Only show subtitle if events are enabled
+                if (_enabled)
+                    GTA.UI.Screen.ShowSubtitle("~r~DebugEvents write failed.", 2000);
+            }
         }
 
         /// <summary>

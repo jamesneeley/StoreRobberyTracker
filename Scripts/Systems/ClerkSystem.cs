@@ -741,17 +741,31 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // FLEE /SURRENDER OVERRIDE
+        // FLEE / SURRENDER OVERRIDE (SAFE, FULLY PATCHED)
         // ------------------------------------------------------------
         private void ProcessFlee(TrackedStore store, Ped clerk)
         {
-            // Fleeing is disabled — clerks surrender instead
-            store.ClerkFleeing = false;
+            try
+            {
+                if (store == null || clerk == null || !clerk.Exists())
+                    return;
 
-            if (store.ClerkSurrenderStage == 0)
-                StartClerkSurrender(store, clerk);
-            else
-                UpdateClerkSurrender(store, clerk);
+                // Fleeing is disabled — clerks surrender instead
+                store.ClerkFleeing = false;
+
+                if (store.ClerkSurrenderStage == 0)
+                {
+                    StartClerkSurrender(store, clerk);
+                }
+                else
+                {
+                    UpdateClerkSurrender(store, clerk);
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("ClerkSystem.ProcessFlee", ex);
+            }
         }
 
         // ------------------------------------------------------------
@@ -1006,26 +1020,50 @@ namespace StoreRobberyTrackerMod.Systems
         }
 
         // ------------------------------------------------------------
-        // CLERK DEATH HANDLING
+        // CLERK DEATH HANDLING — SAFE KO DETECTION
         // ------------------------------------------------------------
         private bool IsPedKnockedOut(Ped ped)
         {
-            if (ped == null || !ped.Exists()) return false;
+            try
+            {
+                if (ped == null || !ped.Exists())
+                    return false;
 
-            // KO states that are NOT death
-            return ped.IsRagdoll ||
-                   ped.IsInjured ||
-                   (ped.Health <= 1 && !ped.IsDead);
+                // KO states that are NOT death
+                return ped.IsRagdoll ||
+                       ped.IsInjured ||
+                       (ped.Health <= 1 && !ped.IsDead);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("ClerkSystem.IsPedKnockedOut", ex);
+                return false;
+            }
         }
 
+        // ------------------------------------------------------------
+        // CLERK DEATH HANDLING — SAFE RAGDOLL KO
+        // ------------------------------------------------------------
         private void KnockOutPed(Ped ped)
         {
-            if (ped == null || !ped.Exists()) return;
+            try
+            {
+                if (ped == null || !ped.Exists())
+                    return;
 
-            ped.Health = 1; // keep alive
-            ped.Armor = 0;
-            ped.Task.ClearAllImmediately();
-            ped.SetToRagdoll(5000, 5000, 0); // unconscious for 5 seconds
+                ped.Health = 1; // keep alive
+                ped.Armor = 0;
+
+                // Clear tasks safely
+                ped.Task.ClearAllImmediately();
+
+                // Apply ragdoll KO
+                ped.SetToRagdoll(5000, 5000, 0);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("ClerkSystem.KnockOutPed", ex);
+            }
         }
 
         private void HandleClerkDeath(TrackedStore store)

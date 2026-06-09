@@ -502,6 +502,7 @@ namespace StoreRobberyTrackerMod
 
         // File Manager
         public bool EnableFileManager { get; set; }
+        public bool EnableEvents { get; set; }
         public bool AutoSnapshotOnScenario { get; set; }
 
         // ------------------------------------------------------------
@@ -586,6 +587,7 @@ namespace StoreRobberyTrackerMod
 
             // File Manager
             ini.WriteBool("Debug", "EnableFileManager", true);
+            ini.WriteBool("Debug", "EnableEvents", true);
             ini.WriteBool("Debug", "AutoSnapshotOnScenario", true);
         }
 
@@ -625,6 +627,7 @@ namespace StoreRobberyTrackerMod
             Profiler_DumpInterval = ini.ReadInt("Debug", "Profiler_DumpInterval", 30);
 
             EnableFileManager = ini.ReadBool("Debug", "EnableFileManager", true);
+            EnableEvents = ini.ReadBool("Debug", "EnableEvents", true);
             AutoSnapshotOnScenario = ini.ReadBool("Debug", "AutoSnapshotOnScenario", true);
         }
 
@@ -669,6 +672,7 @@ namespace StoreRobberyTrackerMod
 
             // File Manager
             ini.WriteBool("Debug", "EnableFileManager", EnableFileManager);
+            ini.WriteBool("Debug", "EnableEvents", EnableEvents);
             ini.WriteBool("Debug", "AutoSnapshotOnScenario", AutoSnapshotOnScenario);
         }
     }
