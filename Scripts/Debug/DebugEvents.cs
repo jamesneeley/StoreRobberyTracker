@@ -85,6 +85,7 @@ namespace StoreRobberyTrackerMod.Debug
 
                 File.WriteAllText(_eventFilePath, ""); // create empty file
                 _initialized = true;
+                DebugLogger.Info("DebugEvents initialized");
             }
             catch (Exception ex)
             {

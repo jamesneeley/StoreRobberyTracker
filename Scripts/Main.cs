@@ -22,7 +22,7 @@ namespace StoreRobberyTrackerMod
             try
             {
                 if (_ctx.Config.EnableMessages)
-                    _ui.ShowNotification($"~b~Store Robbery Tracker v{ScriptVersion}~w~ is now active.");
+                    GTA.UI.Notification.PostTicker($"~b~Store Robbery Enhanced v{ScriptVersion}~w~ is now active.", true);
 
                 DebugLogger.Info($"Loaded notification shown (v{ScriptVersion})");
             }

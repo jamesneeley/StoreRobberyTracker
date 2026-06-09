@@ -42,10 +42,11 @@ namespace StoreRobberyTrackerMod.Debug
                 File.WriteAllText(_logFilePath, $"[Session Start] {DateTime.Now}\n");
 
                 _initialized = true;
+                DebugLogger.Info("DebugLogger initialized");
             }
             catch (Exception ex)
             {
-                GTA.UI.Notification.Show($"~r~DebugLogger Init Failed: {ex.Message}");
+                GTA.UI.Notification.PostTicker($"~r~DebugLogger Init Failed: {ex.Message}", true);
             }
         }
 
