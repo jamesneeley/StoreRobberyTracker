@@ -1,5 +1,5 @@
 Store Robbery Enhanced — Latest Build
-Version: v2.6.7.9 (Latest release)
+Version: v2.6.8.0 (Latest release)
 
 Thank you for downloading the latest build of Store Robbery Enhanced.
 This mod brings the GTA Online store robbery achievement experience into
@@ -21,7 +21,7 @@ INSTALLATION
 ------------
 1. Install ScriptHookV.
 2. Install ScriptHookVDotNet 3.9.0 Enhanced.
-3. Place StoreRobberTracker.dll into:
+3. Place StoreRobberEnhanced.dll into:
    Grand Theft Auto V/scripts/
 
 NOTES
