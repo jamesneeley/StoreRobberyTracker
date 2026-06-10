@@ -1171,6 +1171,31 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
+        // PATCH 11 SUPPORT — Finalize payout (collection mode)
+        // ------------------------------------------------------------
+        public void FinalizePayout(TrackedStore store)
+        {
+            try
+            {
+                int payout = store.PendingPayout;
+                if (payout <= 0)
+                    return;
+
+                // Instead of paying the player, record the collected amount
+                store.CollectedPayout += payout;
+
+                DebugLogger.Info($"[PATCH11] Collected payout of ${payout} for store {store.Id} (awaiting successful escape)");
+
+                // Reset pending payout so it isn't double-counted
+                store.PendingPayout = 0;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("RobberySystem.FinalizePayout", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
         // PAYOUT (FULLY PATCHED + PATCH 1 APPLIED)
         // ------------------------------------------------------------
         private void AwardPayout(TrackedStore store)

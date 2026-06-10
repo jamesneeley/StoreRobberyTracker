@@ -178,16 +178,15 @@ namespace StoreRobberyEnhanced.Systems
 
                 if (player.IsDead || Function.Call<bool>(Hash.IS_PLAYER_BEING_ARRESTED, Game.Player))
                 {
+                    if (_ctx.AnyRobberyActive && player.IsDead)
+                    {
+                        DebugLogger.Info("Player died during robbery — sending death message");
+                        SendRandomMessage(_meleeKillMsgs);
+                        _messagesSentThisRobbery = _ctx.Config.MaxMessagesPerRobbery;
+                    }
+
                     DebugLogger.Trace("Player dead/arrested — clearing stalker queue");
                     _eventQueue.Clear();
-                    return;
-                }
-
-                if (_ctx.AnyRobberyActive && player.IsDead)
-                {
-                    DebugLogger.Info("Player died during robbery — sending death message");
-                    SendRandomMessage(_meleeKillMsgs);
-                    _messagesSentThisRobbery = _ctx.Config.MaxMessagesPerRobbery;
                     return;
                 }
 

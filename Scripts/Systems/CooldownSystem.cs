@@ -142,9 +142,6 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
-                if (!store.CooldownActive)
-                    return false;
-
                 if (store.LastRobbedUtc == DateTime.MinValue)
                     return false;
 
@@ -152,7 +149,6 @@ namespace StoreRobberyEnhanced.Systems
                 bool result = (DateTime.UtcNow - store.LastRobbedUtc) < span;
 
                 DebugLogger.Trace($"IsStoreInCooldown({store.Id}) = {result}");
-
                 return result;
             }
             catch (Exception ex)

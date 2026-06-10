@@ -1,4 +1,5 @@
 ﻿using GTA;
+using StoreRobberyEnhanced.Data;
 using StoreRobberyEnhanced.Debug;
 using StoreRobberyEnhanced.UI;
 
@@ -42,6 +43,39 @@ namespace StoreRobberyEnhanced.Debug
             {
                 _ui.ShowNotification("~b~Debug Overlay Toggled");
                 DebugState.OverlayVisible = !DebugState.OverlayVisible;
+            }
+
+            // ------------------------------------------------------------
+            // PATCH 12 — GLOBAL DEBUG STATE UPDATES
+            // ------------------------------------------------------------
+
+            // 1. Track SafeCrack running state
+            DebugState.SafeCrackRunning =
+                _ctx.SafeCrack != null &&
+                _ctx.SafeCrack.IsRunning;
+
+            // 2. Track the last store processed (for DebugOverlay)
+            //    We pick the nearest store to the player each tick.
+            Ped player = Game.Player.Character;
+            if (player != null && player.Exists())
+            {
+                float bestDist = float.MaxValue;
+                TrackedStore nearest = null;
+
+                foreach (var s in _ctx.Stores)
+                {
+                    if (s == null)
+                        continue;
+
+                    float d = player.Position.DistanceTo(s.StorePos);
+                    if (d < bestDist)
+                    {
+                        bestDist = d;
+                        nearest = s;
+                    }
+                }
+
+                DebugState.LastStore = nearest;
             }
 
             // ------------------------------------------------------------

@@ -72,7 +72,7 @@ namespace StoreRobberyEnhanced.Systems
                 if (!_ctx.Config.EnablePolice)
                     return;
 
-                HandleCameraTriggeredAlarm(store);
+                //HandleCameraTriggeredAlarm(store);
                 HandleClerkDeathAlarm(store);
                 HandleSilentAlarm(store);
                 HandleClerkCallingPolice(store);

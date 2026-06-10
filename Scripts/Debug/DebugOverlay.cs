@@ -54,9 +54,69 @@ namespace StoreRobberyEnhanced.Debug
             sb.AppendLine($"9 Banner:       ~{(config.Debug_Banner ? "g" : "r")}~{config.Debug_Banner}");
             sb.AppendLine($"0 Timer:        ~{(config.Debug_Timer ? "g" : "r")}~{config.Debug_Timer}");
             sb.AppendLine($"F10 StoreDiag:  ~{(config.Debug_StoreDiag ? "g" : "r")}~{config.Debug_StoreDiag}");
-            sb.AppendLine($"/ MultiPos:  ~{(config.Debug_MultiPos ? "g" : "r")}~{config.Debug_MultiPos}");
-            sb.AppendLine($"* MultiActions:  ~{(config.Debug_MultiActions ? "g" : "r")}~{config.Debug_MultiActions}");
-            sb.AppendLine($"F3 CameraDebug:  ~{(config.Debug_CameraDebug ? "g" : "r")}~{config.Debug_CameraDebug}");
+            sb.AppendLine($"/ MultiPos:     ~{(config.Debug_MultiPos ? "g" : "r")}~{config.Debug_MultiPos}");
+            sb.AppendLine($"* MultiActions: ~{(config.Debug_MultiActions ? "g" : "r")}~{config.Debug_MultiActions}");
+            sb.AppendLine($"F3 CameraDebug: ~{(config.Debug_CameraDebug ? "g" : "r")}~{config.Debug_CameraDebug}");
+
+            // ------------------------------------------------------------
+            // PATCH 12 — GLOBAL ROBBERY / CLERK STATE MACHINE OVERLAY
+            // ------------------------------------------------------------
+
+            var store = DebugState.LastStore; // optional: set by your DebugController
+            if (store != null)
+            {
+                sb.AppendLine("");
+                sb.AppendLine("~y~--- ACTIVE STORE ---~s~");
+                sb.AppendLine($"Store: ~c~{store.Name}");
+
+                sb.AppendLine($"RobberyActive: ~c~{store.IsRobberyActive}");
+                sb.AppendLine($"RobberyEnded:  ~c~{store.RobberyEnded}");
+                sb.AppendLine($"Cooldown:      ~c~{store.CooldownActive}");
+
+                if (store.CooldownActive)
+                {
+                    TimeSpan cd = DateTime.UtcNow - store.CooldownStartUtc;
+                    sb.AppendLine($"CooldownTime:  ~c~{cd.TotalSeconds:0}s");
+                }
+
+                sb.AppendLine($"SilentRobbery: ~c~{store.SilentRobbery}");
+                sb.AppendLine($"SafeCrackRun:  ~c~{(DebugState.SafeCrackRunning ? "Yes" : "No")}");
+
+                sb.AppendLine("");
+                sb.AppendLine("~y~--- CLERK STATE ---~s~");
+
+                sb.AppendLine($"SurrenderStage: ~c~{store.ClerkSurrenderStage}");
+
+                string phase =
+                    (store.ClerkStalling ? "STALL " : "") +
+                    (store.ClerkOpeningRegister ? "OPEN " : "") +
+                    (store.ClerkGrabbingCash ? "CASH " : "") +
+                    (store.ClerkThrowingBag ? "BAG " : "") +
+                    (store.ClerkPanicking ? "PANIC " : "") +
+                    (store.ClerkFleeing ? "FLEE " : "");
+
+                sb.AppendLine($"Phase: ~c~{(phase.Length == 0 ? "IDLE" : phase)}");
+
+                sb.AppendLine($"Heat: ~c~{store.HeatLevel}");
+                sb.AppendLine($"Alarm: ~c~{store.AlarmTriggered}");
+
+                sb.AppendLine($"PendingPayout:  ~c~{store.PendingPayout}");
+                sb.AppendLine($"Collected:      ~c~{store.CollectedPayout}");
+
+                sb.AppendLine($"ReactionType:   ~c~{store.ReactionType}");
+
+                // Patch 10 corruption detection
+                int active =
+                    (store.ClerkStalling ? 1 : 0) +
+                    (store.ClerkOpeningRegister ? 1 : 0) +
+                    (store.ClerkGrabbingCash ? 1 : 0) +
+                    (store.ClerkThrowingBag ? 1 : 0) +
+                    (store.ClerkPanicking ? 1 : 0) +
+                    (store.ClerkFleeing ? 1 : 0);
+
+                if (active > 1)
+                    sb.AppendLine("~r~STATE CORRUPTION DETECTED (PATCH10)~s~");
+            }
 
             DrawTextTopRight(sb.ToString(), 0.985f, 0.015f, 0.35f);
         }

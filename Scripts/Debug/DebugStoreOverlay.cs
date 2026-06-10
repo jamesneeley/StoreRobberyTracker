@@ -27,16 +27,36 @@ namespace StoreRobberyEnhanced.Debug
                 float dist = p.DistanceTo(s.StorePos);
                 bool inside = dist <= s.Radius;
 
+                // ------------------------------------------------------------
+                // PATCH 12 — EXTENDED STATE MACHINE DEBUG LINE
+                // ------------------------------------------------------------
                 string text =
                     $"{s.Name}  " +
                     $"Dist:{dist:0.0}  " +
                     $"Inside:{inside}  " +
-                    $"Robbed:{s.IsRobbed}  " +
+                    $"RobberyActive:{s.IsRobberyActive}  " +
+                    $"RobberyEnded:{s.RobberyEnded}  " +
                     $"Cooldown:{s.CooldownActive}  " +
+                    $"SurrenderStage:{s.ClerkSurrenderStage}  " +
+                    $"Phase:" +
+                        $"{(s.ClerkStalling ? "STALL " : "")}" +
+                        $"{(s.ClerkOpeningRegister ? "OPEN " : "")}" +
+                        $"{(s.ClerkGrabbingCash ? "CASH " : "")}" +
+                        $"{(s.ClerkThrowingBag ? "BAG " : "")}" +
+                        $"{(s.ClerkPanicking ? "PANIC " : "")}" +
+                        $"{(s.ClerkFleeing ? "FLEE " : "")}" +
+                    $"Heat:{s.HeatLevel}  " +
+                    $"Alarm:{s.AlarmTriggered}  " +
+                    $"Pending:{s.PendingPayout}  " +
+                    $"Collected:{s.CollectedPayout}  " +
+                    $"Silent:{s.SilentRobbery}  " +
+                    $"SafeCrack:{(ctx.SafeCrack != null && ctx.SafeCrack.IsRunning)}  " +
+                    $"Reaction:{s.ReactionType}  " +
                     $"Door:{FormatVec(s.DoorPos)}  " +
                     $"Safe:{FormatVec(s.SafePos)}  " +
                     $"Clerk:{FormatVec(s.ClerkPos)}  " +
-                    $"Blocker:{(s.CooldownBlocker != null ? "Yes" : "No")}  " + $"DefClerkRemoved:{s.DefaultClerkRemoved}";
+                    $"Blocker:{(s.CooldownBlocker != null ? "Yes" : "No")}  " +
+                    $"DefClerkRemoved:{s.DefaultClerkRemoved}";
 
                 DrawText(text, 0.01f, y / 1080f, HudColor.White);
                 y += line;

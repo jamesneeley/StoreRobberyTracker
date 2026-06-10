@@ -1,4 +1,5 @@
-﻿using System;
+﻿using StoreRobberyEnhanced.Data;
+using System;
 using System.Collections.Generic;
 
 namespace StoreRobberyEnhanced.Debug
@@ -92,5 +93,21 @@ namespace StoreRobberyEnhanced.Debug
 
             return false;
         }
+        // ------------------------------------------------------------
+        // PATCH 12 — Global Debug References
+        // ------------------------------------------------------------
+
+        /// <summary>
+        /// The last store processed by UpdateClerk(), used by DebugOverlay.
+        /// This is optional and only for debug display.
+        /// </summary>
+        internal static TrackedStore LastStore { get; set; } = null;
+
+        /// <summary>
+        /// Indicates whether SafeCrack is currently running.
+        /// Set by DebugController or SafeCrack system.
+        /// </summary>
+        public static bool SafeCrackRunning { get; set; } = false;
+
     }
 }

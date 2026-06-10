@@ -98,11 +98,21 @@ namespace StoreRobberyEnhanced.Data
         public int PendingPayout;
         public DateTime RobberyStartUtc = DateTime.MinValue;
         public bool RobberyEnded = false;
+        // ------------------------------------------------------------
+        // PATCH 11 SUPPORT — Collected payout tracking
+        // ------------------------------------------------------------
+        public int CollectedPayout { get; set; } = 0;
+
 
         // Cooldown
         public bool CooldownActive;
         public DateTime LastRobbedUtc = DateTime.MinValue;
         public Prop CooldownBlocker;
+        // ------------------------------------------------------------
+        // PATCH 11 SUPPORT — Cooldown tracking
+        // ------------------------------------------------------------
+        public DateTime CooldownStartUtc { get; set; } = DateTime.MinValue;
+
 
         // Clerk reaction state
         public bool ClerkReacted;

@@ -280,6 +280,7 @@ namespace StoreRobberyEnhanced
                     Cameras.UpdateStoreCameras(this, store);
 
                     // 5) Our clerk behavior
+                    DebugState.LastStore = store;
                     Clerks.UpdateClerk(store, player);
                     
                     // 6) Police / heat per store

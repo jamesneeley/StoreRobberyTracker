@@ -56,7 +56,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // MAIN UPDATE (PATCH 7 + PATCH 10 APPLIED)
+        // MAIN UPDATE (PATCH 7 + PATCH 10 + PATCH 11 APPLIED)
         // ------------------------------------------------------------
         public void UpdateClerk(TrackedStore store, Ped player)
         {
@@ -129,7 +129,6 @@ namespace StoreRobberyEnhanced.Systems
                     store.ClerkGrabbingCash = false;
                     store.ClerkThrowingBag = false;
                     store.ClerkPanicking = false;
-                    // Fleeing allowed (surrender safe)
                 }
 
                 // If SilentRobbery → clerk must never react
@@ -166,6 +165,74 @@ namespace StoreRobberyEnhanced.Systems
 
                     store.ClerkFleeing = true;
                     store.ClerkSurrenderStage = 0;
+                }
+
+                // ------------------------------------------------------------
+                // ⭐ PATCH 11 — GLOBAL ROBBERY FLOW CONSISTENCY CONTROLLER
+                // ------------------------------------------------------------
+
+                // If robbery is not active → ensure all clerk states are off
+                if (!store.IsRobberyActive)
+                {
+                    store.ClerkStalling = false;
+                    store.ClerkOpeningRegister = false;
+                    store.ClerkGrabbingCash = false;
+                    store.ClerkThrowingBag = false;
+                    store.ClerkPanicking = false;
+                    store.ClerkFleeing = false;
+                    store.ClerkSurrenderStage = 0;
+                }
+
+                // If clerk has surrendered → robbery must end
+                if (store.ClerkSurrenderStage == 3 && store.IsRobberyActive)
+                {
+                    DebugLogger.Info($"[PATCH11] Clerk surrendered — ending robbery for store {store.Id}");
+
+                    store.IsRobberyActive = false;
+                    store.RobberyEnded = true;
+
+                    // Start cooldown
+                    store.CooldownActive = true;
+                    store.CooldownStartUtc = DateTime.UtcNow;
+
+                    // Finalize payout
+                    if (store.PendingPayout > 0)
+                    {
+                        _ctx.Robberies.FinalizePayout(store);
+                        store.PendingPayout = 0;
+                    }
+
+                    // Prevent further escalation
+                    store.AlarmTriggered = true;
+                    return;
+                }
+
+                // If robbery ended → no further escalation allowed
+                if (store.RobberyEnded)
+                {
+                    store.ClerkStalling = false;
+                    store.ClerkOpeningRegister = false;
+                    store.ClerkGrabbingCash = false;
+                    store.ClerkThrowingBag = false;
+                    store.ClerkPanicking = false;
+
+                    if (store.ClerkFleeing)
+                        ProcessFlee(store, clerk);
+
+                    return;
+                }
+
+                // If cooldown active → no robbery logic allowed
+                if (store.CooldownActive)
+                {
+                    store.ClerkStalling = false;
+                    store.ClerkOpeningRegister = false;
+                    store.ClerkGrabbingCash = false;
+                    store.ClerkThrowingBag = false;
+                    store.ClerkPanicking = false;
+                    store.ClerkFleeing = false;
+                    store.ClerkSurrenderStage = 0;
+                    return;
                 }
 
                 // ------------------------------------------------------------
@@ -272,42 +339,36 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
-                // Register opening
                 if (store.ClerkOpeningRegister)
                 {
                     ProcessRegisterOpening(store, clerk);
                     return;
                 }
 
-                // Cash grab
                 if (store.ClerkGrabbingCash)
                 {
                     ProcessCashGrab(store, clerk);
                     return;
                 }
 
-                // Bag toss
                 if (store.ClerkThrowingBag)
                 {
                     ProcessBagToss(store, clerk);
                     return;
                 }
 
-                // Panic / flee
                 if (store.ClerkPanicking)
                 {
                     ProcessPanic(store, clerk);
                     return;
                 }
 
-                // Fleeing is disabled, but if it somehow triggers, override with surrender or feelfroggy fight back logic chance
                 if (store.ClerkFleeing)
                 {
                     ProcessFlee(store, clerk);
                     return;
                 }
 
-                // After bag toss, clerk may call police or press silent alarm
                 TryTriggerSilentAlarm(store, clerk);
                 TryTriggerPoliceCall(store, clerk, player);
             }
@@ -1392,8 +1453,8 @@ namespace StoreRobberyEnhanced.Systems
                     );
                 }
 
-                // Trigger police response
-                Game.Player.WantedLevel = Math.Max(Game.Player.WantedLevel, 2);
+                //// Trigger police response
+                //Game.Player.WantedLevel = Math.Max(Game.Player.WantedLevel, 2);
 
                 // Speech
                 SafePlaySpeech(clerk, "GENERIC_SHOCKED_MED", "SPEECH_PARAMS_FORCE");
@@ -1462,10 +1523,9 @@ namespace StoreRobberyEnhanced.Systems
 
                         SafePlaySpeech(clerk, "GENERIC_SHOCKED_MED", "SPEECH_PARAMS_FORCE");
 
-                        // ⭐ PATCH 8B — SAFE HEAT INCREMENT
-                        store.HeatLevel += 1;
-
-                        Game.Player.WantedLevel = Math.Max(Game.Player.WantedLevel, 2);
+                        //// ⭐ PATCH 8B — SAFE HEAT INCREMENT
+                        //store.HeatLevel += 1;
+                        //Game.Player.WantedLevel = Math.Max(Game.Player.WantedLevel, 2);
 
                         DebugLogger.Info($"Police called for robbery at store {store.Id}");
                     }
