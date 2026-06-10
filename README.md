@@ -170,7 +170,7 @@ Shows:
 - Trigger payout                   // 101 NumPad5
 - Trigger cooldown                 // 102 NumPad6
 - Trigger stalker event            // 103 NumPad7
-- Trigger stalker call event       // 103 NumPad Subtrack
+- Trigger stalker call event       // 109 NumPad Subtrack
 - Toggle UI                        // 104 NumPad8
 - Toggle banner                    // 105 NumPad9
 - Toggle timer                     // 96  NumPad0
