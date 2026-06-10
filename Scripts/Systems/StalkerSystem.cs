@@ -1,10 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using GTA;
+﻿using GTA;
+using GTA.Math;
 using GTA.Native;
+using iFruitAddon2;
 using StoreRobberyEnhanced.Data;
 using StoreRobberyEnhanced.Debug;
-using iFruitAddon2;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Threading;
+using System.Xml.Linq;
 
 namespace StoreRobberyEnhanced.Systems
 {
@@ -31,7 +35,8 @@ namespace StoreRobberyEnhanced.Systems
 
         // iFruit phone
         private readonly CustomiFruit _phone;
-        private readonly iFruitAddon2.iFruitContact _stalkerContact;
+        private readonly iFruitContact _stalkerContact;
+        private readonly iFruitContactCollection _stalkerContactCollection;
         private static readonly Dictionary<string, ContactIcon> ContactIcons = new Dictionary<string, ContactIcon>(StringComparer.OrdinalIgnoreCase)
         {
             { "generic", ContactIcon.Generic },
@@ -508,13 +513,35 @@ namespace StoreRobberyEnhanced.Systems
             {
                 DebugLogger.Info("Starting stalker iFruit call");
 
-                if (_stalkerContact != null && _stalkerContact.Active)
-                {
-                    _stalkerContact.Call();
-                }
-                else
+                if (_stalkerContact == null || !_stalkerContact.Active)
                 {
                     DebugLogger.Info("Stalker contact not active or null");
+                    return;
+                }
+
+                // Destroy any existing phone first
+                Function.Call(Hash.DESTROY_MOBILE_PHONE);
+                Function.Call(Hash.SET_MOBILE_PHONE_SCALE, 250.0f);
+                Function.Call(Hash.CREATE_MOBILE_PHONE, 0);
+                
+                // Trigger the call
+                _stalkerContact.Call();
+
+                _ctx.Ui.TextNotification(_callerImage, _callerName, "NO CALLER ID", "INCOMING CALL");
+
+                // Record when the call started
+                int callStartTime = Game.GameTime;
+                int timeoutMs = _stalkerContact.DialTimeout > 0 ? _stalkerContact.DialTimeout + 2000 : 10000;
+
+                // Run a non‑blocking timeout check using Script.Tick
+                Script.Wait(timeoutMs);
+
+                // If still ringing after timeout, end the call manually
+                if (_stalkerContact != null && _stalkerContact.Active)
+                {
+                    DebugLogger.Info("Stalker call timed out — ending call");
+                    _stalkerContact.EndCall();
+                    Function.Call(Hash.DESTROY_MOBILE_PHONE);
                 }
             }
             catch (Exception ex)
@@ -530,6 +557,9 @@ namespace StoreRobberyEnhanced.Systems
             {
                 DebugLogger.Info("Stalker call answered (iFruit)");
                 QueueMessage(_callAnsweredMsgs);
+
+                // Cleanup phone model + camera
+                Function.Call(Hash.DESTROY_MOBILE_PHONE);
             }
             catch (Exception ex)
             {
@@ -547,6 +577,18 @@ namespace StoreRobberyEnhanced.Systems
             catch (Exception ex)
             {
                 DebugLogger.LogException("StalkerSystem.UpdatePhone", ex);
+            }
+        }
+
+        private void CleanupPhone()
+        {
+            try
+            {
+                Function.Call(Hash.DESTROY_MOBILE_PHONE);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StalkerSystem.CleanupPhone", ex);
             }
         }
 

@@ -190,6 +190,9 @@ namespace StoreRobberyEnhanced
                     store.PendingPayout += payout;
 
                     DebugLogger.Info($"[SafeCrack] Store {store.Id} safe cracked, added payout={payout}, totalPending={store.PendingPayout}");
+
+                    // ⭐ Persist the safe state
+                    SaveStoreState(store);
                 };
 
                 // ⭐ PHASE 3 — POLICE SYSTEM
