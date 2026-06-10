@@ -1255,7 +1255,7 @@ namespace StoreRobberyEnhanced.Systems
                 else
                 {
                     DebugLogger.Info($"Awarding payout: store={store.Id}, payout={payout}, DebugState={wasDebugEscape}");
-                    _ctx.Ui.ShowNotification("~y~DEBUG FORCE ESCAPE COMPLETED~n~(no actual payout).");
+                    _ctx.Ui.ShowNotification("~y~DEBUG STATE ESCAPE COMPLETED~n~(no actual payout).");
                     StoreContext.GlobalUi.ShowHeistPassedBanner("~o~ROBBERY COMPLETE", $"~g~Earned ${payout}");
                 }
 
@@ -1379,6 +1379,5 @@ namespace StoreRobberyEnhanced.Systems
                 DebugLogger.LogException("RobberySystem.BeginCooldown", ex);
             }
         }
-
     }
 }
