@@ -1,13 +1,28 @@
-MIT License
+MIT License RESTRICTED
 
-Copyright (c) [year] [fullname]
+Copyright (c) [2026] [FastBurst]
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted to any person obtaining a copy of this software 
+and associated documentation files (the “Software”) to use, modify, and run 
+the Software for personal or internal purposes.
+
+The following restrictions apply:
+
+Redistribution Prohibited  
+The Software, or any modified version of it, may not be published, distributed, 
+sublicensed, uploaded, or otherwise made available to any third party in any form.
+
+Commercial Use  
+Commercial use is permitted only if it does not involve redistribution of the 
+Software itself.
+
+No Warranty  
+The Software is provided “as is”, without warranty of any kind, express or implied, 
+including but not limited to the warranties of merchantability, fitness for a 
+particular purpose, and noninfringement. In no event shall the authors be liable 
+for any claim, damages, or other liability arising from the use of the Software.
+
+By using the Software, you agree to the terms above.
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
