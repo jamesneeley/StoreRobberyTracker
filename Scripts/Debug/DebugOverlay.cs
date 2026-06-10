@@ -50,6 +50,7 @@ namespace StoreRobberyEnhanced.Debug
             sb.AppendLine($"5 Payout:       ~{(config.Debug_Payout ? "g" : "r")}~{config.Debug_Payout}");
             sb.AppendLine($"6 Cooldown:     ~{(config.Debug_Cooldown ? "g" : "r")}~{config.Debug_Cooldown}");
             sb.AppendLine($"7 Stalker:      ~{(config.Debug_Stalker ? "g" : "r")}~{config.Debug_Stalker}");
+            sb.AppendLine($"- StalkerCall:  ~{(config.Debug_StalkerCall ? "g" : "r")}~{config.Debug_StalkerCall}");
             sb.AppendLine($"8 UI:           ~{(config.Debug_UI ? "g" : "r")}~{config.Debug_UI}");
             sb.AppendLine($"9 Banner:       ~{(config.Debug_Banner ? "g" : "r")}~{config.Debug_Banner}");
             sb.AppendLine($"0 Timer:        ~{(config.Debug_Timer ? "g" : "r")}~{config.Debug_Timer}");

@@ -33,6 +33,7 @@ namespace StoreRobberyEnhanced.Debug
             Payout,
             Cooldown,
             Stalker,
+            StalkerCall,
             UI,
             Banner,
             Timer,

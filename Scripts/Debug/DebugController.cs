@@ -115,6 +115,7 @@ namespace StoreRobberyEnhanced.Debug
                 case "Payout": DebugActions.TriggerPayout(); break;
                 case "Cooldown": DebugActions.TriggerCooldown(); break;
                 case "Stalker": DebugActions.TriggerStalker(); break;
+                case "StalkerCall": DebugActions.TriggerStalkerCall(); break;
                 case "UI": DebugActions.TriggerUI(); break;
                 case "Banner": DebugActions.TriggerBanner(); break;
                 case "Timer": DebugActions.TriggerTimer(); break;

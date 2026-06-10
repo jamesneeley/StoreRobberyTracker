@@ -466,6 +466,7 @@ namespace StoreRobberyEnhanced
         public bool Debug_UI { get; set; }
         public bool Debug_Banner { get; set; }
         public bool Debug_Timer { get; set; }
+        public bool Debug_StalkerCall { get; set; }
         public bool Debug_StoreDiag { get; set; }
         public bool Debug_MultiPos { get; set; }
         public bool Debug_MultiActions { get; set; }
@@ -485,6 +486,7 @@ namespace StoreRobberyEnhanced
         public int Action_Payout { get; set; }
         public int Action_Cooldown { get; set; }
         public int Action_Stalker { get; set; }
+        public int Action_StalkerCall { get; set; }
         public int Action_UI { get; set; }
         public int Action_Banner { get; set; }
         public int Action_Timer { get; set; }
@@ -572,6 +574,7 @@ namespace StoreRobberyEnhanced
             ini.WriteInt("Debug", "Action_Payout", 101);       // NumPad5
             ini.WriteInt("Debug", "Action_Cooldown", 102);     // NumPad6
             ini.WriteInt("Debug", "Action_Stalker", 103);      // NumPad7
+            ini.WriteInt("Debug", "Action_StalkerCall", 109);  // NumPad Subtract
             ini.WriteInt("Debug", "Action_UI", 104);           // NumPad8
             ini.WriteInt("Debug", "Action_Banner", 105);       // NumPad9
             ini.WriteInt("Debug", "Action_Timer", 96);         // NumPad0
@@ -616,6 +619,7 @@ namespace StoreRobberyEnhanced
             Action_Payout = ini.ReadInt("Debug", "Action_Payout", 101);
             Action_Cooldown = ini.ReadInt("Debug", "Action_Cooldown", 102);
             Action_Stalker = ini.ReadInt("Debug", "Action_Stalker", 103);
+            Action_StalkerCall = ini.ReadInt("Debug", "Action_StalkerCall", 109);
             Action_UI = ini.ReadInt("Debug", "Action_UI", 104);
             Action_Banner = ini.ReadInt("Debug", "Action_Banner", 105);
             Action_Timer = ini.ReadInt("Debug", "Action_Timer", 96); 
@@ -659,6 +663,7 @@ namespace StoreRobberyEnhanced
             ini.WriteInt("Debug", "Action_Payout", Action_Payout);
             ini.WriteInt("Debug", "Action_Cooldown", Action_Cooldown);
             ini.WriteInt("Debug", "Action_Stalker", Action_Stalker);
+            ini.WriteInt("Debug", "Action_StalkerCall", Action_StalkerCall);
             ini.WriteInt("Debug", "Action_UI", Action_UI);
             ini.WriteInt("Debug", "Action_Banner", Action_Banner);
             ini.WriteInt("Debug", "Action_Timer", Action_Timer);

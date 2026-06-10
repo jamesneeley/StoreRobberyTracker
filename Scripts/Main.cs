@@ -94,6 +94,7 @@ namespace StoreRobberyEnhanced
                         { _ctx.Config.Action_Payout, "Payout" },
                         { _ctx.Config.Action_Cooldown, "Cooldown" },
                         { _ctx.Config.Action_Stalker, "Stalker" },
+                        { _ctx.Config.Action_StalkerCall, "StalkerCall" },
                         { _ctx.Config.Action_UI, "UI" },
                         { _ctx.Config.Action_Banner, "Banner" },
                         { _ctx.Config.Action_Timer, "Timer" },
@@ -128,7 +129,7 @@ namespace StoreRobberyEnhanced
                     _ctx.Update();
                 }
 
-                // SafeCrack UI first
+                // SafeCrack UI
                 if (_ctx != null &&
                     _ctx.SafeState != null &&
                     _ctx.SafeState.Active)
@@ -136,14 +137,23 @@ namespace StoreRobberyEnhanced
                     _ctx.SafeCrackUI.Draw(_ctx.SafeState, _ctx.SafeCrackSettings);
                 }
 
-                // Debug overlays next
+                // -------------------------------
+                // STALKER SYSTEM TICK INTEGRATION
+                // -------------------------------
+                if (_ctx.Stalker != null)
+                {
+                    _ctx.Stalker.ProcessEvents();       // queued messages
+                    _ctx.Stalker.UpdatePhone(); 
+                }
+
+                // Debug overlays
                 if (DebugState.OverlayVisible)
                     DebugOverlay.Draw(_ctx.Config);
 
                 if (DebugState.OverlayVisible)
                     DebugStoreOverlay.Draw(_ctx);
 
-                // ⭐ Banner + Timer LAST — always on top
+                // Banner LAST
                 StoreContext.GlobalUi.Draw();
             }
             catch (Exception ex)

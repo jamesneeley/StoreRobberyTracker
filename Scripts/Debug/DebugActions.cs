@@ -103,12 +103,21 @@ namespace StoreRobberyEnhanced.Debug
         }
 
         // ------------------------------------------------------------
-        // STALKER
+        // STALKER FORCE MESSAGES
         // ------------------------------------------------------------
         public static void TriggerStalker()
         {
             _ctx.Stalker.DebugForceStalker();
-            StoreContext.GlobalUi.ShowNotification("~r~Stalker Triggered");
+            StoreContext.GlobalUi.ShowNotification("~r~Stalker Messages Triggered");
+        }
+
+        // ------------------------------------------------------------
+        // STALKER FORCE CALL
+        // ------------------------------------------------------------
+        public static void TriggerStalkerCall()
+        {
+            _ctx.Stalker.DebugForceStalkerCall();
+            StoreContext.GlobalUi.ShowNotification("~r~Stalker Call Triggered");
         }
 
         // ------------------------------------------------------------

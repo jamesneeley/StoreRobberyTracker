@@ -4,6 +4,7 @@ using GTA;
 using GTA.Native;
 using StoreRobberyEnhanced.Data;
 using StoreRobberyEnhanced.Debug;
+using iFruitAddon2;
 
 namespace StoreRobberyEnhanced.Systems
 {
@@ -22,15 +23,196 @@ namespace StoreRobberyEnhanced.Systems
 
         private Queue<StalkerEvent> _eventQueue;
 
-        private bool _callActive;
-        private bool _callAnswered;
-        private int _callEndTime;
-
         private string _callerImage;
         private string _callerName;
 
         private int _messagesSentThisRobbery = 0;
         private DateTime _nextAllowedMessageTime = DateTime.MinValue;
+
+        // iFruit phone
+        private readonly CustomiFruit _phone;
+        private readonly iFruitAddon2.iFruitContact _stalkerContact;
+        private static readonly Dictionary<string, ContactIcon> ContactIcons = new Dictionary<string, ContactIcon>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "generic", ContactIcon.Generic },
+            { "abigail", ContactIcon.Abigail },
+            { "allcharacters", ContactIcon.AllCharacters },
+            { "amanda", ContactIcon.Amanda },
+            { "ammunation", ContactIcon.Ammunation },
+            { "andreas", ContactIcon.Andreas },
+            { "antonia", ContactIcon.Antonia },
+            { "arthur", ContactIcon.Arthur },
+            { "ashley", ContactIcon.Ashley },
+            { "bankofliberty", ContactIcon.BankOfLiberty },
+            { "fleecabank", ContactIcon.FleecaBank },
+            { "mazebank", ContactIcon.MazeBank },
+            { "barry", ContactIcon.Barry },
+            { "beverly", ContactIcon.Beverly },
+            { "bikesite", ContactIcon.Bikesite },
+            { "blank", ContactIcon.Blank },
+            { "blimp", ContactIcon.Blimp },
+            { "blocked", ContactIcon.Blocked },
+            { "boatsite", ContactIcon.Boatsite },
+            { "brokendowngirl", ContactIcon.BrokenDownGirl },
+            { "bugstars", ContactIcon.Bugstars },
+            { "emergency", ContactIcon.Emergency },
+            { "legendarymotorsport", ContactIcon.LegendaryMotorsport },
+            { "ssasuperautos", ContactIcon.SSASuperAutos },
+            { "castro", ContactIcon.Castro },
+            { "chaticon", ContactIcon.ChatIcon },
+            { "chef", ContactIcon.Chef },
+            { "cheng", ContactIcon.Cheng },
+            { "chengsr", ContactIcon.ChengSr },
+            { "chop", ContactIcon.Chop },
+            { "creatorportraits", ContactIcon.CreatorPortraits },
+            { "cris", ContactIcon.Cris },
+            { "dave", ContactIcon.Dave },
+            { "denise", ContactIcon.Denise },
+            { "detonatebomb", ContactIcon.DetonateBomb },
+            { "detonatephone", ContactIcon.DetonatePhone },
+            { "devin", ContactIcon.Devin },
+            { "dialasub", ContactIcon.DialASub },
+            { "dom", ContactIcon.Dom },
+            { "domesticgirl", ContactIcon.DomesticGirl },
+            { "dreyfuss", ContactIcon.Dreyfuss },
+            { "drfriedlander", ContactIcon.DrFriedlander },
+            { "epsilon", ContactIcon.Epsilon },
+            { "estateagent", ContactIcon.EstateAgent },
+            { "facebook", ContactIcon.Facebook },
+            { "filmnoir", ContactIcon.Filmnoir },
+            { "floyd", ContactIcon.Floyd },
+            { "franklin", ContactIcon.Franklin },
+            { "franklintrevor", ContactIcon.FranklinTrevor },
+            { "gaymilitary", ContactIcon.GayMilitary },
+            { "hao", ContactIcon.Hao },
+            { "hitchergirl", ContactIcon.HitcherGirl },
+            { "human", ContactIcon.Human },
+            { "hunter", ContactIcon.Hunter },
+            { "jimmy", ContactIcon.Jimmy },
+            { "jimmyboston", ContactIcon.JimmyBoston },
+            { "joe", ContactIcon.Joe },
+            { "josef", ContactIcon.Josef },
+            { "josh", ContactIcon.Josh },
+            { "lamar", ContactIcon.Lamar },
+            { "lazlow", ContactIcon.Lazlow },
+            { "lester", ContactIcon.Lester },
+            { "skull", ContactIcon.Skull },
+            { "lesterfranklin", ContactIcon.LesterFranklin },
+            { "lestermichael", ContactIcon.LesterMichael },
+            { "lifeinvader", ContactIcon.Lifeinvader },
+            { "lscustoms", ContactIcon.LSCustoms },
+            { "lstouristboard", ContactIcon.LSTouristBoard },
+            { "manuel", ContactIcon.Manuel },
+            { "marnie", ContactIcon.Marnie },
+            { "martin", ContactIcon.Martin },
+            { "maryann", ContactIcon.MaryAnn },
+            { "maude", ContactIcon.Maude },
+            { "mechanic", ContactIcon.Mechanic },
+            { "michael", ContactIcon.Michael },
+            { "michaelfranklin", ContactIcon.MichaelFranklin },
+            { "michaeltrevor", ContactIcon.MichaelTrevor },
+            { "milsite", ContactIcon.Milsite },
+            { "minotaur", ContactIcon.Minotaur },
+            { "molly", ContactIcon.Molly },
+
+            // MP Contacts
+            { "mp_armycontact", ContactIcon.MP_ArmyContact },
+            { "mp_bikerboss", ContactIcon.MP_BikerBoss },
+            { "mp_bikermechanic", ContactIcon.MP_BikerMechanic },
+            { "mp_brucie", ContactIcon.MP_Brucie },
+            { "mp_detonatephone", ContactIcon.MP_Detonatephone },
+            { "mp_famboss", ContactIcon.MP_FamBoss },
+            { "mp_fibcontact", ContactIcon.MP_FibContact },
+            { "mp_fmcontact", ContactIcon.MP_FmContact },
+            { "mp_gerald", ContactIcon.MP_Gerald },
+            { "mp_julio", ContactIcon.MP_Julio },
+            { "mp_mechanic", ContactIcon.MP_Mechanic },
+            { "mp_merryweather", ContactIcon.MP_Merryweather },
+            { "mp_mexboss", ContactIcon.MP_MexBoss },
+            { "mp_mexdocks", ContactIcon.MP_MexDocks },
+            { "mp_mexlt", ContactIcon.MP_MexLt },
+            { "mp_morsmutual", ContactIcon.MP_MorsMutual },
+            { "mp_profboss", ContactIcon.MP_ProfBoss },
+            { "mp_raylavoy", ContactIcon.MP_RayLavoy },
+            { "mp_roberto", ContactIcon.MP_Roberto },
+            { "mp_snitch", ContactIcon.MP_Snitch },
+            { "mp_stretch", ContactIcon.MP_Stretch },
+            { "mp_stripclubpr", ContactIcon.MP_StripclubPr },
+
+            { "mrsthornhill", ContactIcon.MrsThornhill },
+            { "multiplayer", ContactIcon.Multiplayer },
+            { "nigel", ContactIcon.Nigel },
+            { "omega", ContactIcon.Omega },
+            { "oneil", ContactIcon.Oneil },
+            { "ortega", ContactIcon.Ortega },
+            { "oscar", ContactIcon.Oscar },
+            { "patricia", ContactIcon.Patricia },
+            { "pegasus", ContactIcon.Pegasus },
+            { "planesite", ContactIcon.Planesite },
+
+            // Property Icons
+            { "property_armstrafficking", ContactIcon.Property_ArmsTrafficking },
+            { "property_barairport", ContactIcon.Property_BarAirport },
+            { "property_barbayview", ContactIcon.Property_BarBayview },
+            { "property_barcaferojo", ContactIcon.Property_BarCafeRojo },
+            { "property_barcockotoos", ContactIcon.Property_BarCockotoos },
+            { "property_bareclipse", ContactIcon.Property_BarEclipse },
+            { "property_barfes", ContactIcon.Property_BarFes },
+            { "property_barhenhouse", ContactIcon.Property_BarHenHouse },
+            { "property_barhimen", ContactIcon.Property_BarHiMen },
+            { "property_barhookies", ContactIcon.Property_BarHookies },
+            { "property_barirish", ContactIcon.Property_BarIrish },
+            { "property_barlesbianco", ContactIcon.Property_BarLesBianco },
+            { "property_barmirrorpark", ContactIcon.Property_BarMirrorPark },
+            { "property_barpitchers", ContactIcon.Property_BarPitchers },
+            { "property_barsingletons", ContactIcon.Property_BarSingletons },
+            { "property_bartequilala", ContactIcon.Property_BarTequilala },
+            { "property_barunbranded", ContactIcon.Property_BarUnbranded },
+
+            { "property_carmodshop", ContactIcon.Property_CarModShop },
+            { "property_carscrapyard", ContactIcon.Property_CarScrapYard },
+            { "property_cinemadowntown", ContactIcon.Property_CinemaDowntown },
+            { "property_cinemamorningwood", ContactIcon.Property_CinemaMorningwood },
+            { "property_cinemavinewood", ContactIcon.Property_CinemaVinewood },
+            { "property_golfclub", ContactIcon.Property_GolfClub },
+            { "property_planescrapyard", ContactIcon.Property_PlaneScrapYard },
+            { "property_sonarcollections", ContactIcon.Property_SonarCollections },
+            { "property_taxilot", ContactIcon.Property_TaxiLot },
+            { "property_towingimpound", ContactIcon.Property_TowingImpound },
+            { "property_weedshop", ContactIcon.Property_WeedShop },
+
+            { "ron", ContactIcon.Ron },
+            { "saeeda", ContactIcon.Saeeda },
+            { "sasquatch", ContactIcon.Sasquatch },
+            { "simeon", ContactIcon.Simeon },
+            { "socialclub", ContactIcon.SocialClub },
+            { "solomon", ContactIcon.Solomon },
+            { "steve", ContactIcon.Steve },
+            { "stevemichael", ContactIcon.SteveMichael },
+            { "stevetrevor", ContactIcon.SteveTrevor },
+            { "stretch", ContactIcon.Stretch },
+
+            // Strippers
+            { "stripperchastity", ContactIcon.StripperChastity },
+            { "strippercheetah", ContactIcon.StripperCheetah },
+            { "stripperfufu", ContactIcon.StripperFufu },
+            { "stripperinfernus", ContactIcon.StripperInfernus },
+            { "stripperjuliet", ContactIcon.StripperJuliet },
+            { "strippernikki", ContactIcon.StripperNikki },
+            { "stripperpeach", ContactIcon.StripperPeach },
+            { "strippersapphire", ContactIcon.StripperSapphire },
+
+            { "tanisha", ContactIcon.Tanisha },
+            { "taxi", ContactIcon.Taxi },
+            { "taxiliz", ContactIcon.TaxiLiz },
+            { "tenniscoach", ContactIcon.TennisCoach },
+            { "tonya", ContactIcon.Tonya },
+            { "tracey", ContactIcon.Tracey },
+            { "trevor", ContactIcon.Trevor },
+            { "wade", ContactIcon.Wade },
+            { "youtube", ContactIcon.Youtube }
+        };
+
 
         public StalkerSystem(StoreContext ctx)
         {
@@ -40,11 +222,57 @@ namespace StoreRobberyEnhanced.Systems
                 _rng = new Random();
                 _eventQueue = new Queue<StalkerEvent>();
 
-                DebugLogger.Info("StalkerSystem initialized");
+                // iFruit setup
+                _phone = new CustomiFruit();
+
+                _stalkerContact = new iFruitContact(_callerName ?? "Unknown Caller")
+                {
+                    Active = true,
+                    DialTimeout = 8000,
+                    Icon = ResolveIcon(_callerImage)
+                };
+
+                _phone.Contacts.Add(_stalkerContact);
+
+                // Event wiring (use On-prefixed names)
+                _stalkerContact.Answered += OnStalkerCallAnswered;
+
+                DebugLogger.Info("StalkerSystem initialized (iFruit enabled)");
+
             }
             catch (Exception ex)
             {
                 DebugLogger.LogException("StalkerSystem.ctor", ex);
+            }
+        }
+
+        private ContactIcon ResolveIcon(string iconName)
+        {
+            if (string.IsNullOrWhiteSpace(iconName))
+                return ContactIcon.Blank;
+
+            iconName = iconName.ToLowerInvariant();
+
+            return ContactIcons.TryGetValue(iconName, out var icon)
+                ? icon
+                : ContactIcon.Blank;
+        }
+
+
+        // ------------------------------------------------------------
+        // DEBUG FORCE PHONE CALL
+        // ------------------------------------------------------------
+        public void DebugForceStalkerCall()
+        {
+            try
+            {
+                DebugLogger.Info("DebugForceStalkerCall() invoked");
+                _ctx.Ui.ShowNotification("~y~Debug: Forcing stalker phone call");
+                StartCall();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StalkerSystem.DebugForceCall", ex);
             }
         }
 
@@ -105,6 +333,12 @@ namespace StoreRobberyEnhanced.Systems
                 _meleeKillMsgs = ini.StalkerMeleeKillMsgs;
                 _callAnsweredMsgs = ini.StalkerCallAnsweredMsgs;
                 _callIgnoredMsgs = ini.StalkerCallIgnoredMsgs;
+
+                // Sync iFruit contact name with INI
+                if (!string.IsNullOrWhiteSpace(_callerName))
+                    _stalkerContact.Name = _callerName;
+                else
+                    _stalkerContact.Name = "Unknown Caller";
 
                 DebugLogger.Info("Stalker messages loaded");
             }
@@ -190,9 +424,6 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
-                if (_callActive)
-                    return;
-
                 if (_eventQueue.Count == 0)
                     return;
 
@@ -245,7 +476,7 @@ namespace StoreRobberyEnhanced.Systems
         }
 
         // ------------------------------------------------------------
-        // CALL SYSTEM
+        // CALL SYSTEM (iFruit)
         // ------------------------------------------------------------
         public void TryTriggerCall()
         {
@@ -257,14 +488,11 @@ namespace StoreRobberyEnhanced.Systems
                 if (!_ctx.Config.EnableStalkerCall)
                     return;
 
-                if (_callActive)
-                    return;
-
                 int chance = _ctx.Config.StalkerCallChance;
 
                 if (_rng.Next(0, 100) < chance)
                 {
-                    DebugLogger.Info("Stalker call triggered");
+                    DebugLogger.Info("Stalker call triggered (iFruit)");
                     StartCall();
                 }
             }
@@ -278,20 +506,16 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
-                _callActive = true;
-                _callAnswered = false;
-                _callEndTime = Game.GameTime + 8000;
+                DebugLogger.Info("Starting stalker iFruit call");
 
-                DebugLogger.Info("Starting stalker call");
-
-                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Phone_Ring", "DLC_HEIST_HACKING_SOUNDS");
-
-                _ctx.Ui.TextNotification(
-                    _callerImage,
-                    _callerName,
-                    "Incoming Call",
-                    "~c~Unknown Caller"
-                );
+                if (_stalkerContact != null && _stalkerContact.Active)
+                {
+                    _stalkerContact.Call();
+                }
+                else
+                {
+                    DebugLogger.Info("Stalker contact not active or null");
+                }
             }
             catch (Exception ex)
             {
@@ -299,47 +523,30 @@ namespace StoreRobberyEnhanced.Systems
             }
         }
 
-        // ------------------------------------------------------------
-        // CALL STATE UPDATE
-        // ------------------------------------------------------------
-        public void UpdateCallState()
+        // iFruit event handlers
+        private void OnStalkerCallAnswered(iFruitContact contact)
         {
             try
             {
-                if (!_callActive)
-                    return;
-
-                if (!_ctx.AnyRobberyActive)
-                {
-                    DebugLogger.Trace("Call cancelled — robbery ended");
-                    _callActive = false;
-                    return;
-                }
-
-                if (Game.IsControlJustPressed(Control.Context))
-                {
-                    DebugLogger.Info("Stalker call answered");
-                    _callAnswered = true;
-                    _callActive = false;
-
-                    QueueMessage(_callAnsweredMsgs);
-                    return;
-                }
-
-                if (Game.GameTime >= _callEndTime)
-                {
-                    if (!_callAnswered)
-                    {
-                        DebugLogger.Info("Stalker call ignored");
-                        QueueMessage(_callIgnoredMsgs);
-                    }
-
-                    _callActive = false;
-                }
+                DebugLogger.Info("Stalker call answered (iFruit)");
+                QueueMessage(_callAnsweredMsgs);
             }
             catch (Exception ex)
             {
-                DebugLogger.LogException("StalkerSystem.UpdateCallState", ex);
+                DebugLogger.LogException("StalkerSystem.OnStalkerCallAnswered", ex);
+            }
+        }
+
+        // Called from Main.OnTick
+        public void UpdatePhone()
+        {
+            try
+            {
+                _phone?.Update();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("StalkerSystem.UpdatePhone", ex);
             }
         }
 
@@ -355,7 +562,6 @@ namespace StoreRobberyEnhanced.Systems
                 _messagesSentThisRobbery = 0;
                 _nextAllowedMessageTime = DateTime.MinValue;
                 _eventQueue.Clear();
-                _callActive = false;
             }
             catch (Exception ex)
             {
