@@ -1245,9 +1245,7 @@ namespace StoreRobberyEnhanced.Systems
 
                 bool wasDebugEscape = _debugEscapeActive;
                 int payout = store.PendingPayout;
-
-                DebugLogger.Info($"Awarding payout: store={store.Id}, payout={payout}, debugEscape={wasDebugEscape}");
-
+                
                 // Debug escape → do NOT pay player
                 if (!wasDebugEscape)
                 {
@@ -1256,14 +1254,10 @@ namespace StoreRobberyEnhanced.Systems
                 }
                 else
                 {
-                    _ctx.Ui.ShowSubtitle("Debug escape complete (no actual payout).", 3000);
-                    StoreContext.GlobalUi.ShowHeistPassedBanner("~o~ROBBERY COMPLETE", $"~g~Earned $50000");
+                    DebugLogger.Info($"Awarding payout: store={store.Id}, payout={payout}, DebugState={wasDebugEscape}");
+                    _ctx.Ui.ShowNotification("~y~DEBUG FORCE ESCAPE COMPLETED~n~(no actual payout).");
+                    StoreContext.GlobalUi.ShowHeistPassedBanner("~o~ROBBERY COMPLETE", $"~g~Earned ${payout}");
                 }
-
-                // Clear debug escape state
-                _debugEscapeActive = false;
-                _debugEscapeStoreId = -1;
-                _ctx.Police.SuppressPoliceForDebug = false;
 
                 // Reset robbery flags
                 store.IsRobbed = false;
@@ -1363,23 +1357,19 @@ namespace StoreRobberyEnhanced.Systems
                 _ctx.SaveStoreState(store);
                 _ctx.Blips.RefreshBlip(store.Id);
 
-                //if (_ctx.Config.EnableStalkerMsg)
-                //    _ctx.Stalker.QueueEscapeMessage();
-
-                //_ctx.Stalker.TryTriggerCall();
-
                 // ------------------------------------------------------------
                 // ⭐ DEBUG ESCAPE CLEANUP (KEEP DebugResetStore)
                 // ------------------------------------------------------------
                 if (wasDebugEscape)
                 {
-                    _debugEscapeActive = false;
-                    _debugEscapeStoreId = -1;
-
                     // ⭐ REQUIRED — ensures clean test state for next debug run
                     DebugResetStore(store);
+                    DebugLogger.Info($"Debug State cleared after cooldown: store={store.Id}");
 
-                    DebugLogger.Info("Debug escape state cleared after cooldown.");
+                    // Clear debug escape state
+                    _debugEscapeActive = false;
+                    _debugEscapeStoreId = -1;
+                    _ctx.Police.SuppressPoliceForDebug = false;
                 }
 
                 // Banner + payout handled in AwardPayout()
