@@ -142,7 +142,7 @@ namespace StoreRobberyEnhanced
                 // -------------------------------
                 if (_ctx.Stalker != null)
                 {
-                    _ctx.Stalker.ProcessEvents();       // queued messages
+                    _ctx.Stalker.ProcessEvents();       // queued messages                    
                     _ctx.Stalker.UpdatePhone(); 
                 }
 

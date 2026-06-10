@@ -255,7 +255,6 @@ namespace StoreRobberyEnhanced
                 // Global systems
                 Stalker.ProcessEvents();
                 Cooldowns.UpdateGlobalHeat();
-                Stalker.UpdateCallState();
 
                 // Per-store systems
                 int count = Stores.Count;
