@@ -627,14 +627,8 @@ namespace StoreRobberyEnhanced.Systems
                 // ⭐ PLAY QUIET REGISTER / MONEY SOUND
                 // ------------------------------------------------------------
                 // "ROBBERY_MONEY" is a subtle cash-handling sound used in GTA V
-                Function.Call(Hash.PLAY_SOUND_FROM_ENTITY,
-                    -1,
-                    "ROBBERY_MONEY",
-                    clerk.Handle,
-                    "HUD_AWARDS",   // sound set
-                    false,
-                    0
-                );
+                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "ROBBERY_MONEY", "HUD_AWARDS");
+                Script.Wait(300); // small delay to avoid sound overlap
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
 
                 // ------------------------------------------------------------
@@ -711,6 +705,10 @@ namespace StoreRobberyEnhanced.Systems
                 store.ClerkReacted = true;
                 store.ClerkIdle = false;
                 store.IsRobberyActive = true;
+
+                // ⭐ ADD THESE TWO LINES
+                store.RobberyStartUtc = DateTime.UtcNow;
+                _ctx.Stalker.ResetForNewRobbery();
 
                 clerk.Task.ClearAllImmediately();
                 clerk.Task.HandsUp(-1);

@@ -1,10 +1,11 @@
-﻿using System;
-using GTA;
+﻿using GTA;
 using GTA.Math;
 using GTA.Native;
 using StoreRobberyEnhanced.Data;
 using StoreRobberyEnhanced.Debug;
 using StoreRobberyEnhanced.Minigame;
+using System;
+using System.Threading.Tasks;
 
 namespace StoreRobberyEnhanced.Systems
 {
@@ -573,6 +574,12 @@ namespace StoreRobberyEnhanced.Systems
 
                     DebugLogger.Info($"SilentRobbery HARD LOCK activated for store {store.Id}");
 
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(2000);
+                        _ctx.Ui.ShowNotification("~r~Silent robbery started.");
+                    });
+
                     // ------------------------------------------------------------
                     // ⭐ COSMETIC CLERK ANIMATION FOR SILENT ROBBERY
                     // ------------------------------------------------------------
@@ -585,7 +592,11 @@ namespace StoreRobberyEnhanced.Systems
                     payout = (int)(payout * _ctx.Config.PayoutMultiplier);
                     store.PendingPayout += payout;
 
-                    _ctx.Ui.ShowSubtitle("~g~Silent robbery successful. Leave quietly.", 4000);
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(2000);
+                        _ctx.Ui.ShowSubtitle("~g~Silent robbery started, complete & leave quietly.", 4000);
+                    });
 
                     _ctx.SaveStoreState(store);
                     _ctx.Cooldowns.UpdateStoreBlip(store);
@@ -1025,6 +1036,10 @@ namespace StoreRobberyEnhanced.Systems
                     if (distdebug < _ctx.Config.EscapeDistance)
                     {
                         _ctx.Ui.ShowSubtitle("Robbery complete! Escape the area.", 3000);
+                        if (_ctx.Config.EnableStalkerMsg)
+                            _ctx.Stalker.QueueEscapeMessage();
+
+                        _ctx.Stalker.TryTriggerCall();
                         return;
                     }
 
@@ -1047,6 +1062,10 @@ namespace StoreRobberyEnhanced.Systems
                 if (Game.Player.WantedLevel > 0)
                 {
                     _ctx.Ui.ShowSubtitle("Escape the area & lose the cops.", 3000);
+                    if (_ctx.Config.EnableStalkerMsg)
+                        _ctx.Stalker.QueueEscapeMessage();
+
+                    _ctx.Stalker.TryTriggerCall();
                     return;
                 }
 
@@ -1105,6 +1124,10 @@ namespace StoreRobberyEnhanced.Systems
                 if (!store.SilentRobbery && Game.Player.WantedLevel > 0)
                 {
                     _ctx.Ui.ShowSubtitle("Escape the area & lose the cops.", 3000);
+                    if (_ctx.Config.EnableStalkerMsg)
+                        _ctx.Stalker.QueueEscapeMessage();
+
+                    _ctx.Stalker.TryTriggerCall();
                     return;
                 }
 
@@ -1116,6 +1139,10 @@ namespace StoreRobberyEnhanced.Systems
                     if (distdebug < _ctx.Config.EscapeDistance)
                     {
                         _ctx.Ui.ShowSubtitle("Robbery complete! Escape the area.", 3000);
+                        if (_ctx.Config.EnableStalkerMsg)
+                            _ctx.Stalker.QueueEscapeMessage();
+
+                        _ctx.Stalker.TryTriggerCall();
                         return;
                     }
 
@@ -1336,10 +1363,10 @@ namespace StoreRobberyEnhanced.Systems
                 _ctx.SaveStoreState(store);
                 _ctx.Blips.RefreshBlip(store.Id);
 
-                if (_ctx.Config.EnableStalkerMsg)
-                    _ctx.Stalker.QueueEscapeMessage();
+                //if (_ctx.Config.EnableStalkerMsg)
+                //    _ctx.Stalker.QueueEscapeMessage();
 
-                _ctx.Stalker.TryTriggerCall();
+                //_ctx.Stalker.TryTriggerCall();
 
                 // ------------------------------------------------------------
                 // ⭐ DEBUG ESCAPE CLEANUP (KEEP DebugResetStore)
