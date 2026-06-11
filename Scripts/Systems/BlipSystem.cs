@@ -33,8 +33,6 @@ namespace StoreRobberyEnhanced.Systems
             try
             {
                 DebugLogger.Info("BlipSystem.Initialize()");
-
-                RemoveNativeHoldupBlipsImmediate();
                 CreateStoreBlips();
             }
             catch (Exception ex)
@@ -50,7 +48,6 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
-                RemoveNativeHoldupBlipsTick();
                 UpdateBlipStates();
             }
             catch (Exception ex)
@@ -148,89 +145,7 @@ namespace StoreRobberyEnhanced.Systems
             {
                 DebugLogger.LogException("BlipSystem.UpdateBlipStates", ex);
             }
-        }
-
-        // ------------------------------------------------------------
-        // REMOVE NATIVE HOLDUP BLIPS (TICK)
-        // ------------------------------------------------------------
-        private void RemoveNativeHoldupBlipsTick()
-        {
-            try
-            {
-                Blip[] blips = World.GetAllBlips();
-
-                foreach (Blip b in blips)
-                {
-                    try
-                    {
-                        if (!b.Exists())
-                            continue;
-
-                        bool isOurBlip = false;
-                        foreach (var kv in _ctx.StoreBlips)
-                        {
-                            if (kv.Value != null && kv.Value.Exists() && kv.Value.Handle == b.Handle)
-                            {
-                                isOurBlip = true;
-                                break;
-                            }
-                        }
-                        if (isOurBlip)
-                            continue;
-
-                        if (b.Sprite == (BlipSprite)52)
-                        {
-                            DebugLogger.Trace("Removing native holdup blip (tick)");
-                            b.Delete();
-                        }
-                    }
-                    catch (Exception exBlip)
-                    {
-                        DebugLogger.LogException("BlipSystem.RemoveNativeHoldupBlipsTick(blip)", exBlip);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.LogException("BlipSystem.RemoveNativeHoldupBlipsTick", ex);
-            }
-        }
-
-        // ------------------------------------------------------------
-        // REMOVE NATIVE HOLDUP BLIPS (IMMEDIATE)
-        // ------------------------------------------------------------
-        private void RemoveNativeHoldupBlipsImmediate()
-        {
-            try
-            {
-                DebugLogger.Info("Removing native holdup blips (immediate)");
-
-                Blip[] blips = World.GetAllBlips();
-
-                foreach (Blip b in blips)
-                {
-                    try
-                    {
-                        if (!b.Exists())
-                            continue;
-
-                        if (b.Sprite == (BlipSprite)52)
-                        {
-                            DebugLogger.Trace("Removing native holdup blip (immediate)");
-                            b.Delete();
-                        }
-                    }
-                    catch (Exception exBlip)
-                    {
-                        DebugLogger.LogException("BlipSystem.RemoveNativeHoldupBlipsImmediate(blip)", exBlip);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.LogException("BlipSystem.RemoveNativeHoldupBlipsImmediate", ex);
-            }
-        }
+        }        
 
         // ------------------------------------------------------------
         // CLEANUP
