@@ -66,8 +66,6 @@ namespace StoreRobberyEnhanced
                 _initialized = true;
                 Tick -= WaitForGameLoad;
 
-                RemoveNativeHoldupBlipsGlobal();
-
                 _ctx = new StoreContext(this);
                 _ctx.Initialize();
 
@@ -178,42 +176,6 @@ namespace StoreRobberyEnhanced
             {
                 DebugLogger.LogException("Main.OnAborted", ex);
             }
-        }
-
-        // ------------------------------------------------------------
-        // GLOBAL BLIP CLEANUP
-        // ------------------------------------------------------------
-        private void RemoveNativeHoldupBlipsGlobal()
-        {
-            try
-            {
-                DebugLogger.Info("Removing native holdup blips (global)");
-
-                Blip[] blips = World.GetAllBlips();
-
-                foreach (Blip b in blips)
-                {
-                    try
-                    {
-                        if (!b.Exists())
-                            continue;
-
-                        if (b.Sprite == (BlipSprite)52)
-                        {
-                            DebugLogger.Trace("Deleting Rockstar store blip");
-                            b.Delete();
-                        }
-                    }
-                    catch (Exception exBlip)
-                    {
-                        DebugLogger.LogException("Main.RemoveNativeHoldupBlipsGlobal(blip)", exBlip);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.LogException("Main.RemoveNativeHoldupBlipsGlobal", ex);
-            }
-        }
+        }       
     }
 }
