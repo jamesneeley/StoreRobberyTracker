@@ -72,12 +72,15 @@ The goal was simple:
 ---
 
 ## 💰 Safe Cracking Minigame
-<img width="1536" alt="SafeCrackMinigame" src="https://github.com/user-attachments/assets/a9da36a0-349e-4bce-af5c-23383af645ae" />
+<img width="1500" height="922" alt="SafeCrackMinigame2" src="https://github.com/user-attachments/assets/0f748995-f39d-4db3-a553-3f2f799ce5f4" />
 
 A fully interactive, skill‑based safe cracking system:
 
 - Dial rotation with sweet‑spot detection  
-- Difficulty scaling per store  
+- Difficulty scaling per store (safes can be 3-4 combos to unlock)
+- Visual feedback with glowing style unlocks
+- Audio queues for when unlocked in stages
+- Dynamic Timer for Minigame
 - Bonus payout on success  
 - Configurable safe crack time  
 - Configurable cooldown  
@@ -112,13 +115,14 @@ For a list and visual of for possible Stalker Icons for the Stalker System can b
 
 You can edit the StoreRobberyTracker.ini file and update the Icon and Name in these settings
 [Stalker]
-EnableStalkerMsg=true
-EnableStalkerCall=true
-StalkerCallChance=25
-CallerImage=CHAR_ARTHUR <-- where you can change the icon
-CallerName=NO CALLER ID	<-- where you can change the caller ID name if desired.
-MaxMessagesPerRobbery=5
-MessageCooldownSeconds=20
+- EnableStalkerMsg=true
+- EnableStalkerCall=true
+- StalkerCallChance=25
+- CallerImage=CHAR_ARTHUR <-- where you can change the icon
+- CallerName=NO CALLER ID	<-- where you can change the caller ID name if desired.
+- MaxMessagesPerRobbery=5
+- MessageCooldownSeconds=20
+<img width="1500" height="807" alt="Stalker1" src="https://github.com/user-attachments/assets/700618a2-8d22-43fe-b6a0-9c59e4c21013" />
 
 ---
 
@@ -285,18 +289,20 @@ All 20 stores included.
 ### Requirements
 - **GTA V (Latest Version)**  
 - **ScriptHookV**  
-- **ScriptHookVDotNet 3.9.0 Enhanced**  
+- **ScriptHookVDotNet 3.9.0 Enhanced** for Enhanced Version of Game
+- **ScriptHookVDotNet 3.7.0 Nightly Build or Newer** for Legacy Version of Game
 - **.NET Framework 4.8**
 
 ### Install Steps
 1. Install ScriptHookV  
-2. Install ScriptHookVDotNet 3.9.0 Enhanced  
-3. Drag `StoreRobberyEnhanced.dll` and `StoreRobberyEnhanced.pdb`into:
+2. Install ScriptHookVDotNet 3.9.0 Enhanced for Enhanced Version
+   - Install ScriptHookVDotNet 3.7.0 Nightly for Legacy Version
+4. Drag `StoreRobberyEnhanced.dll` and `StoreRobberyEnhanced.pdb`into:
 
    ```
    Grand Theft Auto V/scripts/
    ```
-4. Launch the game.
+5. Launch the game.
 
 ---
 
@@ -417,15 +423,17 @@ To build the project:
 
 1. Download ScriptHookVDotNet 3.9.0 Enhanced:
    https://www.gta5-mods.com/tools/script-hook-v-net-enhanced
+   - ScriptHookVDotNet Nighly Build for Legacy Installations:
+   - https://github.com/scripthookvdotnet/scripthookvdotnet-nightly/releases/tag/v3.7.0-nightly.48
 
-2. Create a folder named `lib` in the project root.
+3. Create a folder named `lib` in the project root.
 
-3. Place the following files inside `/lib/`:
+4. Place the following files inside `/lib/`:
    - ScriptHookVDotNet.dll
    - ScriptHookVDotNet2.dll
    - ScriptHookVDotNet3.dll
 
-4. Open the solution and build in Release mode.
+5. Open the solution and build in Release mode.
    
 ---
 
