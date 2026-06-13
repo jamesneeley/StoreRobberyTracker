@@ -328,6 +328,7 @@ StoreRobberyTracker/
 │   │   └── StalkerMessageConfigCreator.cs
 │   ├── Data/
 │   │   ├── CameraData.cs
+│   │   └── ShopItemData.cs
 │   │   └── TrackStore.cs
 │   ├── Debug/
 │   │   ├── DebugActions.cs
@@ -364,10 +365,13 @@ StoreRobberyTracker/
 │   │   ├── PoliceSystem.cs
 │   │   ├── RobberySystem.cs
 │   │   ├── SafeSystem.cs
+│   │   ├── ShopConsumeSystem.cs
+│   │   ├── ShopSystem.cs
 │   │   ├── StalkerSystem.cs
 │   │   └── TimerSystem.cs
 │   ├── UI/
 │   │   ├── PlayerHelper.cs
+│   │   ├── ShopMenuUI.cs
 │   │   └── UiHelpers.cs
 │   ├── Main.cs
 │   └── StoreContext.cs
