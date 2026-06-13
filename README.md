@@ -118,10 +118,11 @@ You can edit the StoreRobberyTracker.ini file and update the Icon and Name in th
 EnableStalkerMsg=true
 EnableStalkerCall=true
 StalkerCallChance=25
-CallerImage=CHAR_ARTHUR <-- where you can change the icon
-CallerName=NO CALLER ID	<-- where you can change the caller ID name if desired.
+CallerImage=CHAR_ARTHUR -- where you can change the icon
+CallerName=NO CALLER ID	-- where you can change the caller ID name if desired.
 MaxMessagesPerRobbery=5
 MessageCooldownSeconds=20
+<img width="1500" height="807" alt="Stalker1" src="https://github.com/user-attachments/assets/700618a2-8d22-43fe-b6a0-9c59e4c21013" />
 
 ---
 
