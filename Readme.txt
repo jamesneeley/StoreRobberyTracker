@@ -1,4 +1,4 @@
-⭐ GTA5‑Mods Upload Description — Store Robbery Enhanced (v2.6.8.1 Initial Release)
+⭐ GTA5‑Mods Upload Description — Store Robbery Enhanced (v2.6.8.2 Latest Release)
 (Fully polished, cinematic, feature‑rich, and ready for upload)
 
 🏪 Store Robbery Enhanced — Bringing GTA Online’s Robbery Achievements to Single Player with some huge twists.
@@ -330,12 +330,14 @@ All 20 stores included.
 
 📦 INSTALLATION
 Requirements
- * ScriptHookV
- * ScriptHookVDotNet 3.9.0 Enhanced  
- * 👉 https://www.gta5-mods.com/tools/script-hook-v-net-enhanced
- * iFruitAddon2 - (Included)
- * .NET Framework 4.8
- * GTA V (Latest Version)
+* ScriptHookV
+* FOR ENHANCED Version of game ScriptHookVDotNet 3.9.0 Enhanced
+* 👉 https://www.gta5-mods.com/tools/script-hook-v-net-enhanced
+* FOR LEGACY Version of game you need the SHVDN Nightly 3.7.0 min
+* 👉 https://github.com/scripthookvdotnet/scripthookvdotnet-nightly/releases/tag/v3.7.0-nightly.48
+* iFruitAddon2 - (Included)
+* .NET Framework 4.8
+* GTA V (Latest Version) LEGIT LEGAL COPY
 
 Install Steps
 1. Install ScriptHookV
@@ -353,6 +355,14 @@ v2.6.8.1 — Initial Release
  * Safe cracking system complete
  * Full debug suite included
  * Stalker system fully implemented
+
+v2.6.8.2
+ * Fixed issue with SafeCrack Minigame not exiting upon timer expire
+ * Fixed issue of SafeCracking not saving to INI file for SafeCracked
+ * Removed unused method blocks that are no longer needed
+ * Removed checkt to remove Rockstar blips from system as it is not needed
+ * Added Visual Improvements for locks for locked and unlocked states
+ * Added Audio Sounds for unlocks and completion for SafeCrack Minigame
 
 ⭐ CREDITS
 Created by James Neeley (FastBurst)  

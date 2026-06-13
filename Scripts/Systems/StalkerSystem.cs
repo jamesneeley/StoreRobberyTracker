@@ -522,6 +522,8 @@ namespace StoreRobberyEnhanced.Systems
                 // Destroy any existing phone first
                 Function.Call(Hash.DESTROY_MOBILE_PHONE);
                 Function.Call(Hash.SET_MOBILE_PHONE_SCALE, 250.0f);
+                // ⭐ Position the phone bottom-right (GTA Online style)
+                //Function.Call(Hash.SET_MOBILE_PHONE_POSITION, 0.12f, -0.02f, 0.0f);
                 Function.Call(Hash.CREATE_MOBILE_PHONE, 0);
                 
                 // Trigger the call
