@@ -135,6 +135,9 @@ You can edit the StoreRobberyTracker.ini file and update the Icon and Name in th
 ---
 
 ## 🛒 Shop Menu System
+
+<img width="1500" height="849" alt="ClerkStore1" src="https://github.com/user-attachments/assets/1b717fef-6411-4e11-8f8a-7015cccf6957" />
+
 A fully integrated in‑store shopping experience that activates when the player approaches a clerk inside any supported convenience store interior. Each shop automatically loads a themed LemonUI menu with the correct Rockstar banner (24/7, LTD, Rob’s Liquor, or Liquor Ace) and a matching subtitle. Items display with right‑aligned prices and detailed descriptions, mirroring GTA V’s native shop layout. Purchases trigger the Shop Consume System, which handles animations, props, cooldowns, and item effects for a seamless, lore‑friendly shopping flow.
 
 ---
