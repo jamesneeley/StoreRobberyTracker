@@ -1,4 +1,4 @@
-⭐ GTA5‑Mods Upload Description — Store Robbery Enhanced (v2.6.8.2 Latest Release)
+⭐ GTA5‑Mods Upload Description — Store Robbery Enhanced (v2.6.8.5 Latest Release)
 (Fully polished, cinematic, feature‑rich, and ready for upload)
 
 🏪 Store Robbery Enhanced — Bringing GTA Online’s Robbery Achievements to Single Player with some huge twists.
@@ -15,6 +15,7 @@ In GTA Online, robbing all convenience stores is a structured progression path:
  * Safe Cracking Minigame
  * Clerk Reaction Styles for Different Style Robberies
  * Custom Text Notifications and Police responses
+ * Shop Menu System
  
 This mod brings that entire experience into Story Mode — and then pushes it further.
 
@@ -188,6 +189,8 @@ SafeCrackPadShake
 SafeCrackLoadOptionalSafes
 PayoutMultiplier
 
+🛒 Shop Menu System
+A fully integrated in‑store shopping experience that activates when the player approaches a clerk inside any supported convenience store interior. Each shop automatically loads a themed LemonUI menu with the correct Rockstar banner (24/7, LTD, Rob’s Liquor, or Liquor Ace) and a matching subtitle. Items display with right‑aligned prices and detailed descriptions, mirroring GTA V’s native shop layout. Purchases trigger the Shop Consume System, which handles animations, props, cooldowns, and item effects for a seamless, lore‑friendly shopping flow.
 
 🧪 FULL DEBUG SUITE (Developer‑Grade Tools)
 If the Debug System is enabled in the MainSettings.ini, to active and use features you must Holddown Left CTRL + Hotkey(s) to activate. All HotKeys as well as ModifierKey (Left CTRL) can be changed via the DebugSettings.ini a full list of useable HotKeys can be found at the link below
@@ -363,6 +366,11 @@ v2.6.8.2
  * Removed checkt to remove Rockstar blips from system as it is not needed
  * Added Visual Improvements for locks for locked and unlocked states
  * Added Audio Sounds for unlocks and completion for SafeCrack Minigame
+
+v2.6.8.5
+ * Fixed minor issues
+ * Utilizing LemonUI for Shop Menu
+ * Added Store Clerk Shop Menu System pop to mimic the in-game clerks with more items
 
 ⭐ CREDITS
 Created by James Neeley (FastBurst)  
