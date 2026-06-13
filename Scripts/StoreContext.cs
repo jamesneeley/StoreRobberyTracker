@@ -52,6 +52,8 @@ namespace StoreRobberyEnhanced
         internal SafeCrackSettings SafeCrackSettings { get; private set; }
         internal ISafeCrackUI SafeCrackUI { get; private set; }
 
+        internal bool DebugModeSafeCrack = false;
+
         // ------------------------------------------------------------
         // DATA
         // ------------------------------------------------------------
@@ -63,7 +65,7 @@ namespace StoreRobberyEnhanced
         // ------------------------------------------------------------
         internal int GlobalHeatLevel;
         internal DateTime LastHeatUpdate;
-
+        
         // ------------------------------------------------------------
         // RNG
         // ------------------------------------------------------------
@@ -194,7 +196,8 @@ namespace StoreRobberyEnhanced
                     DebugLogger.Info($"[SafeCrack] Store {store.Id} safe cracked, added payout={payout}, totalPending={store.PendingPayout}");
 
                     // ⭐ Persist the safe state
-                    SaveStoreState(store);
+                    if (!DebugModeSafeCrack)
+                        SaveStoreState(store);
                 };
 
                 // ⭐ PHASE 3 — POLICE SYSTEM

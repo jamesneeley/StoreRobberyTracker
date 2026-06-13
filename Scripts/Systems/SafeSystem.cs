@@ -93,6 +93,8 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
+                _ctx.DebugModeSafeCrack = true;
+
                 DebugLogger.Info("DebugStartSafeCrack() called — launching REAL SafeCrack minigame");
 
                 if (_ctx.SafeCrack == null || _ctx.SafeState == null)
@@ -139,6 +141,8 @@ namespace StoreRobberyEnhanced.Systems
                 _ctx.SafeCrack.Start(store, store.SafePos, store.SafeHeading, Game.Player.Character);
 
                 msg = "SafeCrack minigame started";
+
+                _ctx.DebugModeSafeCrack = false;
                 return true;
             }
             catch (Exception ex)

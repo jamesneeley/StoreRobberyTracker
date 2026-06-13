@@ -1,8 +1,9 @@
-﻿using System;
-using System.Drawing;
-using GTA;
+﻿using GTA;
 using GTA.Native;
+using LemonUI.Scaleform;
 using StoreRobberyEnhanced.Debug;
+using System;
+using System.Drawing;
 
 namespace StoreRobberyEnhanced.UI
 {
@@ -36,6 +37,8 @@ namespace StoreRobberyEnhanced.UI
         private Scaleform _timerScaleform = null;
         private int _heistBannerEndTime = 0;
         private bool _suppressUiUntilBannerDone = false;
+        private Scaleform _celebration;
+
         public bool IsBannerActive => _heistScaleform != null && Game.GameTime <= _heistBannerEndTime;
 
 
@@ -96,12 +99,17 @@ namespace StoreRobberyEnhanced.UI
             {
                 DebugLogger.Info($"ShowHeistPassedBanner: {title} / {subtitle}");
 
+                // ⭐ 1. Load cinematic ONLINE background
+                _celebration = new Scaleform("MP_CELEBRATION");
+                _celebration.CallFunction("CREATE_STAT_WALL", title, subtitle, "", true, 0, "");
+
+                // ⭐ 2. Load the main big message banner
                 _heistScaleform = new Scaleform("MP_BIG_MESSAGE_FREEMODE");
                 _heistScaleform.CallFunction("SHOW_SHARD_CENTERED_MP_MESSAGE", title, subtitle, 21, true, false);
 
                 _heistBannerEndTime = Game.GameTime + 6000;
 
-                // ⭐ NEW — suppress all UI drawing while banner is active
+                // ⭐ Suppress all other UI
                 _suppressUiUntilBannerDone = true;
             }
             catch (Exception ex)
@@ -153,19 +161,23 @@ namespace StoreRobberyEnhanced.UI
                 // ⭐ If UI is suppressed because a banner is active, skip everything
                 if (_suppressUiUntilBannerDone)
                 {
-                    // But still draw the banner if it exists
+                    // ⭐ Draw ONLINE background scene FIRST
+                    if (_celebration != null && _celebration.IsValid)
+                        _celebration.Render2D();
+
+                    // ⭐ Draw the main banner on top
                     if (_heistScaleform != null)
                     {
                         if (_heistScaleform.IsValid)
                             _heistScaleform.Render2D();
 
-                        // If banner still active, stop here
+                        // Banner still active → stop here
                         if (Game.GameTime <= _heistBannerEndTime)
                             return;
 
-                        // Banner expired → clear and re-enable UI
-                        DebugLogger.Trace("Heist banner expired");
+                        // Banner expired → cleanup
                         _heistScaleform = null;
+                        _celebration = null;
                         _suppressUiUntilBannerDone = false;
                     }
 
@@ -178,6 +190,10 @@ namespace StoreRobberyEnhanced.UI
                 if (_heistScaleform != null)
                 {
                     DebugLogger.Trace($"[BannerDraw] Active={_heistScaleform != null}, Valid={_heistScaleform.IsValid}, Time={Game.GameTime}/{_heistBannerEndTime}");
+
+                    // ⭐ Draw ONLINE background scene FIRST
+                    if (_celebration != null && _celebration.IsValid)
+                        _celebration.Render2D();
 
                     if (_heistScaleform.IsValid)
                         _heistScaleform.Render2D();
