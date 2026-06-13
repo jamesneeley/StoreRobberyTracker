@@ -126,19 +126,36 @@ namespace StoreRobberyEnhanced.Minigame
         // ------------------------------------------------------------
         private void DrawLocks(SafeCrackState state)
         {
-            float baseX = 0.40f;
+            int total = state.TotalStages;     // 3, 4, or more
+            int current = state.Stage;         // how many are unlocked
+
             float y = 0.80f;
 
             float scaleX = 0.06f;
             float scaleY = scaleX * GetAspectRatio();
 
-            bool p1 = state.Stage >= 1;
-            bool p2 = state.Stage >= 2;
-            bool p3 = state.Stage >= 3;
+            float spacing = 0.10f;             // distance between locks
 
-            DrawSprite(DICT_SAFE, p1 ? SPRITE_LOCK_OPEN : SPRITE_LOCK_CLOSED, baseX, y, scaleX, scaleY, 0f, 255, 255, 255, 255);
-            DrawSprite(DICT_SAFE, p2 ? SPRITE_LOCK_OPEN : SPRITE_LOCK_CLOSED, baseX + 0.10f, y, scaleX, scaleY, 0f, 255, 255, 255, 255);
-            DrawSprite(DICT_SAFE, p3 ? SPRITE_LOCK_OPEN : SPRITE_LOCK_CLOSED, baseX + 0.20f, y, scaleX, scaleY, 0f, 255, 255, 255, 255);
+            // ⭐ Total width of the lock row
+            float totalWidth = (total - 1) * spacing;
+
+            // ⭐ Center the row horizontally
+            float startX = 0.50f - (totalWidth / 2f);
+
+            for (int i = 0; i < total; i++)
+            {
+                bool unlocked = i < current;
+                float x = startX + (i * spacing);
+
+                // ⭐ Glow effect for unlocked locks
+                if (unlocked)
+                {
+                    // Soft green glow behind the lock
+                    DrawSprite(DICT_SAFE, SPRITE_LOCK_OPEN, x, y, scaleX * 1.25f, scaleY * 1.25f, 0f, 0, 255, 0, 120);
+                }
+                // ⭐ Main lock sprite
+                DrawSprite(DICT_SAFE, unlocked ? SPRITE_LOCK_OPEN : SPRITE_LOCK_CLOSED, x, y, scaleX, scaleY, 0f, 255, 255, 255, 255);
+            }
         }
 
         // ------------------------------------------------------------

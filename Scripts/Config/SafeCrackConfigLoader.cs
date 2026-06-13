@@ -23,7 +23,7 @@ namespace StoreRobberyEnhanced.Config
                 // ------------------------------------------------------------
                 SimpleIni ini = new SimpleIni(config.MainIniPath);
 
-                int cooldownDefault = 30000;
+                int cooldownDefault = 3000;
                 bool padShakeDefault = true;
                 bool loadOptionalDefault = false;
 

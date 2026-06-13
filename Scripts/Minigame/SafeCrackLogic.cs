@@ -28,6 +28,8 @@ namespace StoreRobberyEnhanced.Minigame
         private readonly int _minStages = 3;
         private readonly int _maxStages = 4;
 
+        private int _lastTickTime = 0;
+
         private readonly System.Random _rand = new System.Random();
 
         // ------------------------------------------------------------
@@ -69,6 +71,23 @@ namespace StoreRobberyEnhanced.Minigame
                 state.CurrentDialRotation -= 360f;
             if (state.CurrentDialRotation < 0f)
                 state.CurrentDialRotation += 360f;
+
+            // ------------------------------------------------------------
+            // TICK‑TICK‑TICK SOUND WHILE ROTATING
+            // ------------------------------------------------------------
+            if (System.Math.Abs(state.RotationSpeed) > 0.1f)
+            {
+                int now = Game.GameTime;
+
+                // Tick every 150 ms (≈ 6 ticks per second)
+                if (now - _lastTickTime > 150)
+                {
+                    _lastTickTime = now;
+
+                    // Soft mechanical tick
+                    Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "NAV_UP_DOWN", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                }
+            }
 
             // ------------------------------------------------------------
             // SWEET SPOT DETECTION
@@ -139,6 +158,12 @@ namespace StoreRobberyEnhanced.Minigame
         private bool AdvanceStage(SafeCrackState state)
         {
             state.Stage++;
+
+            // ⭐ Play lock unlock sound (only if not final stage)
+            if (state.Stage < state.TotalStages)
+            {
+                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "PIN_BUTTON", "ATM_SOUNDS");
+            }
 
             // ⭐ Completed all stages
             if (state.Stage >= state.TotalStages)

@@ -37,6 +37,8 @@ namespace StoreRobberyEnhanced.Minigame
 
         // ⭐ REQUIRED BY RobberySystem
         public bool IsRunning => _state.Active;
+        public TrackedStore CurrentStore => _store;
+
 
         // ------------------------------------------------------------
         // CONSTRUCTOR
@@ -214,7 +216,18 @@ namespace StoreRobberyEnhanced.Minigame
 
             if (remaining < 0)
             {
+                DebugLogger.Info("[SafeCrack] Timer expired → fail");
+
+                // SAFECRACK‑ONLY COOLDOWN
+                _state.CooldownActive = true;
+                _state.CooldownEndTime = Game.GameTime + _settings.CooldownMs;
+
+                // PLAYER NOTIFICATION
+                _UiHelp.ShowSubtitle("~r~Time has run out. The safe is locked. Try again after cooldown.", 4000);
+
+                // FAIL CLEANLY
                 _state.Failed = true;
+                FailAndResetStore();
                 return;
             }
 
@@ -282,12 +295,15 @@ namespace StoreRobberyEnhanced.Minigame
 
             _anim.EndSuccess(_state.Player);
 
+            // ⭐ Heavy final clunk sound
+            Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "COLLECTED", "HUD_AWARDS");
+
             int payout = _logic.CalculatePayout(_settings);
             _state.Payout = payout;
 
             Function.Call(Hash.SET_CONTROL_SHAKE, 0, 250, 200);
             Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET");
-
+            
             _UiHelp.ShowSubtitle("~g~Safe cracked!", 3000);
 
             SafeCrackEvents.OnSafeCracked(_state.SafePos, payout);
@@ -295,6 +311,9 @@ namespace StoreRobberyEnhanced.Minigame
             if (_store != null)
             {
                 _store.SafeCracked = true;
+
+                // ⭐ Persist safe cracked state to INI
+                _ctx.SaveStoreState(_store);   // or StoreDataManager.SaveStoreState(_store)
 
                 payout = (int)(payout * _ctx.Config.PayoutMultiplier);
                 _store.PendingPayout += payout;

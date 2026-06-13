@@ -182,7 +182,9 @@ namespace StoreRobberyEnhanced
 
                 SafeCrackEvents.SafeCracked += (pos, payout) =>
                 {
-                    var store = GetNearestStore();
+                    // var store = GetNearestStore();
+                    var store = SafeCrack.CurrentStore;
+
                     if (store == null)
                         return;
 
