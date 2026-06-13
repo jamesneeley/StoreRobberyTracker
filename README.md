@@ -16,6 +16,7 @@ In GTA Online, robbing all convenience stores is a structured progression path:
 - Achievements track your progress
 - Stalker System intregrated and customizible
 - Safe Cracking Minigame
+- Shop Menu System
 
 **Store Robbery Enhanced brings that entire experience into Single Player — and then pushes it further.**
 
@@ -130,6 +131,11 @@ You can edit the StoreRobberyTracker.ini file and update the Icon and Name in th
 - Blips appear **only on the minimap**, not the world map  
 - Dynamic color changes based on robbery state  
 - Matches GTA Online’s UI style  
+
+---
+
+## 🛒 Shop Menu System
+A fully integrated in‑store shopping experience that activates when the player approaches a clerk inside any supported convenience store interior. Each shop automatically loads a themed LemonUI menu with the correct Rockstar banner (24/7, LTD, Rob’s Liquor, or Liquor Ace) and a matching subtitle. Items display with right‑aligned prices and detailed descriptions, mirroring GTA V’s native shop layout. Purchases trigger the Shop Consume System, which handles animations, props, cooldowns, and item effects for a seamless, lore‑friendly shopping flow.
 
 ---
 
