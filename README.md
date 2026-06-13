@@ -285,18 +285,20 @@ All 20 stores included.
 ### Requirements
 - **GTA V (Latest Version)**  
 - **ScriptHookV**  
-- **ScriptHookVDotNet 3.9.0 Enhanced**  
+- **ScriptHookVDotNet 3.9.0 Enhanced** for Enhanced Version of Game
+- **ScriptHookVDotNet 3.7.0 Nightly Build or Newer** for Legacy Version of Game
 - **.NET Framework 4.8**
 
 ### Install Steps
 1. Install ScriptHookV  
-2. Install ScriptHookVDotNet 3.9.0 Enhanced  
-3. Drag `StoreRobberyEnhanced.dll` and `StoreRobberyEnhanced.pdb`into:
+2. Install ScriptHookVDotNet 3.9.0 Enhanced for Enhanced Version
+   - Install ScriptHookVDotNet 3.7.0 Nightly for Legacy Version
+4. Drag `StoreRobberyEnhanced.dll` and `StoreRobberyEnhanced.pdb`into:
 
    ```
    Grand Theft Auto V/scripts/
    ```
-4. Launch the game.
+5. Launch the game.
 
 ---
 
@@ -417,15 +419,17 @@ To build the project:
 
 1. Download ScriptHookVDotNet 3.9.0 Enhanced:
    https://www.gta5-mods.com/tools/script-hook-v-net-enhanced
+   - ScriptHookVDotNet Nighly Build for Legacy Installations:
+   - https://github.com/scripthookvdotnet/scripthookvdotnet-nightly/releases/tag/v3.7.0-nightly.48
 
-2. Create a folder named `lib` in the project root.
+3. Create a folder named `lib` in the project root.
 
-3. Place the following files inside `/lib/`:
+4. Place the following files inside `/lib/`:
    - ScriptHookVDotNet.dll
    - ScriptHookVDotNet2.dll
    - ScriptHookVDotNet3.dll
 
-4. Open the solution and build in Release mode.
+5. Open the solution and build in Release mode.
    
 ---
 
