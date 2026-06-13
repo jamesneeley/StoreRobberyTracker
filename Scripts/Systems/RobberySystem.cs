@@ -595,7 +595,7 @@ namespace StoreRobberyEnhanced.Systems
                     Task.Run(async () =>
                     {
                         await Task.Delay(2000);
-                        _ctx.Ui.ShowSubtitle("~g~Silent robbery started, complete & leave quietly.", 4000);
+                        _ctx.Ui.ShowSubtitle("~o~Silent robbery started, complete & leave quietly.", 4000);
                     });
 
                     _ctx.SaveStoreState(store);

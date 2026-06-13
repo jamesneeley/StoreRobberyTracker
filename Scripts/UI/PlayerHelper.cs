@@ -25,6 +25,190 @@ namespace StoreRobberyEnhanced.UI
         }
 
         // ------------------------------------------------------------
+        // GENERIC HELPERS USED BY ShopConsumeSystem
+        // ------------------------------------------------------------
+        public static bool IsPlayerBusy(Ped player)
+        {
+            return player == null || !player.Exists() || player.IsInVehicle() || player.IsRagdoll || player.IsDead;
+        }
+
+        public static void RequestAnimDict(string dict)
+        {
+            try
+            {
+                Function.Call(Hash.REQUEST_ANIM_DICT, dict);
+                int timeout = Game.GameTime + 2000;
+                while (!Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, dict) && Game.GameTime < timeout)
+                    Script.Yield();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("PlayerHelper.RequestAnimDict", ex);
+            }
+        }
+
+        public static Prop CreateProp(string modelName, Vector3 pos)
+        {
+            try
+            {
+                int hash = Function.Call<int>(Hash.GET_HASH_KEY, modelName);
+                Function.Call(Hash.REQUEST_MODEL, hash);
+                while (!Function.Call<bool>(Hash.HAS_MODEL_LOADED, hash))
+                    Script.Yield();
+
+                return World.CreateProp(hash, pos, true, false);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("PlayerHelper.CreateProp", ex);
+                return null;
+            }
+        }
+
+        public static void AttachProp(Prop prop, Ped player, int boneIndex, Vector3 offset, Vector3 rotation)
+        {
+            try
+            {
+                if (prop != null && prop.Exists())
+                {
+                    prop.AttachTo(player, offset, rotation);
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("PlayerHelper.AttachProp", ex);
+            }
+        }
+
+        public static void DeleteProp(Prop prop)
+        {
+            try
+            {
+                if (prop != null && prop.Exists())
+                    prop.Delete();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("PlayerHelper.DeleteProp", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // GIVE SNACK TO PLAYER LOGIC
+        // ------------------------------------------------------------
+        public static void GiveSnackToPlayer(string itemId)
+        {
+            try
+            {
+                Ped player = Game.Player.Character;
+                if (player == null || !player.Exists())
+                    return;
+
+                // ------------------------------------------------------------
+                // BLOCK ACTION IF PLAYER IS BUSY
+                // ------------------------------------------------------------
+                if (player.IsInVehicle() || player.IsRagdoll || player.IsDead)
+                {
+                    DebugLogger.Warn("GiveSnackToPlayer: Player busy, skipping.");
+                    return;
+                }
+
+                DebugLogger.Info($"GiveSnackToPlayer: Consuming item '{itemId}'");
+
+                // ------------------------------------------------------------
+                // LOAD ANIMATION DICTIONARY
+                // ------------------------------------------------------------
+                const string animDict = "mp_player_inteat@burger";
+                const string animName = "mp_player_int_eat_burger";
+
+                Function.Call(Hash.REQUEST_ANIM_DICT, animDict);
+                int timeout = Game.GameTime + 2000;
+                while (!Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, animDict) && Game.GameTime < timeout)
+                    Script.Yield();
+
+                // ------------------------------------------------------------
+                // CREATE PROP (CHOCOLATE BAR)
+                // ------------------------------------------------------------
+                int propHash = Function.Call<int>(Hash.GET_HASH_KEY, "prop_choc_ego");
+                Vector3 pos = player.Position + new Vector3(0, 0, -1f);
+
+                Prop snackProp = World.CreateProp(propHash, pos, true, false);
+                if (snackProp != null && snackProp.Exists())
+                {
+                    // ⭐ FIXED: Correct AttachTo() signature
+                    snackProp.AttachTo(
+                        player, // right hand bone index
+                        new Vector3(0.08f, 0.02f, -0.02f),
+                        new Vector3(10f, 160f, 20f)
+                    );
+                }
+
+                // ------------------------------------------------------------
+                // PLAY ANIMATION
+                // ------------------------------------------------------------
+                player.Task.PlayAnimation(animDict, animName, 8f, -8f, 2500, AnimationFlags.UpperBodyOnly, 0f);
+
+                int animEnd = Game.GameTime + 2500;
+                bool cancelled = false;
+
+                // ------------------------------------------------------------
+                // SAFECRACK-STYLE CANCEL INPUT
+                // ESC (keyboard) or B (controller)
+                // ------------------------------------------------------------
+                while (Game.GameTime < animEnd)
+                {
+                    bool cancelKey = Game.IsKeyPressed(System.Windows.Forms.Keys.Escape);
+                    bool cancelPad = Function.Call<bool>(Hash.IS_CONTROL_JUST_PRESSED, 0, (int)Control.PhoneCancel);
+
+                    if (cancelKey || cancelPad)
+                    {
+                        cancelled = true;
+                        break;
+                    }
+
+                    Script.Yield();
+                }
+
+                // ------------------------------------------------------------
+                // CLEANUP PROP
+                // ------------------------------------------------------------
+                if (snackProp != null && snackProp.Exists())
+                    snackProp.Delete();
+
+                // ------------------------------------------------------------
+                // CANCEL BEHAVIOR
+                // ------------------------------------------------------------
+                if (cancelled)
+                {
+                    DebugLogger.Info("GiveSnackToPlayer: Snack consumption cancelled.");
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // APPLY ITEM EFFECTS
+                // ------------------------------------------------------------
+                switch (itemId)
+                {
+                    case "ps_and_qs":
+                    case "egochaser":
+                    case "meteorite":
+                        player.Health = Math.Min(player.MaxHealth, player.Health + 15);
+                        break;
+
+                    default:
+                        DebugLogger.Warn($"GiveSnackToPlayer: Unknown item '{itemId}'");
+                        break;
+                }
+
+                DebugLogger.Info($"GiveSnackToPlayer: Successfully consumed '{itemId}'");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.LogException("PlayerHelper.GiveSnackToPlayer", ex);
+            }
+        }
+
+        // ------------------------------------------------------------
         // BASIC STATES
         // ------------------------------------------------------------
         public bool IsAiming()
@@ -86,19 +270,14 @@ namespace StoreRobberyEnhanced.UI
                 if (player == null || !player.Exists())
                     return false;
 
-                // Component 1 = masks
                 int maskDrawable = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, player.Handle, 1);
-
-                // Component 0 = hats / helmets
                 int hatDrawable = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, player.Handle, 0);
-
-                // Component 7 = accessories (bandanas, scarves)
                 int accessoryDrawable = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, player.Handle, 7);
 
                 bool masked =
-                    maskDrawable != 0 ||      // actual mask
-                    hatDrawable != 0 ||       // hat / helmet
-                    accessoryDrawable != 0;   // bandana / scarf
+                    maskDrawable != 0 ||
+                    hatDrawable != 0 ||
+                    accessoryDrawable != 0;
 
                 DebugLogger.Trace($"IsMasked() = {masked} (mask={maskDrawable}, hat={hatDrawable}, acc={accessoryDrawable})");
                 return masked;
@@ -178,7 +357,7 @@ namespace StoreRobberyEnhanced.UI
                 DebugLogger.Trace($"IsInsideStore(store={store.Id}, radius={radius}) = {result}");
                 return result;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 DebugLogger.LogException("PlayerHelper.IsInsideStore", ex);
                 return false;
@@ -209,7 +388,7 @@ namespace StoreRobberyEnhanced.UI
                 DebugLogger.Trace($"IsInLOS(target={target.Handle}) = {result}");
                 return result;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 DebugLogger.LogException("PlayerHelper.IsInLOS", ex);
                 return false;
@@ -234,7 +413,6 @@ namespace StoreRobberyEnhanced.UI
                 if (current == null)
                     return false;
 
-                // ⭐ Only guns count as threats
                 bool isGun =
                     current.Hash != WeaponHash.Unarmed &&
                     current.Group != WeaponGroup.Melee;
@@ -245,7 +423,6 @@ namespace StoreRobberyEnhanced.UI
                     return false;
                 }
 
-                // ⭐ Must be aiming AND have LOS
                 bool result =
                     IsAiming() &&
                     IsInLOS(target);

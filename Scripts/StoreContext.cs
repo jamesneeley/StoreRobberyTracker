@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using GTA;
 using GTA.Math;
+using LemonUI;
 using StoreRobberyEnhanced.Data;
 using StoreRobberyEnhanced.Systems;
 using StoreRobberyEnhanced.Initialization;
@@ -46,6 +47,9 @@ namespace StoreRobberyEnhanced
         internal DebugScenarios Scenarios { get; private set; }
         internal BlipSystem Blips { get; private set; }
         internal PoliceSystem Police { get; private set; }
+        internal ShopSystem Shops { get; private set; }
+
+        internal ShopConsumeSystem ConsumeSystem { get; private set; }
 
         internal SafeCrackState SafeState { get; private set; }
         internal SafeCrackController SafeCrack { get; private set; }
@@ -70,6 +74,8 @@ namespace StoreRobberyEnhanced
         // RNG
         // ------------------------------------------------------------
         internal Random Rng { get; private set; }
+
+        public ObjectPool MenuPool { get; } = new ObjectPool();
 
         public StoreContext(Script script)
         {
@@ -203,6 +209,10 @@ namespace StoreRobberyEnhanced
                 // ⭐ PHASE 3 — POLICE SYSTEM
                 Police = new PoliceSystem(this);
 
+                // ⭐ NEW — Shop systems
+                Shops = new ShopSystem(this);
+                ConsumeSystem = new ShopConsumeSystem(this);
+
                 // 7. Blip system
                 Blips = new BlipSystem(this);
                 Blips.Initialize();
@@ -296,6 +306,12 @@ namespace StoreRobberyEnhanced
 
                 // Draw global UI
                 // Ui.Draw();
+
+                // ⭐ Shop menu + interaction system
+                Shops.Tick();
+
+                // ⭐ Shop item consumption system
+                ConsumeSystem.Tick();
 
                 // ⭐ SafeCrack logic tick (UI is drawn in Main.OnFrameRender)
                 if (SafeState.Active)

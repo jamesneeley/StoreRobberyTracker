@@ -72,6 +72,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Scripts\Data\ShopItemData.cs" />
     <Compile Include="Scripts\Systems\BlipSystem.cs" />
     <Compile Include="Scripts\Config\DefaultConfigCreator.cs" />
     <Compile Include="Scripts\Config\IniConfig.cs" />
@@ -112,12 +113,15 @@
     <Compile Include="Scripts\Systems\ClerkReplacementSystem.cs" />
     <Compile Include="Scripts\Systems\ClerkSystem.cs" />
     <Compile Include="Scripts\Systems\CooldownSystem.cs" />
+    <Compile Include="Scripts\Systems\ShopConsumeSystem.cs" />
+    <Compile Include="Scripts\Systems\ShopSystem.cs" />
     <Compile Include="Scripts\UI\PlayerHelper.cs" />
     <Compile Include="Scripts\Systems\PoliceSystem.cs" />
     <Compile Include="Scripts\Systems\RobberySystem.cs" />
     <Compile Include="Scripts\Systems\SafeSystem.cs" />
     <Compile Include="Scripts\Systems\StalkerSystem.cs" />
     <Compile Include="Scripts\Systems\TimerSystem.cs" />
+    <Compile Include="Scripts\UI\ShopMenuUI.cs" />
     <Compile Include="Scripts\UI\UiHelpers.cs" />
   </ItemGroup>
   <ItemGroup>

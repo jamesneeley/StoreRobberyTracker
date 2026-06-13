@@ -181,10 +181,10 @@ namespace StoreRobberyEnhanced.Initialization
             // ACE LIQUOR (9)
             // =====================================================================
 
-            // 9 - Ace Liquor (Route 68)
+            // 9 - Liquor Ace (Route 68)
             ctx.Stores.Add(CreateStore(
                 id++,
-                "Ace Liquor (Route 68)",
+                "Liquor Ace (Route 68)",
                 new Vector3(1392.500f, 3606.000f, 34.900f),
                 new Vector3(1392.45f, 3606.55f, 34.98f),             // ClerkPos
                 195.00f,                                             // ClerkHeading
@@ -512,6 +512,9 @@ namespace StoreRobberyEnhanced.Initialization
                 Radius = radius,
                 Cameras = new List<CameraData>() // Will be replaced by DefaultCamerasFor
             };
+
+            // ⭐ NEW — assign interior ID
+            s.InteriorId = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, clerkPos.X, clerkPos.Y, clerkPos.Z);
 
             // Build cameras using the rebuilt Rockstar-accurate system
             var camPositions = DefaultCamerasFor(id, s);

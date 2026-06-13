@@ -1,0 +1,61 @@
+﻿using System.Collections.Generic;
+
+namespace StoreRobberyEnhanced.Data
+{
+    /// <summary>
+    /// Defines a purchasable shop item.
+    /// </summary>
+    internal class ShopItemData
+    {
+        public string Id { get; }
+        public string Name { get; }
+        public int Price { get; }
+        public ShopItemCategory Category { get; }
+        public string Description { get; }   // ⭐ NEW
+
+        public ShopItemData(string id, string name, int price, ShopItemCategory category, string description)
+        {
+            Id = id;
+            Name = name;
+            Price = price;
+            Category = category;
+            Description = description;
+        }
+
+        /// <summary>
+        /// Categories for shop items.
+        /// </summary>
+        internal enum ShopItemCategory
+        {
+            Snack,
+            Drink,
+            Utility,
+            Medical,
+            Other
+        }
+
+        /// <summary>
+        /// Static database of all items sold in convenience stores.
+        /// </summary>
+        internal static class ShopItemDatabase
+        {
+            public static readonly Dictionary<string, ShopItemData> Items = new Dictionary<string, ShopItemData>
+            {
+                // Snacks
+                { "ps_and_qs", new ShopItemData("ps_and_qs", "P's & Q's", 1, ShopItemCategory.Snack, "Small candy snack. Restores a little health.") },
+                { "egochaser", new ShopItemData("egochaser", "EgoChaser", 2, ShopItemCategory.Snack, "Energy bar. Restores some health.") },
+                { "meteorite", new ShopItemData("meteorite", "Meteorite", 4, ShopItemCategory.Snack, "Chocolate bar. Restores moderate health.") },
+
+                // Drinks
+                { "sprunk", new ShopItemData("sprunk", "Sprunk", 3, ShopItemCategory.Drink, "Carbonated soda. Slight stamina boost.") },
+                { "e_colas", new ShopItemData("e_colas", "eCola", 3, ShopItemCategory.Drink, "Classic cola drink. Slight stamina boost.") },
+
+                // Medical
+                { "bandage", new ShopItemData("bandage", "Bandage", 15, ShopItemCategory.Medical, "Stops bleeding and restores health.") },
+
+                // Utility
+                { "lighter", new ShopItemData("lighter", "Lighter", 5, ShopItemCategory.Utility, "Useful for lighting things.") }
+            };
+        }
+    }
+}

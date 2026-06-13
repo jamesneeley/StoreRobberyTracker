@@ -113,6 +113,7 @@ namespace StoreRobberyEnhanced.Data
         // ------------------------------------------------------------
         public DateTime CooldownStartUtc { get; set; } = DateTime.MinValue;
 
+        public int InteriorId { get; set; }
 
         // Clerk reaction state
         public bool ClerkReacted;
