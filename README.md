@@ -77,7 +77,10 @@ The goal was simple:
 A fully interactive, skill‑based safe cracking system:
 
 - Dial rotation with sweet‑spot detection  
-- Difficulty scaling per store  
+- Difficulty scaling per store (safes can be 3-4 combos to unlock)
+- Visual feedback with glowing style unlocks
+- Audio queues for when unlocked in stages
+- Dynamic Timer for Minigame
 - Bonus payout on success  
 - Configurable safe crack time  
 - Configurable cooldown  
