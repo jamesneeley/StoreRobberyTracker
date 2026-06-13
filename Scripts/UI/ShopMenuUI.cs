@@ -1,10 +1,9 @@
 ﻿using GTA;
-using LemonUI;
 using LemonUI.Elements;
 using LemonUI.Menus;
 using StoreRobberyEnhanced.Data;
+using StoreRobberyEnhanced.Debug;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using static StoreRobberyEnhanced.Data.ShopItemData;
 
@@ -19,76 +18,107 @@ namespace StoreRobberyEnhanced.UI
 
         public ShopMenuUI(StoreContext ctx, TrackedStore store)
         {
-            _ctx = ctx;
+            try
+            {
+                _ctx = ctx;
 
-            // Build correct subtitle based on store type
-            string subtitle = GetSubtitleForStore(store);
+                // Build correct subtitle based on store type
+                string subtitle = GetSubtitleForStore(store);
 
-            // Remove store name text from banner, use dynamic subtitle
-            _menu = new NativeMenu("", subtitle);
+                // Remove store name text from banner, use dynamic subtitle
+                _menu = new NativeMenu("", subtitle);
 
-            // Add to global pool
-            _ctx.MenuPool.Add(_menu);
+                // Add to global pool
+                _ctx.MenuPool.Add(_menu);
 
-            // Apply correct Rockstar banner based on store type
-            _menu.Banner = new ScaledTexture(
-                new PointF(0f, 0f),
-                new SizeF(512f, 128f),
-                GetBannerTextureDict(store),
-                GetBannerTextureName(store)
-            );
+                // Apply correct Rockstar banner based on store type
+                _menu.Banner = new ScaledTexture(
+                    new PointF(0f, 0f),
+                    new SizeF(512f, 128f),
+                    GetBannerTextureDict(store),
+                    GetBannerTextureName(store)
+                );
 
-            BuildMenu();
+                BuildMenu();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopMenuUI.ctor: {ex}");
+            }
         }
 
         // ============================================================
-        // STORE NAME TO SUBTITLE MAPPING (NAME‑BASED, NOT INTERIOR‑BASED)
+        // STORE NAME TO SUBTITLE MAPPING
         // ============================================================
         private string GetSubtitleForStore(TrackedStore store)
         {
-            string name = store.Name.ToLower();
+            try
+            {
+                string name = store.Name.ToLower();
 
-            if (name.Contains("rob"))
-                return "Rob's Liquor";
+                if (name.Contains("rob"))
+                    return "Rob's Liquor";
 
-            if (name.Contains("ltd"))
-                return "LTD Gas Station";
+                if (name.Contains("ltd"))
+                    return "LTD Gas Station";
 
-            if (name.Contains("ace"))
-                return "Liquor Ace";
+                if (name.Contains("ace"))
+                    return "Liquor Ace";
 
-            // Default for all 24/7 stores
-            return "24/7 Supermarket";
+                // Default for all 24/7 stores
+                return "24/7 Supermarket";
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopMenuUI.GetSubtitleForStore: {ex}");
+                return "Store";
+            }
         }
 
         // ============================================================
-        // BANNER SELECTION (INTERIOR‑BASED, NOT NAME‑BASED)
+        // BANNER SELECTION
         // ============================================================
-
         private string GetBannerTextureDict(TrackedStore store)
         {
-            string name = store.Name.ToLower();
+            try
+            {
+                string name = store.Name.ToLower();
 
-            // LTD Gasoline
-            if (name.Contains("ltd"))
-                return "shopui_title_gasstation";
+                // LTD Gasoline
+                if (name.Contains("ltd"))
+                    return "shopui_title_gasstation";
 
-            // Rob's Liquor (6 stores)
-            if (name.Contains("rob"))
-                return "shopui_title_liquorstore2";
+                // Rob's Liquor (6 stores)
+                if (name.Contains("rob"))
+                    return "shopui_title_liquorstore2";
 
-            // Ace Liquor (unique interior)
-            if (name.Contains("ace"))
-                return "shopui_title_liquorstore";
+                // Ace Liquor (unique interior)
+                if (name.Contains("ace"))
+                    return "shopui_title_liquorstore";
 
-            // Default 24/7
-            return "shopui_title_conveniencestore";
+                // Default 24/7
+                return "shopui_title_conveniencestore";
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopMenuUI.GetBannerTextureDict: {ex}");
+                return "shopui_title_conveniencestore";
+            }
         }
 
+        // Rockstar uses same dict + texture name for each store type, so we can reuse the dict name as the texture name
         private string GetBannerTextureName(TrackedStore store)
         {
-            // Rockstar uses same dict + texture name
-            return GetBannerTextureDict(store);
+            try
+            {
+                // Rockstar uses same dict + texture name
+                return GetBannerTextureDict(store);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopMenuUI.GetBannerTextureName: {ex}");
+                return "shopui_title_conveniencestore";
+            }
         }
 
         // ============================================================
@@ -96,47 +126,89 @@ namespace StoreRobberyEnhanced.UI
         // ============================================================
         private void BuildMenu()
         {
-            foreach (var item in ShopItemDatabase.Items.Values)
+            try
             {
-                var menuItem = new NativeItem(item.Name, item.Description)
+                foreach (var item in ShopItemDatabase.Items.Values)
                 {
-                    AltTitle = $"${item.Price}"   // ⭐ Right‑aligned price
-                };
+                    var menuItem = new NativeItem(item.Name, item.Description)
+                    {
+                        AltTitle = $"${item.Price}"   // Right‑aligned price
+                    };
 
-                menuItem.Activated += (sender, args) =>
-                {
-                    HandlePurchase(item);
-                };
+                    menuItem.Activated += (sender, args) =>
+                    {
+                        try
+                        {
+                            HandlePurchase(item);
+                        }
+                        catch (Exception ex)
+                        {
+                            DebugLogger.Error($"ShopMenuUI.MenuItem.Activated: {ex}");
+                        }
+                    };
 
-                _menu.Add(menuItem);
+                    _menu.Add(menuItem);
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopMenuUI.BuildMenu: {ex}");
             }
         }
 
+        // Show the menu (called when player interacts with store)
+        public void Show()
+        {
+            try
+            {
+                _menu.Visible = true;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopMenuUI.Show: {ex}");
+            }
+        }
+
+        // Hide the menu (called when player walks away from store)
+        public void Hide()
+        {
+            try
+            {
+                _menu.Visible = false;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopMenuUI.Hide: {ex}");
+            }
+        }
         // ============================================================
         // PURCHASE HANDLING
         // ============================================================
-
         private void HandlePurchase(ShopItemData item)
         {
-            if (Game.Player.Money < item.Price)
+            try
             {
-                _ctx.Ui.ShowSubtitle("~r~Not enough money.");
-                return;
+                if (Game.Player.Money < item.Price)
+                {
+                    _ctx.Ui.ShowSubtitle("~r~Not enough money.");
+                    return;
+                }
+
+                Game.Player.Money -= item.Price;
+
+                // Hand off to ShopConsumeSystem for animation + effects
+                _ctx.ConsumeSystem.QueueItem(item.Id);
+
+                _ctx.Ui.ShowSubtitle(
+                    $"Purchased ~g~{item.Name}~w~ for ~g~${item.Price}"
+                );
+
+                _menu.Visible = false;
             }
-
-            Game.Player.Money -= item.Price;
-
-            // Hand off to ShopConsumeSystem for animation + effects
-            _ctx.ConsumeSystem.QueueItem(item.Id);
-
-            _ctx.Ui.ShowSubtitle(
-                $"Purchased ~g~{item.Name}~w~ for ~g~${item.Price}"
-            );
-
-            _menu.Visible = false;
-        }
-
-        public void Show() => _menu.Visible = true;
-        public void Hide() => _menu.Visible = false;
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopMenuUI.HandlePurchase: {ex}");
+            }
+        }        
     }
 }

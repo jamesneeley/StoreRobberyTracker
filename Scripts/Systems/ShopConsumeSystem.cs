@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using GTA;
 using GTA.Math;
 using GTA.Native;
-using StoreRobberyEnhanced.Data;
 using StoreRobberyEnhanced.Debug;
 using StoreRobberyEnhanced.UI;
 
@@ -22,51 +21,86 @@ namespace StoreRobberyEnhanced.Systems
 
         public ShopConsumeSystem(StoreContext ctx)
         {
-            _ctx = ctx;
-            DebugLogger.Info("ShopConsumeSystem initialized");
+            try
+            {
+                _ctx = ctx;
+                DebugLogger.Info("ShopConsumeSystem initialized");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopConsumeSystem.ctor: {ex}");
+            }
         }
 
         // Called by ShopMenuUI
         public void QueueItem(string itemId)
         {
-            _queue.Enqueue(itemId);
-            DebugLogger.Info($"ShopConsumeSystem: Queued item '{itemId}'");
+            try
+            {
+                _queue.Enqueue(itemId);
+                DebugLogger.Info($"ShopConsumeSystem: Queued item '{itemId}'");
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopConsumeSystem.QueueItem: {ex}");
+            }
         }
 
+        // ============================================================
+        // TICK HANDLING
+        // ============================================================
         public void Tick()
         {
-            Ped player = Game.Player.Character;
-            if (player == null || !player.Exists())
-                return;
+            try
+            {
+                Ped player = Game.Player.Character;
+                if (player == null || !player.Exists())
+                    return;
 
             // Nothing to consume
-            if (_queue.Count == 0)
-                return;
+                if (_queue.Count == 0)
+                    return;
 
-            string itemId = _queue.Peek();
+                string itemId = _queue.Peek();
 
             // Cooldown check
-            if (!IsReady(itemId))
-                return;
+                if (!IsReady(itemId))
+                    return;
 
             // Begin consumption
-            Consume(itemId);
+                Consume(itemId);
 
             // Apply cooldown
-            _cooldowns[itemId] = Game.GameTime + CONSUME_COOLDOWN_MS;
+                _cooldowns[itemId] = Game.GameTime + CONSUME_COOLDOWN_MS;
 
             // Remove from queue
-            _queue.Dequeue();
+                _queue.Dequeue();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopConsumeSystem.Tick: {ex}");
+            }
         }
 
         private bool IsReady(string itemId)
         {
-            if (!_cooldowns.ContainsKey(itemId))
-                return true;
+            try
+            {
+                if (!_cooldowns.ContainsKey(itemId))
+                    return true;
 
-            return Game.GameTime > _cooldowns[itemId];
+                return Game.GameTime > _cooldowns[itemId];
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopConsumeSystem.IsReady: {ex}");
+                return true;
+            }
         }
 
+        // ============================================================
+        // CONSUME HANDLING
+        // ============================================================
         private void Consume(string itemId)
         {
             try
@@ -96,6 +130,7 @@ namespace StoreRobberyEnhanced.Systems
                 Vector3 pos = player.Position + new Vector3(0, 0, -1f);
 
                 Prop snackProp = World.CreateProp(propHash, pos, true, false);
+
                 if (snackProp != null && snackProp.Exists())
                 {
                     // ⭐ FIXED: Correct AttachTo() signature
@@ -143,37 +178,47 @@ namespace StoreRobberyEnhanced.Systems
             }
             catch (Exception ex)
             {
-                DebugLogger.LogException("ShopConsumeSystem.Consume", ex);
+                DebugLogger.Error($"ShopConsumeSystem.Consume: {ex}");
             }
         }
 
+        // ============================================================
+        // APPLY ITEM EFFECTS
+        // ============================================================
         private void ApplyEffects(string itemId)
         {
-            Ped player = Game.Player.Character;
-
-            switch (itemId)
+            try
             {
-                case "ps_and_qs":
-                case "egochaser":
-                case "meteorite":
-                    player.Health = Math.Min(player.MaxHealth, player.Health + 15);
-                    _ctx.Ui.ShowNotification("~y~Health restored by 15%.");
-                    break;
+                Ped player = Game.Player.Character;
 
-                case "sprunk":
-                case "e_colas":
-                    player.Health = Math.Min(player.MaxHealth, player.Health + 50);
-                    _ctx.Ui.ShowNotification("~o~Health restored by 50%.");
-                    break;
+                switch (itemId)
+                {
+                    case "ps_and_qs":
+                    case "egochaser":
+                    case "meteorite":
+                        player.Health = Math.Min(player.MaxHealth, player.Health + 15);
+                        _ctx.Ui.ShowNotification("~y~Health restored by 15%.");
+                        break;
 
-                case "bandage":
-                    player.Health = Math.Min(player.MaxHealth, player.Health + 100);
-                    _ctx.Ui.ShowNotification("~g~Health restored by 100%.");
-                    break;
+                    case "sprunk":
+                    case "e_colas":
+                        player.Health = Math.Min(player.MaxHealth, player.Health + 50);
+                        _ctx.Ui.ShowNotification("~o~Health restored by 50%.");
+                        break;
 
-                default:
-                    DebugLogger.Warn($"ShopConsumeSystem: Unknown item '{itemId}'");
-                    break;
+                    case "bandage":
+                        player.Health = Math.Min(player.MaxHealth, player.Health + 100);
+                        _ctx.Ui.ShowNotification("~g~Health restored by 100%.");
+                        break;
+
+                    default:
+                        DebugLogger.Warn($"ShopConsumeSystem: Unknown item '{itemId}'");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"ShopConsumeSystem.ApplyEffects: {ex}");
             }
         }
     }
