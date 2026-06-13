@@ -47,8 +47,8 @@ namespace StoreRobberyEnhanced.Data
                 { "meteorite", new ShopItemData("meteorite", "Meteorite", 4, ShopItemCategory.Snack, "Chocolate bar. Restores moderate health.") },
 
                 // Drinks
-                { "sprunk", new ShopItemData("sprunk", "Sprunk", 3, ShopItemCategory.Drink, "Carbonated soda. Slight stamina boost.") },
-                { "e_colas", new ShopItemData("e_colas", "eCola", 3, ShopItemCategory.Drink, "Classic cola drink. Slight stamina boost.") },
+                { "sprunk", new ShopItemData("sprunk", "Sprunk", 1, ShopItemCategory.Drink, "Carbonated soda. Restores 50% health.") },
+                { "e_colas", new ShopItemData("e_colas", "eCola", 1, ShopItemCategory.Drink, "Classic cola drink. Restores 50% health.") },
 
                 // Medical
                 { "bandage", new ShopItemData("bandage", "Bandage", 15, ShopItemCategory.Medical, "Stops bleeding and restores health.") },
