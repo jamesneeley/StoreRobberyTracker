@@ -21,8 +21,13 @@ namespace StoreRobberyEnhanced
             try
             {
                 if (_ctx.Config.EnableMessages)
+                {
                     GTA.UI.Notification.PostTicker($"~b~Store Robbery Enhanced v{ScriptVersion}~w~ is now active.", true);
 
+                    Script.Wait(2000); // Ensure the notification has time to display before logging
+
+                    GTA.UI.Screen.ShowHelpText("Store Robbery Enhanced is loaded : ~n~We found (" + _ctx.Stores.Count.ToString() + ") Convinence stores across the map. ~n~You can disable this message in the MainSettings.ini located in scripts/StoreRobberyEnhanced", -1, true, false);
+                }
                 DebugLogger.Info($"Loaded notification shown (v{ScriptVersion})");
             }
             catch (Exception ex)

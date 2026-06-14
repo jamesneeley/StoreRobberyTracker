@@ -384,65 +384,132 @@ namespace StoreRobberyEnhanced.Initialization
             // =====================================================================
             // 24/7 SUPERMARKETS (20–21) FUTURE EXPANSION (currently using generic locations for testing)
             // =====================================================================
-            //if (IsDLcLoaded("vwp_247shop"))
-            //{
-            //    // 20 - 24/7 Supermarket (Vinewood Plaza)
-            //    ctx.Stores.Add(CreateStore(
-            //        id++,
-            //        "24/7 Supermarket (Vinewood Plaza)",
-            //        new Vector3(200.728f, -29.773f, 69.917f),
-            //        new Vector3(192.274f, -21.512f, 69.920f),             // ClerkPos
-            //        255.00f,                                              // ClerkHeading
-            //        new Vector3(192.274f, -21.512f, 69.920f),             // RegisterPos
-            //        255.00f,                                              // RegisterHeading
-            //        new Vector3(198.773f, -16.020f, 69.920f),             // SafePos
-            //        335.55f,                                             // SafeHeading
-            //        new Vector3(200.728f, -29.773f, 69.917f),             // DoorPos
-            //        "v_ilev_gasdoor",
-            //        75.00f,                                             // DoorHeading
-            //        3.0f
-            //    ));
-            //}
 
-            //if (IsDLcLoaded("vsb_247shop"))
-            //{
-            //    // 21 - 24/7 Supermarket (Little Seoul)
-            //    ctx.Stores.Add(CreateStore(
-            //        id++,
-            //        "24/7 Supermarket (Little Seoul)",
-            //        new Vector3(-693.725f, -858.959f, 23.727f),
-            //        new Vector3(-691.570f, -859.322f, 23.758f),             // ClerkPos
-            //        90.00f,                                              // ClerkHeading
-            //        new Vector3(-691.570f, -859.322f, 23.758f),             // RegisterPos
-            //        90.00f,                                              // RegisterHeading
-            //        new Vector3(-691.636f, -867.996f, 23.700f),             // SafePos
-            //        185.55f,                                             // SafeHeading
-            //        new Vector3(-697.084f, -859.229f, 23.693f),             // DoorPos
-            //        "v_ilev_gasdoor",
-            //        270.00f,                                             // DoorHeading
-            //        3.0f
-            //    ));
-            //}
+            // frdfare's Vinewood Plaza 24/7 Add-On expansion
+            if (IsDLcLoaded("vwp_247shop"))
+            {
+                // 20 - 24/7 Supermarket (Vinewood Plaza)
+                ctx.Stores.Add(CreateStore(
+                    id++,
+                    "24/7 Supermarket (Vinewood Plaza)",
+                    new Vector3(200.728f, -29.773f, 69.917f),
+                    new Vector3(192.274f, -21.512f, 69.920f),             // ClerkPos
+                    255.00f,                                              // ClerkHeading
+                    new Vector3(192.274f, -21.512f, 69.920f),             // RegisterPos
+                    255.00f,                                              // RegisterHeading
+                    new Vector3(198.773f, -16.020f, 69.920f),             // SafePos
+                    335.55f,                                             // SafeHeading
+                    new Vector3(200.728f, -29.773f, 69.917f),             // DoorPos
+                    "v_ilev_gasdoor",
+                    75.00f,                                             // DoorHeading
+                    3.0f
+                ));
+            }
 
-            //if (IsDLcLoaded("vwb_247shop"))
-            //{
-            //    // 22 - 24/7 Supermarket (Vinewood Blvd)
-            //    ctx.Stores.Add(CreateStore(
-            //        id++,
-            //        "24/7 Supermarket (Vinewood Blvd)",
-            //        new Vector3(200.728f, -29.773f, 69.917f),
-            //        new Vector3(149.760f, 243.379f, 106.976f),             // ClerkPos
-            //        240.00f,                                              // ClerkHeading
-            //        new Vector3(149.760f, 243.379f, 106.976f),             // RegisterPos
-            //        240.00f,                                              // RegisterHeading
-            //        new Vector3(155.271f, 247.452f, 106.976f),             // SafePos
-            //        335.45f,                                             // SafeHeading
-            //        new Vector3(152.501f, 237.292f, 106.971f),             // DoorPos
-            //        "v_ilev_gasdoor",
-            //        340.00f,                                             // DoorHeading
-            //        3.0f
-            //    ));
-            //}
+            // frdfare's Little Seoul 24/7 Add-On expansion
+            if (IsDLcLoaded("vsb_247shop"))
+            {
+                // 21 - 24/7 Supermarket (Little Seoul)
+                ctx.Stores.Add(CreateStore(
+                    id++,
+                    "24/7 Supermarket (Little Seoul)",
+                    new Vector3(-693.725f, -858.959f, 23.727f),
+                    new Vector3(-691.570f, -859.322f, 23.758f),             // ClerkPos
+                    90.00f,                                              // ClerkHeading
+                    new Vector3(-691.570f, -859.322f, 23.758f),             // RegisterPos
+                    90.00f,                                              // RegisterHeading
+                    new Vector3(-691.636f, -867.996f, 23.700f),             // SafePos
+                    185.55f,                                             // SafeHeading
+                    new Vector3(-697.084f, -859.229f, 23.693f),             // DoorPos
+                    "v_ilev_gasdoor",
+                    270.00f,                                             // DoorHeading
+                    3.0f
+                ));
+            }
+
+            // frdfare's Vinewood Blvd 24/7 Add-On expansion
+            if (IsDLcLoaded("vwb_247shop"))
+            {
+                // 22 - 24/7 Supermarket (Vinewood Blvd)
+                ctx.Stores.Add(CreateStore(
+                    id++,
+                    "24/7 Supermarket (Vinewood Blvd)",
+                    new Vector3(153.277f, 240.093f, 106.976f),
+                    new Vector3(149.760f, 243.379f, 106.976f),             // ClerkPos
+                    240.00f,                                              // ClerkHeading
+                    new Vector3(149.760f, 243.379f, 106.976f),             // RegisterPos
+                    240.00f,                                              // RegisterHeading
+                    new Vector3(155.271f, 247.452f, 106.976f),             // SafePos
+                    335.45f,                                             // SafeHeading
+                    new Vector3(152.501f, 237.292f, 106.971f),             // DoorPos
+                    "v_ilev_gasdoor",
+                    340.00f,                                             // DoorHeading
+                    3.0f
+                ));
+            }
+
+            // Patoche's Paleto Gas Station Add-On expansion
+            if (IsDLcLoaded("int_paletogas"))
+            {
+                // 23 - 24/7 Supermarket (Paleto Bay)
+                ctx.Stores.Add(CreateStore(
+                    id++,
+                    "24/7 Supermarket (Paleto Bay)",
+                    new Vector3(164.011f, 6638.728f, 31.699f),
+                    new Vector3(162.138f, 6643.184f, 31.699f),             // ClerkPos
+                    180.00f,                                              // ClerkHeading
+                    new Vector3(162.138f, 6643.184f, 31.699f),             // RegisterPos
+                    180.00f,                                              // RegisterHeading
+                    new Vector3(168.833f, 6644.659f, 31.699f),             // SafePos
+                    320.45f,                                             // SafeHeading
+                    new Vector3(162.127f, 6636.585f, 31.556f),             // DoorPos
+                    "v_ilev_gasdoor",
+                    314.00f,                                             // DoorHeading
+                    3.0f
+                ));
+            }
+
+            // frdfare's Elgin/Hawick 24/7 Add-On expansion
+            if (IsDLcLoaded("elg_247shop"))
+            {
+                // 24 - 24/7 Supermarket (Elgin/Hawick)
+                ctx.Stores.Add(CreateStore(
+                    id++,
+                    "24/7 Supermarket (Elgin/Hawick)",
+                    new Vector3(533.340f, -156.150f, 57.045f),
+                    new Vector3(535.999f, -152.930f, 57.045f),             // ClerkPos
+                    135.00f,                                              // ClerkHeading
+                    new Vector3(535.999f, -152.930f, 57.045f),             // RegisterPos
+                    135.00f,                                              // RegisterHeading
+                    new Vector3(549.873f, -153.367f, 57.041f),             // SafePos
+                    335.00f,                                             // SafeHeading
+                    new Vector3(527.295f, -157.474f, 57.078f),             // DoorPos
+                    "v_ilev_gasdoor",
+                    270.00f,                                             // DoorHeading
+                    3.0f
+                ));
+            }
+
+            // frdfare's Korea Plaza 24/7 Add-On expansion
+            if (IsDLcLoaded("kt_247shop"))
+            {
+                // 25 - 24/7 Supermarket (Korea Plaza)
+                ctx.Stores.Add(CreateStore(
+                    id++,
+                    "24/7 Supermarket (Korea Plaza)",
+                    new Vector3(-578.48f, -1014.375f, 22.325f),
+                    new Vector3(-575.35f, -1015.198f, 22.325f),             // ClerkPos
+                    88.85f,                                              // ClerkHeading
+                    new Vector3(-575.35f, -1015.198f, 22.325f),             // RegisterPos
+                    88.85f,                                              // RegisterHeading
+                    new Vector3(-591.75f, -1012.621f, 22.325f),             // SafePos
+                    80.00f,                                             // SafeHeading
+                    new Vector3(-578.15f, -1016.550f, 22.325f),             // DoorPos
+                    "v_ilev_gasdoor",
+                    358.00f,                                             // DoorHeading
+                    3.0f
+                ));
+            }
         }
 
         private static List<Vector3> DefaultCamerasFor(int storeId, TrackedStore store)
@@ -483,7 +550,7 @@ namespace StoreRobberyEnhanced.Initialization
                 330.0f, 300.0f, 180.0f, 320.0f, 200.0f,
                 50.0f, 90.0f, 140.0f, 100.0f, 320.0f,
                 30.0f, 90.0f, 130.0f, 275.0f, 90.0f,
-                90.0f, 90.0f, 90.0f
+                90.0f, 90.0f, 90.0f, 90.0f, 90.0f, 90.0f
             };
 
             // Determine interior type
