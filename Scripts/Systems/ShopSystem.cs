@@ -36,11 +36,23 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
-                // ⭐ Prevent LemonUI from drawing during banner display
+                // ============================================================
+                // ⭐ GLOBAL UI BLOCKER (Heist Passed banner protection)
+                // Prevent ANY shop UI from drawing while the banner is active.
+                // ============================================================
                 if (DateTime.UtcNow < ShopMenuUI.UiBlockedUntil)
                     return;
 
-                // Always process LemonUI
+                // ============================================================
+                // ⭐ SAFETY: BLOCK SHOP UI DURING SAFECRACK
+                // Prevents SafeCrack timer flicker caused by LemonUI drawing.
+                // ============================================================
+                if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                    return;
+
+                // ============================================================
+                // ⭐ PROCESS LEMONUI (only when allowed)
+                // ============================================================
                 _ctx.MenuPool.Process();
 
                 var player = Game.Player.Character;
@@ -59,7 +71,9 @@ namespace StoreRobberyEnhanced.Systems
                     return;
                 }
 
+                // ------------------------------------------------------------
                 // If any menu is open, do not show prompts
+                // ------------------------------------------------------------
                 if (IsAnyMenuOpen())
                     return;
 
@@ -81,6 +95,10 @@ namespace StoreRobberyEnhanced.Systems
 
                         if (dist <= INTERACT_DISTANCE)
                         {
+                            // ⭐ Prevent help text during SafeCrack (extra safety)
+                            if (_ctx.SafeCrack != null && _ctx.SafeCrack.IsRunning)
+                                return;
+
                             _ctx.Ui.ShowHelpText("Press ~INPUT_FRONTEND_ACCEPT~ to shop");
 
                             bool interactKey = Game.IsKeyPressed(System.Windows.Forms.Keys.E);

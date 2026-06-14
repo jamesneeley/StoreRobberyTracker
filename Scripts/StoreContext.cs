@@ -100,7 +100,7 @@ namespace StoreRobberyEnhanced
         }
 
         // ------------------------------------------------------------
-        // ENSURE STORESTATE.INI EXISTS + POPULATED
+        // ENSURE STORESTATE.INI EXISTS + AUTO‑MERGE NEW STORES
         // ------------------------------------------------------------
         private void EnsureStoreStatePopulated()
         {
@@ -108,14 +108,38 @@ namespace StoreRobberyEnhanced
             {
                 string path = Config.StoreStatePath;
 
+                // Ensure file exists
                 if (!File.Exists(path))
                     File.WriteAllText(path, "");
 
-                var info = new FileInfo(path);
-                if (info.Length == 0)
+                SimpleIni ini = new SimpleIni(path);
+                bool modified = false;
+
+                foreach (TrackedStore store in Stores)
                 {
-                    DebugLogger.Info("StoreState.ini empty — prepopulating");
-                    Config.PrepopulateStoreState(Stores);
+                    string sec = "Store" + store.Id;
+
+                    // ⭐ If section missing → create full default entry
+                    if (!ini.SectionExists(sec))
+                    {
+                        DebugLogger.Info($"StoreState.ini missing section for store {store.Id} — adding it.");
+                        Config.WriteDefaultStoreState(ini, store);
+                        modified = true;
+                        continue;
+                    }
+
+                    // ⭐ If section exists → ensure all required keys exist
+                    if (Config.AddMissingStoreKeys(ini, store))
+                    {
+                        DebugLogger.Info($"StoreState.ini updated with missing keys for store {store.Id}");
+                        modified = true;
+                    }
+                }
+
+                if (modified)
+                {
+                    ini.Save();
+                    DebugLogger.Info("StoreState.ini updated with new store entries.");
                 }
             }
             catch (Exception ex)

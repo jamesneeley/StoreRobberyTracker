@@ -205,5 +205,34 @@ namespace StoreRobberyEnhanced
                     sec.Remove(key);
             }
         }
+
+        // ------------------------------------------------------------
+        // SECTION & KEY HELPERS (required for auto-merge logic)
+        // ------------------------------------------------------------
+        public bool SectionExists(string section)
+        {
+            return _data.ContainsKey(section);
+        }
+
+        public bool KeyExists(string section, string key)
+        {
+            if (_data.TryGetValue(section, out var sec))
+                return sec.ContainsKey(key);
+
+            return false;
+        }
+
+        public IEnumerable<string> GetSections()
+        {
+            return _data.Keys;
+        }
+
+        public IEnumerable<string> GetKeys(string section)
+        {
+            if (_data.TryGetValue(section, out var sec))
+                return sec.Keys;
+
+            return Array.Empty<string>();
+        }
     }
 }

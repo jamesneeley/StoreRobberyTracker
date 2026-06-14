@@ -336,6 +336,52 @@ namespace StoreRobberyEnhanced
         }
 
         // ------------------------------------------------------------
+        // WRITE DEFAULT STORE STATE (used when new stores are added)
+        // ------------------------------------------------------------
+        public void WriteDefaultStoreState(SimpleIni ini, TrackedStore store)
+        {
+            string sec = "Store" + store.Id;
+
+            ini.WriteString(sec, "StoreName", store.Name);
+            ini.WriteBool(sec, "IsRobbed", false);
+            ini.WriteBool(sec, "CooldownActive", false);
+            ini.WriteBool(sec, "SafeCracked", false);
+            ini.WriteBool(sec, "AlarmTriggered", false);
+            ini.WriteBool(sec, "ClerkDeathHandled", false);
+            ini.WriteBool(sec, "ClerkKilledWithGun", false);
+            ini.WriteString(sec, "LastRobbedUtc", "");
+        }
+
+        // ------------------------------------------------------------
+        // AUTO‑MERGE: ADD MISSING KEYS WITHOUT OVERWRITING EXISTING DATA
+        // ------------------------------------------------------------
+        public bool AddMissingStoreKeys(SimpleIni ini, TrackedStore store)
+        {
+            bool modified = false;
+            string sec = "Store" + store.Id;
+
+            void Ensure(string key, string defaultValue)
+            {
+                if (!ini.KeyExists(sec, key))
+                {
+                    ini.WriteString(sec, key, defaultValue);
+                    modified = true;
+                }
+            }
+
+            Ensure("StoreName", store.Name);
+            Ensure("IsRobbed", "false");
+            Ensure("CooldownActive", "false");
+            Ensure("SafeCracked", "false");
+            Ensure("AlarmTriggered", "false");
+            Ensure("ClerkDeathHandled", "false");
+            Ensure("ClerkKilledWithGun", "false");
+            Ensure("LastRobbedUtc", "");
+
+            return modified;
+        }
+
+        // ------------------------------------------------------------
         // SAVE STORE STATE
         // ------------------------------------------------------------
         public void SaveStoreState(TrackedStore store)
@@ -360,21 +406,6 @@ namespace StoreRobberyEnhanced
                     ? ""
                     : store.LastRobbedUtc.ToString("o")
             );
-
-            // no longer being used, but leaving in place in case we want to write new camera-related data in the future
-            //int camCount = store.Cameras.Count;
-            //for (int i = 0; i < camCount; i++)
-            //{
-            //    ini.WriteBool(sec, $"Cam{i}_Destroyed", store.Cameras[i].Destroyed);
-            //    ini.WriteBool(sec, $"Cam{i}_GraceActive", store.Cameras[i].GraceActive);
-            //    ini.WriteString(
-            //        sec,
-            //        $"Cam{i}_GraceStartUtc",
-            //        store.Cameras[i].GraceStartUtc == DateTime.MinValue
-            //            ? ""
-            //            : store.Cameras[i].GraceStartUtc.ToString("o")
-            //    );
-            //}
 
             ini.Save();
         }
@@ -403,47 +434,17 @@ namespace StoreRobberyEnhanced
             if (DateTime.TryParse(robbedStr, null, DateTimeStyles.RoundtripKind, out DateTime robbed))
                 store.LastRobbedUtc = robbed;
 
-            // no longer being used, but leaving in place in case we want to read old data
-            //int camCount = store.Cameras.Count;
-            //for (int i = 0; i < camCount; i++)
-            //{
-            //    store.Cameras[i].Destroyed = ini.ReadBool(sec, $"Cam{i}_Destroyed", false);
-            //    store.Cameras[i].GraceActive = ini.ReadBool(sec, $"Cam{i}_GraceActive", false);
-
-            //    string graceStr = ini.ReadString(sec, $"Cam{i}_GraceStartUtc", "");
-            //    if (DateTime.TryParse(graceStr, null, DateTimeStyles.RoundtripKind, out DateTime grace))
-            //        store.Cameras[i].GraceStartUtc = grace;
-            //}
         }
 
         // ------------------------------------------------------------
-        // PREPOPULATE STORESTATE.INI WITH ALL STORES
+        // PREPOPULATE STORESTATE.INI WITH ALL STORES (initial creation)
         // ------------------------------------------------------------
         public void PrepopulateStoreState(List<TrackedStore> stores)
         {
             SimpleIni ini = new SimpleIni(_storeStatePath);
 
             foreach (TrackedStore store in stores)
-            {
-                string sec = "Store" + store.Id.ToString();
-
-                ini.WriteString(sec, "StoreName", store.Name);
-                ini.WriteBool(sec, "IsRobbed", false);
-                ini.WriteBool(sec, "CooldownActive", false);
-                ini.WriteBool(sec, "SafeCracked", false);
-                ini.WriteBool(sec, "AlarmTriggered", false);
-                ini.WriteBool(sec, "ClerkDeathHandled", false);
-                ini.WriteBool(sec, "ClerkKilledWithGun", false);
-                ini.WriteString(sec, "LastRobbedUtc", "");
-
-                // no longer used
-                //for (int i = 0; i < store.Cameras.Count; i++)
-                //{
-                //    ini.WriteBool(sec, $"Cam{i}_Destroyed", false);
-                //    ini.WriteBool(sec, $"Cam{i}_GraceActive", false);
-                //    ini.WriteString(sec, $"Cam{i}_GraceStartUtc", "");
-                //}
-            }
+                WriteDefaultStoreState(ini, store);
 
             ini.Save();
         }
