@@ -33,6 +33,12 @@ namespace StoreRobberyEnhanced.Systems
         private int _messagesSentThisRobbery = 0;
         private DateTime _nextAllowedMessageTime = DateTime.MinValue;
 
+        // ⭐ NEW: Call limiting + cooldown
+        private int _callsThisRobbery = 0;
+        private const int MAX_CALLS_PER_ROBBERY = 3;
+        private int _nextAllowedCallTimeMs = 0;
+        private bool _callInProgress = false;
+
         // iFruit phone
         private readonly CustomiFruit _phone;
         private readonly iFruitContact _stalkerContact;
@@ -493,13 +499,38 @@ namespace StoreRobberyEnhanced.Systems
                 if (!_ctx.Config.EnableStalkerCall)
                     return;
 
-                int chance = _ctx.Config.StalkerCallChance;
-
-                if (_rng.Next(0, 100) < chance)
+                // ⭐ Prevent overlapping calls
+                if (_callInProgress)
                 {
-                    DebugLogger.Info("Stalker call triggered (iFruit)");
-                    StartCall();
+                    DebugLogger.Trace("Stalker call suppressed — call already in progress");
+                    return;
                 }
+
+                // ⭐ Hard cap per robbery
+                if (_callsThisRobbery >= MAX_CALLS_PER_ROBBERY)
+                {
+                    DebugLogger.Trace("Stalker call suppressed — max calls per robbery reached");
+                    return;
+                }
+
+                // ⭐ Cooldown between calls
+                if (Game.GameTime < _nextAllowedCallTimeMs)
+                {
+                    DebugLogger.Trace("Stalker call suppressed — call cooldown active");
+                    return;
+                }
+
+                // ⭐ PURE CHANCE — THIS IS THE PART YOU WANTED
+                int chance = _ctx.Config.StalkerCallChance;
+                if (_rng.Next(0, 100) >= chance)
+                    return; // chance failed → do nothing
+
+                // ⭐ Chance succeeded → attempt call
+                _callsThisRobbery++;
+                _nextAllowedCallTimeMs = Game.GameTime + 15000; // 15s cooldown
+
+                DebugLogger.Info($"Stalker call triggered (iFruit), call #{_callsThisRobbery}");
+                StartCall();
             }
             catch (Exception ex)
             {
@@ -525,14 +556,12 @@ namespace StoreRobberyEnhanced.Systems
                 // ⭐ Position the phone bottom-right (GTA Online style)
                 //Function.Call(Hash.SET_MOBILE_PHONE_POSITION, 0.12f, -0.02f, 0.0f);
                 Function.Call(Hash.CREATE_MOBILE_PHONE, 0);
-                
+
                 // Trigger the call
                 _stalkerContact.Call();
 
                 _ctx.Ui.TextNotification(_callerImage, _callerName, "NO CALLER ID", "INCOMING CALL");
 
-                // Record when the call started
-                int callStartTime = Game.GameTime;
                 int timeoutMs = _stalkerContact.DialTimeout > 0 ? _stalkerContact.DialTimeout + 2000 : 10000;
 
                 // Run a non‑blocking timeout check using Script.Tick
@@ -545,9 +574,13 @@ namespace StoreRobberyEnhanced.Systems
                     _stalkerContact.EndCall();
                     Function.Call(Hash.DESTROY_MOBILE_PHONE);
                 }
+
+                // ⭐ Clear in-progress flag after timeout
+                _callInProgress = false;
             }
             catch (Exception ex)
             {
+                _callInProgress = false;
                 DebugLogger.LogException("StalkerSystem.StartCall", ex);
             }
         }
@@ -562,9 +595,13 @@ namespace StoreRobberyEnhanced.Systems
 
                 // Cleanup phone model + camera
                 Function.Call(Hash.DESTROY_MOBILE_PHONE);
+
+                // ⭐ Call finished
+                _callInProgress = false;
             }
             catch (Exception ex)
             {
+                _callInProgress = false;
                 DebugLogger.LogException("StalkerSystem.OnStalkerCallAnswered", ex);
             }
         }
@@ -606,6 +643,11 @@ namespace StoreRobberyEnhanced.Systems
                 _messagesSentThisRobbery = 0;
                 _nextAllowedMessageTime = DateTime.MinValue;
                 _eventQueue.Clear();
+
+                // ⭐ Reset call state
+                _callsThisRobbery = 0;
+                _nextAllowedCallTimeMs = 0;
+                _callInProgress = false;
             }
             catch (Exception ex)
             {

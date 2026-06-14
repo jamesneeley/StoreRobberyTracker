@@ -36,6 +36,10 @@ namespace StoreRobberyEnhanced.Systems
         {
             try
             {
+                // ⭐ Prevent LemonUI from drawing during banner display
+                if (DateTime.UtcNow < ShopMenuUI.UiBlockedUntil)
+                    return;
+
                 // Always process LemonUI
                 _ctx.MenuPool.Process();
 

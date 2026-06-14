@@ -11,6 +11,7 @@ namespace StoreRobberyEnhanced.Systems
     {
         private readonly StoreContext _ctx;
         private readonly Random _rng;
+        private DateTime _nextPoliceCallAttempt = DateTime.MinValue;
 
         public ClerkSystem(StoreContext ctx)
         {
@@ -425,6 +426,18 @@ namespace StoreRobberyEnhanced.Systems
                 clerk.BlockPermanentEvents = true;
 
                 store.ClerkIdle = true;
+
+                // ⭐ Reset clerk state machine after spawn
+                store.ClerkReacted = false;
+                store.ClerkSurrenderStage = 0;
+                store.ClerkStalling = false;
+                store.ClerkOpeningRegister = false;
+                store.ClerkGrabbingCash = false;
+                store.ClerkThrowingBag = false;
+                store.ClerkPanicking = false;
+                store.ClerkFleeing = false;
+                store.ClerkRecognizedPlayer = false;
+
             }
             catch (Exception ex)
             {
@@ -472,6 +485,17 @@ namespace StoreRobberyEnhanced.Systems
 
                 // Push next sweep far into the future so ClerkReplacementSystem stops touching this store
                 store.LastClerkSweepUtc = DateTime.UtcNow + TimeSpan.FromHours(12);
+
+                // ⭐ Reset clerk state machine after spawn
+                store.ClerkReacted = false;
+                store.ClerkSurrenderStage = 0;
+                store.ClerkStalling = false;
+                store.ClerkOpeningRegister = false;
+                store.ClerkGrabbingCash = false;
+                store.ClerkThrowingBag = false;
+                store.ClerkPanicking = false;
+                store.ClerkFleeing = false;
+                store.ClerkRecognizedPlayer = false;
 
                 DebugLogger.Info($"ForceSpawnClerk: Clerk spawned and sweeps disabled for store {store.Id}");
             }
@@ -545,6 +569,27 @@ namespace StoreRobberyEnhanced.Systems
                 DebugLogger.LogException("ClerkSystem.IsPlayingAnim", ex);
                 return false;
             }
+        }
+
+        // ------------------------------------------------------------
+        // SAFE LOAD: ANIM CHECK
+        // ------------------------------------------------------------
+        private bool SafeLoadAnimDict(string dict)
+        {
+            Function.Call(Hash.REQUEST_ANIM_DICT, dict);
+
+            int timeout = Game.GameTime + 2000;
+            while (!Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, dict))
+            {
+                Script.Yield();
+                if (Game.GameTime > timeout)
+                {
+                    DebugLogger.Warn($"Anim dict failed to load: {dict}");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         // ------------------------------------------------------------
@@ -869,7 +914,10 @@ namespace StoreRobberyEnhanced.Systems
                 // STILL IN FIRST ANIMATION PHASE?
                 // ------------------------------------------------------------
                 if ((DateTime.UtcNow - store.ClerkAnimStartUtc).TotalMilliseconds < store.ClerkAnimDurationMs)
+                {
+                    // Prevent idle reset during transition
                     return;
+                }
 
                 // ------------------------------------------------------------
                 // FIRST PHASE: PLAY "ENTER" ANIMATION
@@ -882,9 +930,7 @@ namespace StoreRobberyEnhanced.Systems
                     if (!clerk.IsRagdoll && !store.ClerkFleeing)
                         clerk.Task.ClearAllImmediately();
 
-                    Function.Call(Hash.REQUEST_ANIM_DICT, "anim@heists@ornate_bank@grab_cash");
-
-                    if (Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, "anim@heists@ornate_bank@grab_cash"))
+                    if (SafeLoadAnimDict("anim@heists@ornate_bank@grab_cash"))
                     {
                         Function.Call(
                             Hash.TASK_PLAY_ANIM,
@@ -1407,7 +1453,9 @@ namespace StoreRobberyEnhanced.Systems
                 store.SilentAlarmUtc = DateTime.UtcNow;
 
                 // Clear tasks so animation can play
-                clerk.Task.ClearAllImmediately();
+                //clerk.Task.ClearAllImmediately();
+                if (!clerk.IsRagdoll && !store.ClerkFleeing)
+                    clerk.Task.ClearAll();
 
                 // Load keypad animation
                 Function.Call(Hash.REQUEST_ANIM_DICT, "anim@heists@keypad@");
@@ -1513,6 +1561,11 @@ namespace StoreRobberyEnhanced.Systems
                 // If player leaves the store radius, clerk may call police
                 if (!store.IsPlayerInsideStore)
                 {
+                    if (DateTime.UtcNow < _nextPoliceCallAttempt)
+                        return;
+
+                    _nextPoliceCallAttempt = DateTime.UtcNow.AddSeconds(5); // 5s cooldown
+
                     int chance = store.ClerkRecognizedPlayer ? 50 : 25;
                     if (_rng.Next(0, 100) < chance)
                     {

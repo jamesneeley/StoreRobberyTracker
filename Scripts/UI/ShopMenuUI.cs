@@ -15,6 +15,12 @@ namespace StoreRobberyEnhanced.UI
         private readonly StoreContext _ctx;
 
         public NativeMenu Menu => _menu;
+        public static DateTime UiBlockedUntil = DateTime.MinValue;
+
+        public static void BlockUIForSeconds(int seconds)
+        {
+            UiBlockedUntil = DateTime.UtcNow.AddSeconds(seconds);
+        }
 
         public ShopMenuUI(StoreContext ctx, TrackedStore store)
         {

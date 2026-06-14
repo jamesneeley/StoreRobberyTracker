@@ -4,6 +4,7 @@ using GTA.Native;
 using StoreRobberyEnhanced.Data;
 using StoreRobberyEnhanced.Debug;
 using StoreRobberyEnhanced.Minigame;
+using StoreRobberyEnhanced.UI;
 using System;
 using System.Threading.Tasks;
 
@@ -785,6 +786,13 @@ namespace StoreRobberyEnhanced.Systems
                     if (!store.AlarmTriggered)
                         TriggerPoliceIfNeeded(store);
 
+                    // ⭐ CRITICAL FIX — HARD-END THE ROBBERY SO THE LOOP STOPS
+                    store.RobberyEnded = true;                 // master kill switch
+                    store.IsRobbed = false;                    // stops UpdateRobbery robbery branch
+                    store.IsRobberyActive = false;             // stops all robbery logic
+                    store.PendingCompletion = false;           // prevents re-entry into completion
+                    store.RobberyStartUtc = DateTime.MinValue; // timer cannot compute elapsed
+
                     StoreContext.GlobalUi.ClearTimer();
                     return;
                 }
@@ -1245,18 +1253,24 @@ namespace StoreRobberyEnhanced.Systems
 
                 bool wasDebugEscape = _debugEscapeActive;
                 int payout = store.PendingPayout;
-                
+
                 // Debug escape → do NOT pay player
                 if (!wasDebugEscape)
                 {
                     Game.Player.Money += payout;
                     StoreContext.GlobalUi.ShowHeistPassedBanner("~o~ROBBERY COMPLETE", $"~g~Earned ${payout}");
+
+                    // ⭐ Prevent Shop Menu UI from overwriting the banner
+                    ShopMenuUI.BlockUIForSeconds(3);
                 }
                 else
                 {
                     DebugLogger.Info($"Awarding payout: store={store.Id}, payout={payout}, DebugState={wasDebugEscape}");
                     _ctx.Ui.ShowNotification("~y~DEBUG STATE ESCAPE COMPLETED~n~(no actual payout).");
                     StoreContext.GlobalUi.ShowHeistPassedBanner("~o~ROBBERY COMPLETE", $"~g~Earned ${payout}");
+
+                    // ⭐ Prevent Shop Menu UI from overwriting the banner
+                    ShopMenuUI.BlockUIForSeconds(3);
                 }
 
                 // Reset robbery flags
@@ -1352,6 +1366,10 @@ namespace StoreRobberyEnhanced.Systems
                 // ------------------------------------------------------------
                 store.TimesRobbed++;
 
+                // ⭐ Remove any existing cooldown blocker before creating a new one
+                _ctx.Cooldowns.RemoveCooldownBlocker(store);
+
+                // ⭐ APPLY COOLDOWN VISUALS + SAVE
                 _ctx.Cooldowns.ApplyCooldownBlocker(store);
                 _ctx.Cooldowns.UpdateStoreBlip(store);
                 _ctx.SaveStoreState(store);
